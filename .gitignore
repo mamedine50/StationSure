@@ -1,0 +1,51 @@
+# Dépendances
+node_modules/
+
+# Variables d'environnement : jamais versionnées (seuls les .env.example le sont)
+.env
+.env.*
+!.env.example
+
+# Turborepo
+.turbo/
+
+# Next.js
+apps/web/.next/
+apps/web/out/
+next-env.d.ts
+
+# Expo / React Native
+apps/mobile/.expo/
+apps/mobile/dist/
+apps/mobile/web-build/
+apps/mobile/expo-env.d.ts
+apps/mobile/android/
+apps/mobile/ios/
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.metro-health-check*
+
+# Supabase (état local)
+supabase/.branches/
+supabase/.temp/
+
+# Tests
+coverage/
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+pnpm-debug.*
+
+# Système
+.DS_Store
+*.pem

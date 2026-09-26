@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StationSûre — Clôture de caisse</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0E1311;font-family:'IBM Plex Sans',sans-serif;color:#EEF2EF}
+button,textarea{font-family:inherit}
+</style>
+</head>
+<body>
+<div style="width: 390px; height: 900px; box-sizing: border-box; padding: 20px 20px 24px; display: flex; flex-direction: column; gap: 14px; background: #0E1311; color: #EEF2EF; font-family: 'IBM Plex Sans', sans-serif">
+  <div style="display: flex; align-items: center; gap: 12px">
+    <button aria-label="Retour" style="width: 44px; height: 44px; border-radius: 12px; background: #161D1A; border: 1px solid #2A3530; display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EEF2EF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+    </button>
+    <div style="display: flex; flex-direction: column">
+      <span style="font-family: Sora, sans-serif; font-weight: 700; font-size: 18px">Clôture · shift soir</span>
+      <span style="font-size: 12px; color: #A3B0AA">Gérant : Ibrahima Sarr · 22:10</span>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; background: #161D1A; border: 1px solid #2A3530; border-radius: 14px">
+    <span style="font-size: 12px; color: #A3B0AA">Montant attendu (index × prix + ventes)</span>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600">2 385 000 <span style="font-size: 14px; color: #A3B0AA">FCFA</span></span>
+    <span style="font-size: 12px; color: #A3B0AA">Carburant 2 190 000 · Boutique 145 000 · Lavage 50 000</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; border: 1px solid #2A3530; border-radius: 14px; background: #161D1A">
+    <div style="display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 16px; border-bottom: 1px solid #2A3530; font-size: 14px"><span>Espèces comptées</span><span style="font-family: 'IBM Plex Mono', monospace">1 120 000</span></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 16px; border-bottom: 1px solid #2A3530; font-size: 14px"><span>Wave <span style="font-size: 11px; color: #4CC38A">· rapproché</span></span><span style="font-family: 'IBM Plex Mono', monospace">640 000</span></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 16px; border-bottom: 1px solid #2A3530; font-size: 14px"><span>Orange Money <span style="font-size: 11px; color: #4CC38A">· rapproché</span></span><span style="font-family: 'IBM Plex Mono', monospace">410 000</span></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 16px; border-bottom: 1px solid #2A3530; font-size: 14px"><span>Carte</span><span style="font-family: 'IBM Plex Mono', monospace">150 000</span></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; height: 40px; padding: 0 16px; border-bottom: 1px solid #2A3530; font-size: 14px"><span>Crédit clients (2 bons)</span><span style="font-family: 'IBM Plex Mono', monospace">30 000</span></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; height: 44px; padding: 0 16px; font-size: 14px; font-weight: 600"><span>Total encaissé</span><span style="font-family: 'IBM Plex Mono', monospace">2 350 000</span></div>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: #2A1512; border: 1px solid #7A2F25">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF7A66" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 13px; color: #E8C9C3">Écart de caisse</span>
+      <span style="font-size: 12px; color: #E8C9C3">Justification obligatoire</span>
+    </div>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600; color: #FF7A66">−35 000</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 6px">
+    <label for="justif" style="font-size: 13px; color: #A3B0AA">Justification</label>
+    <textarea id="justif" placeholder="Expliquez l'écart…" style="height: 64px; box-sizing: border-box; padding: 10px 12px; border-radius: 12px; background: #161D1A; border: 1px solid #4A5852; color: #EEF2EF; font-size: 14px; resize: none"></textarea>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px">
+    <span style="font-size: 13px; color: #A3B0AA; font-weight: 600">Preuves requises</span>
+    <div style="display: flex; align-items: center; gap: 10px; font-size: 14px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4CC38A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg><span>Photos d'index de fin · 6/6</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; font-size: 14px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4CC38A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg><span>Jaugeage des cuves · 2/2</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; font-size: 14px">
+      <span style="width: 16px; height: 16px; border-radius: 8px; border: 2px solid #F2A541; box-sizing: border-box; flex-shrink: 0"></span>
+      <span style="flex-grow: 1">Bordereau de versement</span>
+      <button style="display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 10px; background: #221C10; border: 1px solid #F2A541; color: #F2A541; font-size: 13px; font-weight: 600">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F2A541" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>Photo</button>
+    </div>
+  </div>
+
+  <button disabled style="margin-top: auto; height: 54px; border-radius: 14px; background: #1E2723; border: 1px solid #2A3530; color: #6F7D77; font-size: 16px; font-weight: 600">Clôturer le shift</button>
+  <p style="margin: 0; font-size: 12px; color: #A3B0AA; text-align: center">Pas de preuve, pas de clôture.</p>
+</div>
+</body>
+</html>

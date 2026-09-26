@@ -1,0 +1,11 @@
+node_modules
+.next
+.expo
+.turbo
+dist
+coverage
+pnpm-lock.yaml
+docs
+supabase/.temp
+apps/mobile/android
+apps/mobile/ios

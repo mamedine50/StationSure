@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StationSûre — Stock — vue propriétaire</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0E1311;font-family:'IBM Plex Sans',sans-serif;color:#EEF2EF}
+button{font-family:inherit}
+a{color:#F2A541}a:hover{color:#F7C47E}
+</style>
+</head>
+<body>
+<div style="width: 1440px; height: 900px; display: flex; background: #0E1311; color: #EEF2EF; font-family: 'IBM Plex Sans', sans-serif">
+  <nav style="width: 232px; flex-shrink: 0; box-sizing: border-box; padding: 24px 14px; display: flex; flex-direction: column; gap: 4px; background: #111816; border-right: 1px solid #2A3530">
+    <div style="display: flex; align-items: center; gap: 8px; padding: 0 10px 20px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A541" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h12"></path><path d="M4 9h10"></path><path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"></path><path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0V9.83a2 2 0 0 0-.59-1.42L18 5"></path></svg>
+      <span style="font-family: Sora, sans-serif; font-weight: 700; font-size: 15px">StationSûre</span>
+    </div>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Tableau de bord</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Stations</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Carburant et cuves</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Caisse et shifts</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; background: #221C10; color: #F2A541; font-size: 14px; font-weight: 600; text-decoration: none">Stock</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Boutique</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Garage</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Car Wash</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Employés</a>
+    <a href="#" style="display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none"><span>Alertes</span><span style="min-width: 22px; height: 22px; border-radius: 11px; background: #FF7A66; color: #1A0A07; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">5</span></a>
+    <a href="#" style="margin-top: auto; display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #A3B0AA; font-size: 14px; text-decoration: none">Paramètres</a>
+  </nav>
+
+  <main style="flex-grow: 1; box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px; min-width: 0">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-family: Sora, sans-serif; font-size: 26px; font-weight: 700">Stock</h1>
+        <span style="font-size: 14px; color: #A3B0AA">7 derniers jours · Toutes les stations (3)</span>
+      </div>
+      <div style="display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: #161D1A; border: 1px solid #2A3530">
+        <button style="height: 36px; padding: 0 14px; border-radius: 9px; background: #F2A541; border: none; color: #1A1206; font-size: 13px; font-weight: 600">Tout</button>
+        <button style="height: 36px; padding: 0 14px; border-radius: 9px; background: transparent; border: none; color: #C9D3CE; font-size: 13px">Boutique</button>
+        <button style="height: 36px; padding: 0 14px; border-radius: 9px; background: transparent; border: none; color: #C9D3CE; font-size: 13px">Garage</button>
+        <button style="height: 36px; padding: 0 14px; border-radius: 9px; background: transparent; border: none; color: #C9D3CE; font-size: 13px">Car Wash</button>
+        <button style="height: 36px; padding: 0 14px; border-radius: 9px; background: transparent; border: none; color: #C9D3CE; font-size: 13px">Gaz</button>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 18px; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+        <span style="font-size: 13px; color: #A3B0AA">Valeur du stock</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600">18 420 000</span>
+        <span style="font-size: 12px; color: #A3B0AA">FCFA · au prix d'achat</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 18px; background: #2A1512; border: 1px solid #7A2F25; border-radius: 16px">
+        <span style="font-size: 13px; color: #E8C9C3">Écarts constatés</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #FF7A66">−122 400</span>
+        <span style="font-size: 12px; color: #E8C9C3">FCFA · 5 articles</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 18px; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+        <span style="font-size: 13px; color: #A3B0AA">Comptages surprises</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600">19 / 21</span>
+        <span style="font-size: 12px; color: #A3B0AA">faits à temps · 2 en retard</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 18px; background: #261E0F; border: 1px solid #6B4D1C; border-radius: 16px">
+        <span style="font-size: 13px; color: #E9D6B4">Sous le seuil</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #F2A541">4 articles</span>
+        <span style="font-size: 12px; color: #E9D6B4">à commander</span>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px">
+      <div style="display: flex; flex-direction: column; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+        <div style="display: flex; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid #2A3530"><span style="font-weight: 600; font-size: 15px">Écarts de comptage</span><a href="#" style="font-size: 13px">Historique</a></div>
+        <div style="display: grid; grid-template-columns: 1.7fr 0.8fr 0.7fr 0.7fr 0.6fr 0.9fr 1fr; gap: 8px; padding: 10px 18px; font-size: 11px; letter-spacing: 1px; color: #A3B0AA; border-bottom: 1px solid #2A3530">
+          <span>ARTICLE</span><span>STATION</span><span style="text-align: right">PRÉVU</span><span style="text-align: right">COMPTÉ</span><span style="text-align: right">ÉCART</span><span style="text-align: right">VALEUR</span><span style="text-align: right">SHIFT DE</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.7fr 0.8fr 0.7fr 0.7fr 0.6fr 0.9fr 1fr; gap: 8px; align-items: center; height: 52px; padding: 0 18px; font-size: 13px; border-bottom: 1px solid #2A3530">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Huile 15W40 · fût garage</span><span style="font-size: 11px; color: #A3B0AA">Garage · jauge du fût</span></span>
+          <span>Mbour</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">142 L</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">128 L</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace; color: #FF7A66; font-weight: 600">−14 L</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">−63 000</span><span style="text-align: right">L. Gueye</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.7fr 0.8fr 0.7fr 0.7fr 0.6fr 0.9fr 1fr; gap: 8px; align-items: center; height: 52px; padding: 0 18px; font-size: 13px; border-bottom: 1px solid #2A3530">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Huile 15W40 · bidon 5 L</span><span style="font-size: 11px; color: #A3B0AA">Boutique</span></span>
+          <span>Mbour</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">22</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">20</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace; color: #FF7A66; font-weight: 600">−2</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">−36 000</span><span style="text-align: right">K. Fall</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.7fr 0.8fr 0.7fr 0.7fr 0.6fr 0.9fr 1fr; gap: 8px; align-items: center; height: 52px; padding: 0 18px; font-size: 13px; border-bottom: 1px solid #2A3530">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Cigarettes · paquet</span><span style="font-size: 11px; color: #A3B0AA">Boutique</span></span>
+          <span>Mbour</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">48</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">41</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace; color: #FF7A66; font-weight: 600">−7</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">−8 400</span><span style="text-align: right">K. Fall</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.7fr 0.8fr 0.7fr 0.7fr 0.6fr 0.9fr 1fr; gap: 8px; align-items: center; height: 52px; padding: 0 18px; font-size: 13px; border-bottom: 1px solid #2A3530">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Carte recharge 1 000</span><span style="font-size: 11px; color: #A3B0AA">Boutique</span></span>
+          <span>Mbour</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">60</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">52</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace; color: #FF7A66; font-weight: 600">−8</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">−8 000</span><span style="text-align: right">K. Fall</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.7fr 0.8fr 0.7fr 0.7fr 0.6fr 0.9fr 1fr; gap: 8px; align-items: center; height: 52px; padding: 0 18px; font-size: 13px">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Shampoing carrosserie</span><span style="font-size: 11px; color: #A3B0AA">Car Wash</span></span>
+          <span>Kaolack</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">9,5 L</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">6,0 L</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace; color: #FF7A66; font-weight: 600">−3,5 L</span><span style="text-align: right; font-family: 'IBM Plex Mono', monospace">−7 000</span><span style="text-align: right">P. Sow</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px; padding: 18px; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+        <span style="font-weight: 600; font-size: 15px">Ratios de contrôle</span>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="display: flex; justify-content: space-between; font-size: 13px"><span>Garage Mbour · huile sortie du fût vs facturée sur OT</span></div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 15px">98 L / 84 L</span><span style="font-size: 12px; color: #FF7A66; font-weight: 600">14 L non justifiés</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid #2A3530">
+          <span style="font-size: 13px">Garage Mbour · véhicules entrés vs OT facturés</span>
+          <div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 15px">31 / 29</span><span style="font-size: 12px; color: #FF7A66; font-weight: 600">2 sans OT</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid #2A3530">
+          <span style="font-size: 13px">Car Wash Kaolack · eau par lavage déclaré</span>
+          <div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 15px">185 L <span style="font-size: 12px; color: #A3B0AA">(norme 120 L)</span></span><span style="font-size: 12px; color: #F2A541; font-weight: 600">≈ 35 % de lavages non déclarés</span></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid #2A3530">
+          <span style="font-size: 13px">Gaz Thiès · bouteilles pleines + vides</span>
+          <div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 15px">40 + 58 = 98 / 100</span><span style="font-size: 12px; color: #FF7A66; font-weight: 600">2 bouteilles manquantes</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-weight: 600; font-size: 15px">Sous le seuil de réapprovisionnement</span>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #161D1A; border: 1px solid #2A3530; border-radius: 14px"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 600">Eau 1,5 L · pack</span><span style="font-size: 11px; color: #A3B0AA">Mbour · seuil 10</span></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; color: #F2A541">2</span></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #161D1A; border: 1px solid #2A3530; border-radius: 14px"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 600">Filtre à huile Hilux</span><span style="font-size: 11px; color: #A3B0AA">Mbour · seuil 5</span></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; color: #F2A541">1</span></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #161D1A; border: 1px solid #2A3530; border-radius: 14px"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 600">Cire lustrante</span><span style="font-size: 11px; color: #A3B0AA">Kaolack · seuil 2 L</span></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; color: #F2A541">0,5 L</span></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #161D1A; border: 1px solid #2A3530; border-radius: 14px"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 600">Gaz 6 kg · pleine</span><span style="font-size: 11px; color: #A3B0AA">Thiès · seuil 50</span></span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; color: #F2A541">40</span></div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

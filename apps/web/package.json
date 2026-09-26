@@ -1,0 +1,32 @@
+{
+  "name": "@stationsure/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "StationSûre — application web du propriétaire (Next.js App Router)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@stationsure/core": "workspace:*",
+    "@stationsure/i18n": "workspace:*",
+    "@stationsure/ui": "workspace:*",
+    "next": "16.3.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@stationsure/config": "workspace:*",
+    "@types/node": "26.6.3",
+    "@types/react": "19.2.4",
+    "@types/react-dom": "19.2.3",
+    "autoprefixer": "10.6.1",
+    "eslint": "9.39.5",
+    "postcss": "8.5.28",
+    "tailwindcss": "3.4.19",
+    "typescript": "5.9.3"
+  }
+}

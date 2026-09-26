@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StationSûre — Boutique — comptage surprise</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0E1311;font-family:'IBM Plex Sans',sans-serif;color:#EEF2EF}
+button,input{font-family:inherit}
+</style>
+</head>
+<body>
+<div style="width: 390px; height: 900px; box-sizing: border-box; padding: 20px 20px 24px; display: flex; flex-direction: column; gap: 16px; background: #0E1311; color: #EEF2EF; font-family: 'IBM Plex Sans', sans-serif">
+  <div style="display: flex; align-items: center; gap: 12px">
+    <button aria-label="Retour" style="width: 44px; height: 44px; border-radius: 12px; background: #161D1A; border: 1px solid #2A3530; display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EEF2EF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+    </button>
+    <div style="display: flex; flex-direction: column">
+      <span style="font-family: Sora, sans-serif; font-weight: 700; font-size: 18px">Comptage surprise</span>
+      <span style="font-size: 12px; color: #A3B0AA">Boutique · Khady Fall</span>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 14px; background: #221C10; border: 1px solid #6B4D1C">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A541" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 14px; font-weight: 600">Demandé par le propriétaire · 15:20</span>
+      <span style="font-size: 12px; color: #E9D6B4">À terminer avant 15:35</span>
+    </div>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; color: #F2A541">11:42</span>
+  </div>
+
+  <p style="margin: 0; font-size: 13px; color: #A3B0AA; line-height: 1.5">Comptez ce que vous voyez en rayon et en réserve. Le stock prévu n'est pas affiché.</p>
+
+  <div style="display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #161D1A; border: 1px solid #2A3530; border-radius: 14px">
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><label for="c1" style="font-size: 14px; font-weight: 600">Cigarettes · paquet</label><span style="font-size: 12px; color: #A3B0AA">Présentoir caisse</span></div>
+      <input id="c1" value="41" style="width: 76px; height: 48px; box-sizing: border-box; text-align: center; border-radius: 12px; background: #0E1311; border: 1px solid #4CC38A; color: #EEF2EF; font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600">
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #161D1A; border: 1px solid #2A3530; border-radius: 14px">
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><label for="c2" style="font-size: 14px; font-weight: 600">Carte recharge 1 000</label><span style="font-size: 12px; color: #A3B0AA">Tiroir caisse</span></div>
+      <input id="c2" value="52" style="width: 76px; height: 48px; box-sizing: border-box; text-align: center; border-radius: 12px; background: #0E1311; border: 1px solid #4CC38A; color: #EEF2EF; font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600">
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #161D1A; border: 1px solid #2A3530; border-radius: 14px">
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><label for="c3" style="font-size: 14px; font-weight: 600">Huile moteur 15W40 · 5 L</label><span style="font-size: 12px; color: #A3B0AA">Rayon lubrifiants</span></div>
+      <input id="c3" value="20" style="width: 76px; height: 48px; box-sizing: border-box; text-align: center; border-radius: 12px; background: #0E1311; border: 1px solid #4CC38A; color: #EEF2EF; font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600">
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #221C10; border: 2px solid #F2A541; border-radius: 14px">
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><label for="c4" style="font-size: 14px; font-weight: 600">Eau minérale 1,5 L · pack</label><span style="font-size: 12px; color: #A3B0AA">Réserve · frigo 2</span></div>
+      <input id="c4" placeholder="—" style="width: 76px; height: 48px; box-sizing: border-box; text-align: center; border-radius: 12px; background: #0E1311; border: 1px solid #F2A541; color: #EEF2EF; font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600">
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #161D1A; border: 1px solid #2A3530; border-radius: 14px">
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><label for="c5" style="font-size: 14px; font-weight: 600">Boisson gazeuse 33 cl</label><span style="font-size: 12px; color: #A3B0AA">Frigo 1</span></div>
+      <input id="c5" placeholder="—" style="width: 76px; height: 48px; box-sizing: border-box; text-align: center; border-radius: 12px; background: #0E1311; border: 1px solid #4A5852; color: #EEF2EF; font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600">
+    </div>
+  </div>
+
+  <button style="display: flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border-radius: 14px; background: #161D1A; border: 1px solid #4A5852; color: #EEF2EF; font-size: 15px; font-weight: 600">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EEF2EF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><path d="M7 8v8"></path><path d="M11 8v8"></path><path d="M15 8v8"></path></svg>Scanner un article</button>
+
+  <div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+    <button disabled style="height: 54px; border-radius: 14px; background: #1E2723; border: 1px solid #2A3530; color: #6F7D77; font-size: 16px; font-weight: 600">Envoyer le comptage · 3/5</button>
+    <p style="margin: 0; font-size: 12px; color: #A3B0AA; text-align: center">Le résultat part directement au propriétaire.</p>
+  </div>
+</div>
+</body>
+</html>

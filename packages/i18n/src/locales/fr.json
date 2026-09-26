@@ -1,0 +1,88 @@
+{
+  "common": {
+    "currency": "FCFA",
+    "litres": "L",
+    "phase": "Phase {{phase}}",
+    "ownerArea": "Espace propriétaire",
+    "stationApp": "Application station"
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "stations": "Stations",
+    "fuel": "Carburant et cuves",
+    "cash": "Caisse et shifts",
+    "stock": "Stock",
+    "shop": "Boutique",
+    "garage": "Garage",
+    "carwash": "Car Wash",
+    "employees": "Employés",
+    "alerts": "Alertes",
+    "credit": "Crédit clients",
+    "settings": "Paramètres"
+  },
+  "empty": {
+    "availableInPhase": "Disponible en phase {{phase}}",
+    "dashboard": {
+      "title": "Aucune donnée pour le moment",
+      "description": "Les chiffres du jour, les alertes et le score d'écart par employé apparaîtront ici dès la première clôture."
+    },
+    "stations": {
+      "title": "Aucune station",
+      "description": "Vos stations, leurs pompes, pistolets et cuves seront listés ici."
+    },
+    "fuel": {
+      "title": "Aucune cuve suivie",
+      "description": "Relevés d'index, jaugeages, livraisons et écarts de cuve seront rapprochés ici."
+    },
+    "cash": {
+      "title": "Aucun shift",
+      "description": "Les shifts, les clôtures de caisse et les écarts encaissé / attendu seront visibles ici."
+    },
+    "stock": {
+      "title": "Aucun mouvement de stock",
+      "description": "Une seule table de mouvements pour le carburant, la boutique, le garage et le Car Wash."
+    },
+    "shop": {
+      "title": "Aucune vente boutique",
+      "description": "Ventes, annulations et comptages surprise de la boutique."
+    },
+    "garage": {
+      "title": "Aucun ordre de travail",
+      "description": "Ordres de travail, pièces sorties du stock et main-d'œuvre."
+    },
+    "carwash": {
+      "title": "Aucun ticket de lavage",
+      "description": "Tickets, consommables déduits et compteur d'eau rapproché."
+    },
+    "employees": {
+      "title": "Aucun employé",
+      "description": "Chaque employé aura son PIN personnel et son score d'écart."
+    },
+    "alerts": {
+      "title": "Aucune alerte",
+      "description": "Écarts de caisse, de cuve, de passation et annulations remonteront ici en temps réel."
+    },
+    "credit": {
+      "title": "Aucun compte client",
+      "description": "Ardoises clients : plafond, mouvements et relances."
+    },
+    "settings": {
+      "title": "Aucun paramètre à configurer",
+      "description": "Seuils d'alerte, prix publiés, appareils enregistrés et notifications."
+    }
+  },
+  "pin": {
+    "title": "Qui prend le shift ?",
+    "enterPin": "Entrez votre PIN personnel",
+    "clear": "Effacer",
+    "enter": "Entrer",
+    "registeredDevice": "Appareil enregistré",
+    "roles": {
+      "pumpAttendant": "Pompiste",
+      "manager": "Gérant",
+      "shop": "Boutique",
+      "mechanic": "Mécanicien",
+      "washer": "Laveur"
+    }
+  }
+}

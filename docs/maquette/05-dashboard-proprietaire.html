@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StationSûre — Tableau de bord propriétaire</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0E1311;font-family:'IBM Plex Sans',sans-serif;color:#EEF2EF}
+button{font-family:inherit}
+a{color:#F2A541}a:hover{color:#F7C47E}
+</style>
+</head>
+<body>
+<div style="width: 1440px; height: 900px; display: flex; background: #0E1311; color: #EEF2EF; font-family: 'IBM Plex Sans', sans-serif">
+  <nav style="width: 232px; flex-shrink: 0; box-sizing: border-box; padding: 24px 14px; display: flex; flex-direction: column; gap: 4px; background: #111816; border-right: 1px solid #2A3530">
+    <div style="display: flex; align-items: center; gap: 8px; padding: 0 10px 20px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A541" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h12"></path><path d="M4 9h10"></path><path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"></path><path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0V9.83a2 2 0 0 0-.59-1.42L18 5"></path></svg>
+      <span style="font-family: Sora, sans-serif; font-weight: 700; font-size: 15px">StationSûre</span>
+    </div>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; background: #221C10; color: #F2A541; font-size: 14px; font-weight: 600; text-decoration: none">Tableau de bord</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Stations</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Carburant et cuves</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Caisse et shifts</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Boutique</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Garage</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Car Wash</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Employés</a>
+    <a href="#" style="display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none"><span>Alertes</span><span style="min-width: 22px; height: 22px; border-radius: 11px; background: #FF7A66; color: #1A0A07; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">5</span></a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Crédit clients</a>
+    <a href="#" style="margin-top: auto; display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #A3B0AA; font-size: 14px; text-decoration: none">Paramètres</a>
+  </nav>
+
+  <main style="flex-grow: 1; box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 22px; min-width: 0">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-family: Sora, sans-serif; font-size: 26px; font-weight: 700">Tableau de bord</h1>
+        <span style="font-size: 14px; color: #A3B0AA">Vendredi 25 septembre · Toutes les stations (3)</span>
+      </div>
+      <div style="display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: #161D1A; border: 1px solid #2A3530">
+        <button style="height: 36px; padding: 0 14px; border-radius: 9px; background: #F2A541; border: none; color: #1A1206; font-size: 13px; font-weight: 600">Aujourd'hui</button>
+        <button style="height: 36px; padding: 0 14px; border-radius: 9px; background: transparent; border: none; color: #C9D3CE; font-size: 13px">7 jours</button>
+        <button style="height: 36px; padding: 0 14px; border-radius: 9px; background: transparent; border: none; color: #C9D3CE; font-size: 13px">30 jours</button>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 18px; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+        <span style="font-size: 13px; color: #A3B0AA">Chiffre d'affaires</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600">12 460 500</span>
+        <span style="font-size: 12px; color: #A3B0AA">FCFA · 3 stations</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 18px; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+        <span style="font-size: 13px; color: #A3B0AA">Litres vendus</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600">15 820 L</span>
+        <span style="font-size: 12px; color: #A3B0AA">Super 5 690 · Gasoil 10 130</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 18px; background: #2A1512; border: 1px solid #7A2F25; border-radius: 16px">
+        <span style="font-size: 13px; color: #E8C9C3">Écart de caisse</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #FF7A66">−35 000</span>
+        <span style="font-size: 12px; color: #E8C9C3">FCFA · 1 shift sur 9</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 18px; background: #261E0F; border: 1px solid #6B4D1C; border-radius: 16px">
+        <span style="font-size: 13px; color: #E9D6B4">Écart des cuves</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 600; color: #F2A541">1 alerte</span>
+        <span style="font-size: 12px; color: #E9D6B4">Kaolack · Gasoil −0,9 %</span>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.75fr 1fr; gap: 16px">
+      <div style="display: flex; flex-direction: column; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+        <div style="padding: 16px 18px; font-weight: 600; font-size: 15px; border-bottom: 1px solid #2A3530">Stations</div>
+        <div style="display: grid; grid-template-columns: 1.1fr 1.2fr 0.9fr 1fr 0.9fr 1fr; gap: 8px; padding: 10px 18px; font-size: 11px; letter-spacing: 1px; color: #A3B0AA; border-bottom: 1px solid #2A3530">
+          <span>STATION</span><span style="text-align: right">CA (FCFA)</span><span style="text-align: right">LITRES</span><span style="text-align: right">ÉCART CAISSE</span><span style="text-align: right">CUVES</span><span style="text-align: right">CLÔTURE</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.1fr 1.2fr 0.9fr 1fr 0.9fr 1fr; gap: 8px; align-items: center; height: 54px; padding: 0 18px; font-size: 14px; border-bottom: 1px solid #2A3530">
+          <span style="font-weight: 600">Mbour</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">4 812 500</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">6 010</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; color: #FF7A66; font-weight: 600">−35 000</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">−0,2 %</span>
+          <span style="justify-self: end; padding: 4px 10px; border-radius: 999px; background: #261E0F; color: #F2A541; font-size: 12px; font-weight: 600">En attente</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.1fr 1.2fr 0.9fr 1fr 0.9fr 1fr; gap: 8px; align-items: center; height: 54px; padding: 0 18px; font-size: 14px; border-bottom: 1px solid #2A3530">
+          <span style="font-weight: 600">Thiès</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">4 205 000</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">5 480</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">0</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">−0,1 %</span>
+          <span style="justify-self: end; padding: 4px 10px; border-radius: 999px; background: #13281E; color: #4CC38A; font-size: 12px; font-weight: 600">Clôturée</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.1fr 1.2fr 0.9fr 1fr 0.9fr 1fr; gap: 8px; align-items: center; height: 54px; padding: 0 18px; font-size: 14px">
+          <span style="font-weight: 600">Kaolack</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">3 443 000</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">4 330</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">0</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; color: #F2A541; font-weight: 600">−0,9 %</span>
+          <span style="justify-self: end; padding: 4px 10px; border-radius: 999px; background: #13281E; color: #4CC38A; font-size: 12px; font-weight: 600">Clôturée</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+        <div style="display: flex; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid #2A3530"><span style="font-weight: 600; font-size: 15px">Alertes du jour</span><a href="#" style="font-size: 13px">Tout voir</a></div>
+        <div style="display: flex; gap: 10px; padding: 10px 18px; border-bottom: 1px solid #2A3530">
+          <span style="width: 8px; height: 8px; margin-top: 6px; border-radius: 4px; background: #FF7A66; flex-shrink: 0"></span>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 600">Écart caisse −35 000 FCFA</span><span style="font-size: 12px; color: #A3B0AA">Mbour · shift soir · I. Sarr</span></div>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #A3B0AA">22:14</span>
+        </div>
+        <div style="display: flex; gap: 10px; padding: 10px 18px; border-bottom: 1px solid #2A3530">
+          <span style="width: 8px; height: 8px; margin-top: 6px; border-radius: 4px; background: #FF7A66; flex-shrink: 0"></span>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 600">Passation : écart 10,00 L</span><span style="font-size: 12px; color: #A3B0AA">Mbour · P3-A Super</span></div>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #A3B0AA">14:03</span>
+        </div>
+        <div style="display: flex; gap: 10px; padding: 10px 18px; border-bottom: 1px solid #2A3530">
+          <span style="width: 8px; height: 8px; margin-top: 6px; border-radius: 4px; background: #F2A541; flex-shrink: 0"></span>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 600">Cuve Gasoil −0,9 % (seuil 0,5 %)</span><span style="font-size: 12px; color: #A3B0AA">Kaolack · jaugeage 11:40</span></div>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #A3B0AA">11:40</span>
+        </div>
+        <div style="display: flex; gap: 10px; padding: 10px 18px; border-bottom: 1px solid #2A3530">
+          <span style="width: 8px; height: 8px; margin-top: 6px; border-radius: 4px; background: #F2A541; flex-shrink: 0"></span>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 600">Annulation boutique 25 000 FCFA</span><span style="font-size: 12px; color: #A3B0AA">Thiès · motif : erreur de saisie</span></div>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #A3B0AA">09:15</span>
+        </div>
+        <div style="display: flex; gap: 10px; padding: 10px 18px">
+          <span style="width: 8px; height: 8px; margin-top: 6px; border-radius: 4px; background: #F2A541; flex-shrink: 0"></span>
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 13px; font-weight: 600">Bordereau de versement manquant</span><span style="font-size: 12px; color: #A3B0AA">Thiès · clôture d'hier</span></div>
+          <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #A3B0AA">08:30</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 16px; padding: 18px; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+        <span style="font-weight: 600; font-size: 15px">Chiffre d'affaires par activité</span>
+        <div style="display: flex; gap: 3px; height: 14px">
+          <div style="width: 85.5%; background: #F2A541; border-radius: 4px 0 0 4px"></div>
+          <div style="width: 8.7%; background: #4FB7A8"></div>
+          <div style="width: 3.8%; background: #7AA7F5"></div>
+          <div style="width: 2%; background: #C39BE8; border-radius: 0 4px 4px 0"></div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #F2A541"></span><span style="flex-grow: 1">Carburant</span><span style="font-family: 'IBM Plex Mono', monospace">10 650 000</span></div>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #4FB7A8"></span><span style="flex-grow: 1">Boutique</span><span style="font-family: 'IBM Plex Mono', monospace">1 080 000</span></div>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #7AA7F5"></span><span style="flex-grow: 1">Garage</span><span style="font-family: 'IBM Plex Mono', monospace">470 000</span></div>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 13px"><span style="width: 10px; height: 10px; border-radius: 3px; background: #C39BE8"></span><span style="flex-grow: 1">Car Wash</span><span style="font-family: 'IBM Plex Mono', monospace">260 500</span></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding-top: 12px; border-top: 1px solid #2A3530; font-size: 13px; color: #A3B0AA"><span>Paiements mobiles (Wave + OM)</span><span style="font-family: 'IBM Plex Mono', monospace; color: #EEF2EF">3 480 000 · 28 %</span></div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; padding: 18px; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+        <div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-weight: 600; font-size: 15px">Score d'écart · 30 jours</span><span style="font-size: 12px; color: #A3B0AA">plus haut = plus d'écarts</span></div>
+        <div style="display: grid; grid-template-columns: 140px 1fr 44px; gap: 12px; align-items: center; font-size: 13px">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Ibrahima Sarr</span><span style="font-size: 11px; color: #A3B0AA">Mbour · 4 écarts / 22</span></span>
+          <div style="height: 8px; border-radius: 4px; background: #1E2723; display: flex"><div style="width: 72%; border-radius: 4px; background: #FF7A66"></div></div>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; color: #FF7A66; font-weight: 600">72</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 140px 1fr 44px; gap: 12px; align-items: center; font-size: 13px">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Cheikh Mbaye</span><span style="font-size: 11px; color: #A3B0AA">Kaolack · 2 écarts / 21</span></span>
+          <div style="height: 8px; border-radius: 4px; background: #1E2723; display: flex"><div style="width: 30%; border-radius: 4px; background: #F2A541"></div></div>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; color: #F2A541; font-weight: 600">30</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 140px 1fr 44px; gap: 12px; align-items: center; font-size: 13px">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Awa Diop</span><span style="font-size: 11px; color: #A3B0AA">Mbour · 1 écart / 24</span></span>
+          <div style="height: 8px; border-radius: 4px; background: #1E2723; display: flex"><div style="width: 12%; border-radius: 4px; background: #6F7D77"></div></div>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">12</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 140px 1fr 44px; gap: 12px; align-items: center; font-size: 13px">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Moussa Ndiaye</span><span style="font-size: 11px; color: #A3B0AA">Mbour · 1 écart / 20</span></span>
+          <div style="height: 8px; border-radius: 4px; background: #1E2723; display: flex"><div style="width: 10%; border-radius: 4px; background: #6F7D77"></div></div>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">10</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 140px 1fr 44px; gap: 12px; align-items: center; font-size: 13px">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Fatou Faye</span><span style="font-size: 11px; color: #A3B0AA">Thiès · 0 écart / 26</span></span>
+          <div style="height: 8px; border-radius: 4px; background: #1E2723"></div>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">0</span>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

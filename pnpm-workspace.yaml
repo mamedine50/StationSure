@@ -1,0 +1,12 @@
+packages:
+  - apps/*
+  - packages/*
+
+allowBuilds:
+  unrs-resolver: true
+
+minimumReleaseAgeExclude:
+  - '@types/node@26.6.3'
+
+# Expo (Metro) et Next fonctionnent le plus simplement avec un node_modules aplati.
+nodeLinker: hoisted

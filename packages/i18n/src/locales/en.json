@@ -1,0 +1,88 @@
+{
+  "common": {
+    "currency": "FCFA",
+    "litres": "L",
+    "phase": "Phase {{phase}}",
+    "ownerArea": "Owner area",
+    "stationApp": "Station app"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "stations": "Stations",
+    "fuel": "Fuel and tanks",
+    "cash": "Cash and shifts",
+    "stock": "Inventory",
+    "shop": "Shop",
+    "garage": "Garage",
+    "carwash": "Car Wash",
+    "employees": "Employees",
+    "alerts": "Alerts",
+    "credit": "Customer credit",
+    "settings": "Settings"
+  },
+  "empty": {
+    "availableInPhase": "Available in phase {{phase}}",
+    "dashboard": {
+      "title": "No data yet",
+      "description": "Today's figures, alerts and the per-employee discrepancy score will appear here after the first closing."
+    },
+    "stations": {
+      "title": "No station",
+      "description": "Your stations, their pumps, nozzles and tanks will be listed here."
+    },
+    "fuel": {
+      "title": "No tank tracked",
+      "description": "Meter readings, dips, deliveries and tank discrepancies will be reconciled here."
+    },
+    "cash": {
+      "title": "No shift",
+      "description": "Shifts, cash closings and collected vs expected discrepancies will show here."
+    },
+    "stock": {
+      "title": "No inventory movement",
+      "description": "One movement table for fuel, shop, garage and Car Wash."
+    },
+    "shop": {
+      "title": "No shop sale",
+      "description": "Sales, voids and surprise counts for the shop."
+    },
+    "garage": {
+      "title": "No work order",
+      "description": "Work orders, parts taken from stock and labour."
+    },
+    "carwash": {
+      "title": "No wash ticket",
+      "description": "Tickets, consumables deducted and water meter reconciliation."
+    },
+    "employees": {
+      "title": "No employee",
+      "description": "Each employee will have a personal PIN and a discrepancy score."
+    },
+    "alerts": {
+      "title": "No alert",
+      "description": "Cash, tank, handover discrepancies and voids will surface here in real time."
+    },
+    "credit": {
+      "title": "No customer account",
+      "description": "Customer tabs: ceiling, movements and reminders."
+    },
+    "settings": {
+      "title": "Nothing to configure yet",
+      "description": "Alert thresholds, published prices, registered devices and notifications."
+    }
+  },
+  "pin": {
+    "title": "Who takes the shift?",
+    "enterPin": "Enter your personal PIN",
+    "clear": "Clear",
+    "enter": "Enter",
+    "registeredDevice": "Registered device",
+    "roles": {
+      "pumpAttendant": "Pump attendant",
+      "manager": "Manager",
+      "shop": "Shop",
+      "mechanic": "Mechanic",
+      "washer": "Washer"
+    }
+  }
+}
