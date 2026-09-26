@@ -14,9 +14,11 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { SurveillanceInactivite } from '@/components/inactivite';
+import { VARIABLES_MANQUANTES } from '@/lib/env';
 import { SessionProvider, useSession } from '@/lib/session';
 
 initialiserI18nReact();
@@ -70,6 +72,20 @@ export default function RootLayout() {
   }, [polices, erreurPolices]);
 
   if (!polices && !erreurPolices) return null;
+
+  if (VARIABLES_MANQUANTES.length > 0) {
+    return (
+      <View className="flex-1 justify-center gap-3 bg-fond px-6">
+        <Text className="font-display text-[22px] text-danger">Configuration manquante</Text>
+        <Text className="font-sans text-[14px] leading-5 text-texte">
+          Créez le fichier apps/mobile/.env (modèle : .env.example) avec l&apos;URL de Supabase
+          joignable depuis le téléphone (IP du Mac, port 54721) et la clé publishable, puis relancez
+          Metro avec « npx expo start --clear ».
+        </Text>
+        <Text className="font-mono text-[13px] text-accent">{VARIABLES_MANQUANTES.join('\n')}</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaProvider>

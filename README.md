@@ -125,8 +125,12 @@ PIN de démo (non triviaux, **local uniquement**) :
    première station) → Employés : créer un employé et définir son PIN → Stations › Gérer les
    appareils › Jumeler une tablette : un code à 6 chiffres et un QR s'affichent (10 min).
    Ou connectez-vous directement avec `owner@demo.local`.
-3. Mobile : `cp apps/mobile/.env.example apps/mobile/.env` en remplaçant `127.0.0.1` par l'IP du
-   Mac, puis `npx expo run:android --device`. Saisir le code (ou scanner le QR) → écran PIN avec les
+3. Mobile : `cp apps/mobile/.env.example apps/mobile/.env`, remplacer `127.0.0.1` par l'IP du Mac
+   sur le Wi-Fi (`ipconfig getifaddr en0`) et coller la clé publishable de `supabase status`.
+   **Sans ce fichier l'app affiche « Configuration manquante »** (`supabaseUrl is required` dans les
+   anciennes versions). Les variables `EXPO_PUBLIC_*` sont figées dans le bundle au démarrage de
+   Metro : après toute modification du `.env`, relancer avec `npx expo start --clear`. Puis
+   `npx expo run:android --device` (ou Expo Go pour un premier essai : `npx expo start`, scanner le QR). Saisir le code (ou scanner le QR) → écran PIN avec les
    employés de la station → PIN → accueil → « Changer d'employé ».
 4. Révocation : web › Appareils › Révoquer : la tablette revient à l'écran de jumelage.
 
