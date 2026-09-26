@@ -40,8 +40,31 @@ Next les transpile via `transpilePackages`, Metro nativement.
 
 ## Commandes
 
-`pnpm install` · `pnpm dev` · `pnpm build` · `pnpm lint` · `pnpm typecheck` · `pnpm test` ·
-`supabase start` (Docker requis).
+`pnpm install` · `pnpm dev` · `pnpm build` · `pnpm lint` · `pnpm typecheck` · `pnpm test`.
+
+Base locale (Docker requis, ports 547xx : API 54721, Postgres 54722, Studio 54723) :
+`pnpm db:start` · `pnpm db:reset` (migrations + seed) · `pnpm db:lint` · `pnpm db:test` (pgTAP) ·
+`pnpm db:types` (régénère `packages/database/src/types.generated.ts`) · `pnpm db:stop`.
+`psql` n'est pas installé : `docker exec supabase_db_stationsure psql -U postgres -c "…"`.
+
+**INTERDIT sans demande explicite du propriétaire du repo : `supabase link`, `supabase db push`,
+toute connexion au projet en ligne. `supabase/seed.sql` est LOCAL uniquement et ne doit jamais
+être poussé.**
+
+## Règles de la base (phase 1, détail dans docs/schema.md)
+
+- Une migration par domaine, numérotée dans l'ordre (`supabase/migrations/2026092609000N_*.sql`).
+- Chaque table : PK uuid, `organization_id` + `station_id`, `created_at`. Tables opérationnelles :
+  `device_id`, `employee_id`, `device_created_at`. Clés étrangères composites `(x_id, station_id)`.
+- Montants `*_fcfa bigint`, volumes `*_cl bigint`, hauteurs `height_mm integer`. Enums pour statuts.
+- RLS sur 100 % des tables, aucune policy `using (true)`, `anon` sans aucun privilège. Policies
+  créées avec les fabriques `private.policy_*` ; helpers `current_org_ids()`, `is_org_owner()`,
+  `current_device_*()`, `current_station_ids()`.
+- Garde-fous en base : append-only (`private.enable_append_only`), limite de stations, prix
+  verrouillés (owner seulement), audit (`private.enable_audit`), `volume_from_calibration`.
+- Le PIN vit dans `employee_pins` (bcrypt), sans policy ; seul `set_employee_pin()` y écrit.
+- L'appareil ne lit jamais `inventory_movements` (comptage à l'aveugle).
+- Tests pgTAP : sources dans `supabase/tests/_src/*.sql.src`, assemblés par `_build.sh`.
 
 ## Où est quoi
 
@@ -54,17 +77,17 @@ Next les transpile via `transpilePackages`, Metro nativement.
 
 ## Phases
 
-| Phase | Contenu                                                                                                                                         | État      |
-| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| 0     | Fondations : monorepo, apps vides stylées, `packages/core` testé                                                                                | **faite** |
-| 1     | Schéma Supabase : tables métier de l'architecture v2 (§8), RLS par `organization_id` / `station_id`, journal d'audit append-only, types générés | à venir   |
-| 2     | Auth propriétaire (Supabase Auth), PIN personnel par employé, appareils enregistrés, mode kiosque — écran 01                                    | à venir   |
-| 3     | Relevé d'index avec photo + GPS, passation contradictoire — écrans 02 et 03                                                                     | à venir   |
-| 4     | Clôture de caisse : attendu vs encaissé (espèces, carte, Wave, OM, crédit), justification, versements — écran 04                                | à venir   |
-| 5     | Dashboard propriétaire et rapport WhatsApp / SMS — écrans 05 et 06                                                                              | à venir   |
-| 6     | Offline-first (PowerSync ou WatermelonDB), prix verrouillés, livraisons et barémage en production _(proposition, ordre à valider)_              | à venir   |
-| 7     | Boutique : POS, codes-barres, comptage surprise à l'aveugle — écran 07                                                                          | à venir   |
-| 8     | Garage (ordres de travail) et Car Wash (tickets) — écrans 08 et 09                                                                              | à venir   |
-| 9     | Stock unifié et ratios de contrôle — écran 10                                                                                                   | à venir   |
+| Phase | Contenu                                                                                                                            | État      |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| 0     | Fondations : monorepo, apps vides stylées, `packages/core` testé                                                                   | **faite** |
+| 1     | Schéma Supabase : tables métier (hors garage / Car Wash), RLS, garde-fous, tests pgTAP, seed de démo, types générés                | **faite** |
+| 2     | Auth propriétaire (Supabase Auth), PIN personnel par employé, appareils enregistrés, mode kiosque — écran 01                       | à venir   |
+| 3     | Relevé d'index avec photo + GPS, passation contradictoire — écrans 02 et 03                                                        | à venir   |
+| 4     | Clôture de caisse : attendu vs encaissé (espèces, carte, Wave, OM, crédit), justification, versements — écran 04                   | à venir   |
+| 5     | Dashboard propriétaire et rapport WhatsApp / SMS — écrans 05 et 06                                                                 | à venir   |
+| 6     | Offline-first (PowerSync ou WatermelonDB), prix verrouillés, livraisons et barémage en production _(proposition, ordre à valider)_ | à venir   |
+| 7     | Boutique : POS, codes-barres, comptage surprise à l'aveugle — écran 07                                                             | à venir   |
+| 8     | Garage (ordres de travail) et Car Wash (tickets) — écrans 08 et 09                                                                 | à venir   |
+| 9     | Stock unifié et ratios de contrôle — écran 10                                                                                      | à venir   |
 
 Ne commencer une phase que sur demande explicite.

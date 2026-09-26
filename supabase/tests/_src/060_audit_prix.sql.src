@@ -1,0 +1,68 @@
+-- Garde-fous 3 et 4 : prix verrouillés, audit des changements de configuration.
+create temporary table ctx as
+select pg_temp.new_auth_user('supervisor-a@test.local') as supervisor_a;
+grant select on ctx to authenticated, service_role, anon;
+insert into public.org_members (organization_id, user_id, role) select pg_temp.org_demo(), supervisor_a, 'supervisor' from ctx;
+
+select is((select price_fcfa_per_litre from public.current_fuel_prices where station_id = pg_temp.station('mbour') and fuel_product_code = 'super'), 990::bigint, 'prix de démo en vigueur : Super 990');
+
+-- ---- owner : publie un prix, audit écrit
+select pg_temp.login(pg_temp.owner_demo());
+select lives_ok(
+  format('insert into public.price_changes (organization_id, station_id, fuel_product_code, price_fcfa_per_litre, created_by) values (%L, %L, %L, %s, %L)',
+         pg_temp.org_demo(), pg_temp.station('mbour'), 'super', 1000, pg_temp.owner_demo()),
+  'owner : publie un nouveau prix'
+);
+select is((select price_fcfa_per_litre from public.current_fuel_prices where station_id = pg_temp.station('mbour') and fuel_product_code = 'super'), 1000::bigint, 'la vue current_fuel_prices reflète le nouveau prix');
+select is(
+  (select count(*) from public.audit_log where table_name = 'price_changes' and action = 'INSERT' and actor_user_id = pg_temp.owner_demo()
+     and (new_data ->> 'price_fcfa_per_litre')::bigint = 1000),
+  1::bigint, 'un changement de prix crée une ligne dans audit_log, attribuée à l''owner'
+);
+select throws_ok(
+  format('insert into public.price_changes (organization_id, station_id, fuel_product_code, price_fcfa_per_litre, created_by) values (%L, %L, %L, %s, %L)',
+         pg_temp.org_demo(), pg_temp.station('mbour'), 'super', 1001, (select supervisor_a from ctx)),
+  '42501', null, 'owner : ne peut pas attribuer un prix à quelqu''un d''autre (created_by)'
+);
+-- Audit d'une modification d'employé
+select lives_ok(format('update public.employees set full_name = %L where id = %L', 'Awa Diop Sène', pg_temp.employee('mbour', 'Awa Diop')), 'owner : renomme un employé');
+select is(
+  (select count(*) from public.audit_log where table_name = 'employees' and action = 'UPDATE' and row_id = pg_temp.employee('mbour', 'Awa Diop')
+     and old_data ->> 'full_name' = 'Awa Diop' and new_data ->> 'full_name' = 'Awa Diop Sène'),
+  1::bigint, 'la modification d''un employé est journalisée avec l''ancienne et la nouvelle valeur'
+);
+select is((select count(*) from public.audit_log where organization_id = pg_temp.org_demo()) > 0, true, 'owner : lit le journal d''audit de son organisation');
+select pg_temp.logout();
+
+-- ---- supervisor : ne publie pas de prix
+select pg_temp.login((select supervisor_a from ctx));
+select throws_ok(
+  format('insert into public.price_changes (organization_id, station_id, fuel_product_code, price_fcfa_per_litre, created_by) values (%L, %L, %L, %s, %L)',
+         pg_temp.org_demo(), pg_temp.station('mbour'), 'gasoil', 800, (select supervisor_a from ctx)),
+  '42501', null, 'supervisor : ne peut pas publier de prix'
+);
+select pg_temp.logout();
+
+-- ---- service_role : même lui ne peut pas attribuer un prix à un non-owner (trigger)
+select pg_temp.as_service();
+select throws_like(
+  format('insert into public.price_changes (organization_id, station_id, fuel_product_code, price_fcfa_per_litre, created_by) values (%L, %L, %L, %s, %L)',
+         pg_temp.org_demo(), pg_temp.station('mbour'), 'gasoil', 800, pg_temp.device_user('mbour')),
+  'PRICE_LOCKED%', 'service_role : un prix signé par un appareil est refusé'
+);
+select throws_like(
+  format('insert into public.price_changes (organization_id, station_id, fuel_product_code, price_fcfa_per_litre, created_by) values (%L, %L, %L, %s, %L)',
+         pg_temp.org_demo(), pg_temp.station('mbour'), 'gasoil', 800, (select supervisor_a from ctx)),
+  'PRICE_LOCKED%', 'service_role : un prix signé par un superviseur est refusé'
+);
+select pg_temp.logout();
+
+-- ---- Les tables de configuration sont toutes auditées
+select is(
+  (select count(*) from (values ('stations'), ('devices'), ('employees'), ('tanks'), ('tank_calibrations'), ('pumps'), ('nozzles'),
+                                ('price_changes'), ('plans'), ('org_members'), ('organizations'), ('products'), ('credit_accounts')) as t(name)
+   where not exists (select 1 from pg_trigger tr join pg_class c on c.oid = tr.tgrelid
+                     where c.relname = t.name and tr.tgname = 'audit')),
+  0::bigint, 'trigger audit présent sur toutes les tables de configuration'
+);
+select is((select count(*) from public.audit_log where table_name = 'stations' and action = 'INSERT'), 3::bigint, 'la seed a journalisé la création des 3 stations');

@@ -1,17 +1,2214 @@
-/**
- * PLACEHOLDER — phase 0.
- * Ce fichier sera remplacé par la sortie de `pnpm --filter @stationsure/database gen:types`
- * (supabase gen types typescript --local) dès que les tables métier existeront (phase 1).
- * Ne pas éditer à la main.
- */
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   public: {
-    Tables: Record<string, never>;
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
-    Enums: Record<string, never>;
-    CompositeTypes: Record<string, never>;
+    Tables: {
+      alerts: {
+        Row: {
+          acknowledged_at: string | null;
+          acknowledged_by: string | null;
+          created_at: string;
+          id: string;
+          organization_id: string;
+          payload: Json;
+          severity: Database['public']['Enums']['alert_severity'];
+          shift_id: string | null;
+          station_id: string;
+          type: Database['public']['Enums']['alert_type'];
+        };
+        Insert: {
+          acknowledged_at?: string | null;
+          acknowledged_by?: string | null;
+          created_at?: string;
+          id?: string;
+          organization_id: string;
+          payload?: Json;
+          severity?: Database['public']['Enums']['alert_severity'];
+          shift_id?: string | null;
+          station_id: string;
+          type: Database['public']['Enums']['alert_type'];
+        };
+        Update: {
+          acknowledged_at?: string | null;
+          acknowledged_by?: string | null;
+          created_at?: string;
+          id?: string;
+          organization_id?: string;
+          payload?: Json;
+          severity?: Database['public']['Enums']['alert_severity'];
+          shift_id?: string | null;
+          station_id?: string;
+          type?: Database['public']['Enums']['alert_type'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'alerts_shift_id_station_id_fkey';
+            columns: ['shift_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'shifts';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'alerts_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      audit_log: {
+        Row: {
+          action: Database['public']['Enums']['audit_action'];
+          actor_employee_id: string | null;
+          actor_role: string | null;
+          actor_user_id: string | null;
+          at: string;
+          id: number;
+          new_data: Json | null;
+          old_data: Json | null;
+          organization_id: string | null;
+          row_id: string | null;
+          table_name: string;
+        };
+        Insert: {
+          action: Database['public']['Enums']['audit_action'];
+          actor_employee_id?: string | null;
+          actor_role?: string | null;
+          actor_user_id?: string | null;
+          at?: string;
+          id?: never;
+          new_data?: Json | null;
+          old_data?: Json | null;
+          organization_id?: string | null;
+          row_id?: string | null;
+          table_name: string;
+        };
+        Update: {
+          action?: Database['public']['Enums']['audit_action'];
+          actor_employee_id?: string | null;
+          actor_role?: string | null;
+          actor_user_id?: string | null;
+          at?: string;
+          id?: never;
+          new_data?: Json | null;
+          old_data?: Json | null;
+          organization_id?: string | null;
+          row_id?: string | null;
+          table_name?: string;
+        };
+        Relationships: [];
+      };
+      bank_deposits: {
+        Row: {
+          amount_fcfa: number;
+          bank_ref: string | null;
+          created_at: string;
+          deposited_at: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          evidence_id: string;
+          id: string;
+          organization_id: string;
+          shift_id: string;
+          station_id: string;
+        };
+        Insert: {
+          amount_fcfa: number;
+          bank_ref?: string | null;
+          created_at?: string;
+          deposited_at: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          evidence_id: string;
+          id?: string;
+          organization_id: string;
+          shift_id: string;
+          station_id: string;
+        };
+        Update: {
+          amount_fcfa?: number;
+          bank_ref?: string | null;
+          created_at?: string;
+          deposited_at?: string;
+          device_created_at?: string;
+          device_id?: string;
+          employee_id?: string;
+          evidence_id?: string;
+          id?: string;
+          organization_id?: string;
+          shift_id?: string;
+          station_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'bank_deposits_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'bank_deposits_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'bank_deposits_evidence_id_station_id_fkey';
+            columns: ['evidence_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'evidence_files';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'bank_deposits_shift_id_station_id_fkey';
+            columns: ['shift_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'shifts';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'bank_deposits_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      blind_count_lines: {
+        Row: {
+          blind_count_id: string;
+          counted_qty: number;
+          created_at: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          id: string;
+          organization_id: string;
+          product_id: string;
+          station_id: string;
+        };
+        Insert: {
+          blind_count_id: string;
+          counted_qty: number;
+          created_at?: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          id?: string;
+          organization_id: string;
+          product_id: string;
+          station_id: string;
+        };
+        Update: {
+          blind_count_id?: string;
+          counted_qty?: number;
+          created_at?: string;
+          device_created_at?: string;
+          device_id?: string;
+          employee_id?: string;
+          id?: string;
+          organization_id?: string;
+          product_id?: string;
+          station_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'blind_count_lines_blind_count_id_station_id_fkey';
+            columns: ['blind_count_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'blind_counts';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'blind_count_lines_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'blind_count_lines_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'blind_count_lines_product_id_organization_id_fkey';
+            columns: ['product_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'products';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'blind_count_lines_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      blind_counts: {
+        Row: {
+          created_at: string;
+          device_id: string | null;
+          due_at: string;
+          employee_id: string | null;
+          id: string;
+          organization_id: string;
+          requested_at: string;
+          requested_by: string | null;
+          station_id: string;
+          status: Database['public']['Enums']['blind_count_status'];
+          submitted_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          device_id?: string | null;
+          due_at: string;
+          employee_id?: string | null;
+          id?: string;
+          organization_id: string;
+          requested_at?: string;
+          requested_by?: string | null;
+          station_id: string;
+          status?: Database['public']['Enums']['blind_count_status'];
+          submitted_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          device_id?: string | null;
+          due_at?: string;
+          employee_id?: string | null;
+          id?: string;
+          organization_id?: string;
+          requested_at?: string;
+          requested_by?: string | null;
+          station_id?: string;
+          status?: Database['public']['Enums']['blind_count_status'];
+          submitted_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'blind_counts_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'blind_counts_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'blind_counts_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      credit_accounts: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          customer_name: string;
+          id: string;
+          limit_fcfa: number;
+          organization_id: string;
+          phone: string | null;
+          station_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          customer_name: string;
+          id?: string;
+          limit_fcfa?: number;
+          organization_id: string;
+          phone?: string | null;
+          station_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          customer_name?: string;
+          id?: string;
+          limit_fcfa?: number;
+          organization_id?: string;
+          phone?: string | null;
+          station_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'credit_accounts_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      credit_entries: {
+        Row: {
+          amount_fcfa: number;
+          created_at: string;
+          credit_account_id: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          id: string;
+          kind: Database['public']['Enums']['credit_entry_kind'];
+          organization_id: string;
+          payment_id: string | null;
+          station_id: string;
+          transaction_id: string | null;
+        };
+        Insert: {
+          amount_fcfa: number;
+          created_at?: string;
+          credit_account_id: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          id?: string;
+          kind: Database['public']['Enums']['credit_entry_kind'];
+          organization_id: string;
+          payment_id?: string | null;
+          station_id: string;
+          transaction_id?: string | null;
+        };
+        Update: {
+          amount_fcfa?: number;
+          created_at?: string;
+          credit_account_id?: string;
+          device_created_at?: string;
+          device_id?: string;
+          employee_id?: string;
+          id?: string;
+          kind?: Database['public']['Enums']['credit_entry_kind'];
+          organization_id?: string;
+          payment_id?: string | null;
+          station_id?: string;
+          transaction_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'credit_entries_credit_account_id_station_id_fkey';
+            columns: ['credit_account_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'credit_accounts';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'credit_entries_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'credit_entries_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'credit_entries_payment_id_station_id_fkey';
+            columns: ['payment_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'payments';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'credit_entries_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'credit_entries_transaction_id_station_id_fkey';
+            columns: ['transaction_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'transactions';
+            referencedColumns: ['id', 'station_id'];
+          },
+        ];
+      };
+      devices: {
+        Row: {
+          active: boolean;
+          auth_user_id: string;
+          created_at: string;
+          id: string;
+          label: string;
+          organization_id: string;
+          registered_at: string;
+          station_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          auth_user_id: string;
+          created_at?: string;
+          id?: string;
+          label: string;
+          organization_id: string;
+          registered_at?: string;
+          station_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          auth_user_id?: string;
+          created_at?: string;
+          id?: string;
+          label?: string;
+          organization_id?: string;
+          registered_at?: string;
+          station_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'devices_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      employee_pins: {
+        Row: {
+          employee_id: string;
+          organization_id: string;
+          pin_hash: string;
+          updated_at: string;
+        };
+        Insert: {
+          employee_id: string;
+          organization_id: string;
+          pin_hash: string;
+          updated_at?: string;
+        };
+        Update: {
+          employee_id?: string;
+          organization_id?: string;
+          pin_hash?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employee_pins_employee_id_fkey';
+            columns: ['employee_id'];
+            isOneToOne: true;
+            referencedRelation: 'employees';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'employee_pins_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      employees: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          full_name: string;
+          id: string;
+          organization_id: string;
+          role: Database['public']['Enums']['employee_role'];
+          station_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          full_name: string;
+          id?: string;
+          organization_id: string;
+          role: Database['public']['Enums']['employee_role'];
+          station_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          full_name?: string;
+          id?: string;
+          organization_id?: string;
+          role?: Database['public']['Enums']['employee_role'];
+          station_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employees_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      evidence_files: {
+        Row: {
+          captured_at_device: string;
+          created_at: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          gps_lat: number | null;
+          gps_lng: number | null;
+          id: string;
+          kind: Database['public']['Enums']['evidence_kind'];
+          organization_id: string;
+          sha256: string;
+          station_id: string;
+          storage_path: string;
+        };
+        Insert: {
+          captured_at_device: string;
+          created_at?: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          gps_lat?: number | null;
+          gps_lng?: number | null;
+          id?: string;
+          kind: Database['public']['Enums']['evidence_kind'];
+          organization_id: string;
+          sha256: string;
+          station_id: string;
+          storage_path: string;
+        };
+        Update: {
+          captured_at_device?: string;
+          created_at?: string;
+          device_created_at?: string;
+          device_id?: string;
+          employee_id?: string;
+          gps_lat?: number | null;
+          gps_lng?: number | null;
+          id?: string;
+          kind?: Database['public']['Enums']['evidence_kind'];
+          organization_id?: string;
+          sha256?: string;
+          station_id?: string;
+          storage_path?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'evidence_files_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'evidence_files_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'evidence_files_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      fuel_deliveries: {
+        Row: {
+          after_cl: number;
+          before_cl: number;
+          created_at: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          evidence_id: string;
+          id: string;
+          invoice_ref: string | null;
+          invoiced_cl: number;
+          organization_id: string;
+          received_cl: number | null;
+          station_id: string;
+          supplier: string | null;
+          tank_id: string;
+        };
+        Insert: {
+          after_cl: number;
+          before_cl: number;
+          created_at?: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          evidence_id: string;
+          id?: string;
+          invoice_ref?: string | null;
+          invoiced_cl: number;
+          organization_id: string;
+          received_cl?: number | null;
+          station_id: string;
+          supplier?: string | null;
+          tank_id: string;
+        };
+        Update: {
+          after_cl?: number;
+          before_cl?: number;
+          created_at?: string;
+          device_created_at?: string;
+          device_id?: string;
+          employee_id?: string;
+          evidence_id?: string;
+          id?: string;
+          invoice_ref?: string | null;
+          invoiced_cl?: number;
+          organization_id?: string;
+          received_cl?: number | null;
+          station_id?: string;
+          supplier?: string | null;
+          tank_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fuel_deliveries_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'fuel_deliveries_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'fuel_deliveries_evidence_id_station_id_fkey';
+            columns: ['evidence_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'evidence_files';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'fuel_deliveries_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'fuel_deliveries_tank_id_station_id_fkey';
+            columns: ['tank_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'tanks';
+            referencedColumns: ['id', 'station_id'];
+          },
+        ];
+      };
+      fuel_products: {
+        Row: {
+          code: Database['public']['Enums']['fuel_code'];
+          created_at: string;
+          label: string;
+        };
+        Insert: {
+          code: Database['public']['Enums']['fuel_code'];
+          created_at?: string;
+          label: string;
+        };
+        Update: {
+          code?: Database['public']['Enums']['fuel_code'];
+          created_at?: string;
+          label?: string;
+        };
+        Relationships: [];
+      };
+      inventory_movements: {
+        Row: {
+          created_at: string;
+          device_created_at: string | null;
+          device_id: string | null;
+          employee_id: string | null;
+          id: string;
+          kind: Database['public']['Enums']['inventory_movement_kind'];
+          organization_id: string;
+          product_id: string;
+          quantity: number;
+          reference_id: string | null;
+          reference_kind: string | null;
+          station_id: string;
+          unit_cost_fcfa: number | null;
+        };
+        Insert: {
+          created_at?: string;
+          device_created_at?: string | null;
+          device_id?: string | null;
+          employee_id?: string | null;
+          id?: string;
+          kind: Database['public']['Enums']['inventory_movement_kind'];
+          organization_id: string;
+          product_id: string;
+          quantity: number;
+          reference_id?: string | null;
+          reference_kind?: string | null;
+          station_id: string;
+          unit_cost_fcfa?: number | null;
+        };
+        Update: {
+          created_at?: string;
+          device_created_at?: string | null;
+          device_id?: string | null;
+          employee_id?: string | null;
+          id?: string;
+          kind?: Database['public']['Enums']['inventory_movement_kind'];
+          organization_id?: string;
+          product_id?: string;
+          quantity?: number;
+          reference_id?: string | null;
+          reference_kind?: string | null;
+          station_id?: string;
+          unit_cost_fcfa?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_movements_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'inventory_movements_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'inventory_movements_product_id_organization_id_fkey';
+            columns: ['product_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'products';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'inventory_movements_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      meter_readings: {
+        Row: {
+          created_at: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          evidence_id: string;
+          id: string;
+          index_cl: number;
+          kind: Database['public']['Enums']['meter_reading_kind'];
+          nozzle_id: string;
+          organization_id: string;
+          shift_id: string;
+          station_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          evidence_id: string;
+          id?: string;
+          index_cl: number;
+          kind: Database['public']['Enums']['meter_reading_kind'];
+          nozzle_id: string;
+          organization_id: string;
+          shift_id: string;
+          station_id: string;
+        };
+        Update: {
+          created_at?: string;
+          device_created_at?: string;
+          device_id?: string;
+          employee_id?: string;
+          evidence_id?: string;
+          id?: string;
+          index_cl?: number;
+          kind?: Database['public']['Enums']['meter_reading_kind'];
+          nozzle_id?: string;
+          organization_id?: string;
+          shift_id?: string;
+          station_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meter_readings_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'meter_readings_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'meter_readings_evidence_id_station_id_fkey';
+            columns: ['evidence_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'evidence_files';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'meter_readings_nozzle_id_station_id_fkey';
+            columns: ['nozzle_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'nozzles';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'meter_readings_shift_id_station_id_fkey';
+            columns: ['shift_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'shifts';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'meter_readings_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      nozzles: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          id: string;
+          label: string;
+          organization_id: string;
+          pump_id: string;
+          station_id: string;
+          tank_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          label: string;
+          organization_id: string;
+          pump_id: string;
+          station_id: string;
+          tank_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          label?: string;
+          organization_id?: string;
+          pump_id?: string;
+          station_id?: string;
+          tank_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'nozzles_pump_id_station_id_fkey';
+            columns: ['pump_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'pumps';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'nozzles_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'nozzles_tank_id_station_id_fkey';
+            columns: ['tank_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'tanks';
+            referencedColumns: ['id', 'station_id'];
+          },
+        ];
+      };
+      org_members: {
+        Row: {
+          created_at: string;
+          id: string;
+          organization_id: string;
+          role: Database['public']['Enums']['org_member_role'];
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          organization_id: string;
+          role: Database['public']['Enums']['org_member_role'];
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          organization_id?: string;
+          role?: Database['public']['Enums']['org_member_role'];
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'org_members_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      organizations: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          plan_code: Database['public']['Enums']['plan_code'];
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          plan_code: Database['public']['Enums']['plan_code'];
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          plan_code?: Database['public']['Enums']['plan_code'];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'organizations_plan_code_fkey';
+            columns: ['plan_code'];
+            isOneToOne: false;
+            referencedRelation: 'plans';
+            referencedColumns: ['code'];
+          },
+        ];
+      };
+      payments: {
+        Row: {
+          amount_fcfa: number;
+          created_at: string;
+          credit_account_id: string | null;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          external_ref: string | null;
+          id: string;
+          method: Database['public']['Enums']['payment_method'];
+          organization_id: string;
+          station_id: string;
+          transaction_id: string;
+        };
+        Insert: {
+          amount_fcfa: number;
+          created_at?: string;
+          credit_account_id?: string | null;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          external_ref?: string | null;
+          id?: string;
+          method: Database['public']['Enums']['payment_method'];
+          organization_id: string;
+          station_id: string;
+          transaction_id: string;
+        };
+        Update: {
+          amount_fcfa?: number;
+          created_at?: string;
+          credit_account_id?: string | null;
+          device_created_at?: string;
+          device_id?: string;
+          employee_id?: string;
+          external_ref?: string | null;
+          id?: string;
+          method?: Database['public']['Enums']['payment_method'];
+          organization_id?: string;
+          station_id?: string;
+          transaction_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'payments_credit_account_id_station_id_fkey';
+            columns: ['credit_account_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'credit_accounts';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'payments_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'payments_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'payments_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'payments_transaction_id_station_id_fkey';
+            columns: ['transaction_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'transactions';
+            referencedColumns: ['id', 'station_id'];
+          },
+        ];
+      };
+      plans: {
+        Row: {
+          code: Database['public']['Enums']['plan_code'];
+          created_at: string;
+          label: string;
+          max_stations: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          code: Database['public']['Enums']['plan_code'];
+          created_at?: string;
+          label: string;
+          max_stations?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          code?: Database['public']['Enums']['plan_code'];
+          created_at?: string;
+          label?: string;
+          max_stations?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      price_changes: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          effective_at: string;
+          fuel_product_code: Database['public']['Enums']['fuel_code'];
+          id: string;
+          organization_id: string;
+          price_fcfa_per_litre: number;
+          station_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          effective_at?: string;
+          fuel_product_code: Database['public']['Enums']['fuel_code'];
+          id?: string;
+          organization_id: string;
+          price_fcfa_per_litre: number;
+          station_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          effective_at?: string;
+          fuel_product_code?: Database['public']['Enums']['fuel_code'];
+          id?: string;
+          organization_id?: string;
+          price_fcfa_per_litre?: number;
+          station_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'price_changes_fuel_product_code_fkey';
+            columns: ['fuel_product_code'];
+            isOneToOne: false;
+            referencedRelation: 'fuel_products';
+            referencedColumns: ['code'];
+          },
+          {
+            foreignKeyName: 'price_changes_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      products: {
+        Row: {
+          active: boolean;
+          barcode: string | null;
+          category: Database['public']['Enums']['product_category'];
+          created_at: string;
+          id: string;
+          name: string;
+          organization_id: string;
+          reorder_threshold: number;
+          sale_price_fcfa: number | null;
+          unit: Database['public']['Enums']['product_unit'];
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          barcode?: string | null;
+          category: Database['public']['Enums']['product_category'];
+          created_at?: string;
+          id?: string;
+          name: string;
+          organization_id: string;
+          reorder_threshold?: number;
+          sale_price_fcfa?: number | null;
+          unit?: Database['public']['Enums']['product_unit'];
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          barcode?: string | null;
+          category?: Database['public']['Enums']['product_category'];
+          created_at?: string;
+          id?: string;
+          name?: string;
+          organization_id?: string;
+          reorder_threshold?: number;
+          sale_price_fcfa?: number | null;
+          unit?: Database['public']['Enums']['product_unit'];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'products_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      pumps: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          id: string;
+          label: string;
+          organization_id: string;
+          station_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          label: string;
+          organization_id: string;
+          station_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          label?: string;
+          organization_id?: string;
+          station_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'pumps_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      reconciliations: {
+        Row: {
+          actual: number;
+          created_at: string;
+          details: Json;
+          expected: number;
+          id: string;
+          kind: Database['public']['Enums']['reconciliation_kind'];
+          organization_id: string;
+          shift_id: string | null;
+          station_id: string;
+          status: Database['public']['Enums']['reconciliation_status'];
+          variance: number | null;
+        };
+        Insert: {
+          actual: number;
+          created_at?: string;
+          details?: Json;
+          expected: number;
+          id?: string;
+          kind: Database['public']['Enums']['reconciliation_kind'];
+          organization_id: string;
+          shift_id?: string | null;
+          station_id: string;
+          status?: Database['public']['Enums']['reconciliation_status'];
+          variance?: number | null;
+        };
+        Update: {
+          actual?: number;
+          created_at?: string;
+          details?: Json;
+          expected?: number;
+          id?: string;
+          kind?: Database['public']['Enums']['reconciliation_kind'];
+          organization_id?: string;
+          shift_id?: string | null;
+          station_id?: string;
+          status?: Database['public']['Enums']['reconciliation_status'];
+          variance?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'reconciliations_shift_id_station_id_fkey';
+            columns: ['shift_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'shifts';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'reconciliations_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      shift_handovers: {
+        Row: {
+          created_at: string;
+          device_created_at: string;
+          device_id: string;
+          from_shift_id: string;
+          id: string;
+          incoming_employee_id: string;
+          organization_id: string;
+          outgoing_employee_id: string;
+          signed_in_at: string | null;
+          signed_out_at: string | null;
+          station_id: string;
+          status: Database['public']['Enums']['handover_status'];
+          to_shift_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          device_created_at: string;
+          device_id: string;
+          from_shift_id: string;
+          id?: string;
+          incoming_employee_id: string;
+          organization_id: string;
+          outgoing_employee_id: string;
+          signed_in_at?: string | null;
+          signed_out_at?: string | null;
+          station_id: string;
+          status?: Database['public']['Enums']['handover_status'];
+          to_shift_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          device_created_at?: string;
+          device_id?: string;
+          from_shift_id?: string;
+          id?: string;
+          incoming_employee_id?: string;
+          organization_id?: string;
+          outgoing_employee_id?: string;
+          signed_in_at?: string | null;
+          signed_out_at?: string | null;
+          station_id?: string;
+          status?: Database['public']['Enums']['handover_status'];
+          to_shift_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'shift_handovers_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'shift_handovers_from_shift_id_station_id_fkey';
+            columns: ['from_shift_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'shifts';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'shift_handovers_incoming_employee_id_station_id_fkey';
+            columns: ['incoming_employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'shift_handovers_outgoing_employee_id_station_id_fkey';
+            columns: ['outgoing_employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'shift_handovers_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'shift_handovers_to_shift_id_station_id_fkey';
+            columns: ['to_shift_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'shifts';
+            referencedColumns: ['id', 'station_id'];
+          },
+        ];
+      };
+      shifts: {
+        Row: {
+          closed_at: string | null;
+          closed_by: string | null;
+          created_at: string;
+          device_created_at: string;
+          device_id: string;
+          id: string;
+          opened_at: string;
+          opened_by: string;
+          organization_id: string;
+          station_id: string;
+          status: Database['public']['Enums']['shift_status'];
+          updated_at: string;
+        };
+        Insert: {
+          closed_at?: string | null;
+          closed_by?: string | null;
+          created_at?: string;
+          device_created_at: string;
+          device_id: string;
+          id?: string;
+          opened_at: string;
+          opened_by: string;
+          organization_id: string;
+          station_id: string;
+          status?: Database['public']['Enums']['shift_status'];
+          updated_at?: string;
+        };
+        Update: {
+          closed_at?: string | null;
+          closed_by?: string | null;
+          created_at?: string;
+          device_created_at?: string;
+          device_id?: string;
+          id?: string;
+          opened_at?: string;
+          opened_by?: string;
+          organization_id?: string;
+          station_id?: string;
+          status?: Database['public']['Enums']['shift_status'];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'shifts_closed_by_station_id_fkey';
+            columns: ['closed_by', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'shifts_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'shifts_opened_by_station_id_fkey';
+            columns: ['opened_by', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'shifts_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      stations: {
+        Row: {
+          active: boolean;
+          city: string | null;
+          created_at: string;
+          id: string;
+          name: string;
+          organization_id: string;
+          timezone: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          city?: string | null;
+          created_at?: string;
+          id?: string;
+          name: string;
+          organization_id: string;
+          timezone?: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          city?: string | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          organization_id?: string;
+          timezone?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'stations_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      tank_calibrations: {
+        Row: {
+          created_at: string;
+          height_mm: number;
+          id: string;
+          organization_id: string;
+          station_id: string;
+          tank_id: string;
+          updated_at: string;
+          volume_cl: number;
+        };
+        Insert: {
+          created_at?: string;
+          height_mm: number;
+          id?: string;
+          organization_id: string;
+          station_id: string;
+          tank_id: string;
+          updated_at?: string;
+          volume_cl: number;
+        };
+        Update: {
+          created_at?: string;
+          height_mm?: number;
+          id?: string;
+          organization_id?: string;
+          station_id?: string;
+          tank_id?: string;
+          updated_at?: string;
+          volume_cl?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tank_calibrations_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'tank_calibrations_tank_id_station_id_fkey';
+            columns: ['tank_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'tanks';
+            referencedColumns: ['id', 'station_id'];
+          },
+        ];
+      };
+      tank_readings: {
+        Row: {
+          created_at: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          evidence_id: string;
+          height_mm: number;
+          id: string;
+          organization_id: string;
+          station_id: string;
+          tank_id: string;
+          volume_cl: number;
+        };
+        Insert: {
+          created_at?: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          evidence_id: string;
+          height_mm: number;
+          id?: string;
+          organization_id: string;
+          station_id: string;
+          tank_id: string;
+          volume_cl: number;
+        };
+        Update: {
+          created_at?: string;
+          device_created_at?: string;
+          device_id?: string;
+          employee_id?: string;
+          evidence_id?: string;
+          height_mm?: number;
+          id?: string;
+          organization_id?: string;
+          station_id?: string;
+          tank_id?: string;
+          volume_cl?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tank_readings_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'tank_readings_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'tank_readings_evidence_id_station_id_fkey';
+            columns: ['evidence_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'evidence_files';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'tank_readings_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'tank_readings_tank_id_station_id_fkey';
+            columns: ['tank_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'tanks';
+            referencedColumns: ['id', 'station_id'];
+          },
+        ];
+      };
+      tanks: {
+        Row: {
+          active: boolean;
+          capacity_cl: number;
+          created_at: string;
+          fuel_product_code: Database['public']['Enums']['fuel_code'];
+          id: string;
+          label: string;
+          organization_id: string;
+          station_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          capacity_cl: number;
+          created_at?: string;
+          fuel_product_code: Database['public']['Enums']['fuel_code'];
+          id?: string;
+          label: string;
+          organization_id: string;
+          station_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          capacity_cl?: number;
+          created_at?: string;
+          fuel_product_code?: Database['public']['Enums']['fuel_code'];
+          id?: string;
+          label?: string;
+          organization_id?: string;
+          station_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tanks_fuel_product_code_fkey';
+            columns: ['fuel_product_code'];
+            isOneToOne: false;
+            referencedRelation: 'fuel_products';
+            referencedColumns: ['code'];
+          },
+          {
+            foreignKeyName: 'tanks_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      transaction_items: {
+        Row: {
+          amount_fcfa: number;
+          created_at: string;
+          description: string;
+          id: string;
+          nozzle_id: string | null;
+          organization_id: string;
+          product_id: string | null;
+          quantity: number;
+          station_id: string;
+          transaction_id: string;
+          unit_price_fcfa: number;
+        };
+        Insert: {
+          amount_fcfa: number;
+          created_at?: string;
+          description: string;
+          id?: string;
+          nozzle_id?: string | null;
+          organization_id: string;
+          product_id?: string | null;
+          quantity: number;
+          station_id: string;
+          transaction_id: string;
+          unit_price_fcfa: number;
+        };
+        Update: {
+          amount_fcfa?: number;
+          created_at?: string;
+          description?: string;
+          id?: string;
+          nozzle_id?: string | null;
+          organization_id?: string;
+          product_id?: string | null;
+          quantity?: number;
+          station_id?: string;
+          transaction_id?: string;
+          unit_price_fcfa?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'transaction_items_nozzle_id_station_id_fkey';
+            columns: ['nozzle_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'nozzles';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'transaction_items_product_fk';
+            columns: ['product_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'products';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'transaction_items_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'transaction_items_transaction_id_station_id_fkey';
+            columns: ['transaction_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'transactions';
+            referencedColumns: ['id', 'station_id'];
+          },
+        ];
+      };
+      transactions: {
+        Row: {
+          created_at: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          id: string;
+          kind: Database['public']['Enums']['transaction_kind'];
+          note: string | null;
+          organization_id: string;
+          reverses_id: string | null;
+          shift_id: string;
+          station_id: string;
+          total_fcfa: number;
+        };
+        Insert: {
+          created_at?: string;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          id?: string;
+          kind: Database['public']['Enums']['transaction_kind'];
+          note?: string | null;
+          organization_id: string;
+          reverses_id?: string | null;
+          shift_id: string;
+          station_id: string;
+          total_fcfa: number;
+        };
+        Update: {
+          created_at?: string;
+          device_created_at?: string;
+          device_id?: string;
+          employee_id?: string;
+          id?: string;
+          kind?: Database['public']['Enums']['transaction_kind'];
+          note?: string | null;
+          organization_id?: string;
+          reverses_id?: string | null;
+          shift_id?: string;
+          station_id?: string;
+          total_fcfa?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'transactions_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'transactions_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'transactions_reverses_id_fkey';
+            columns: ['reverses_id'];
+            isOneToOne: false;
+            referencedRelation: 'transactions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'transactions_shift_id_station_id_fkey';
+            columns: ['shift_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'shifts';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'transactions_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      voids: {
+        Row: {
+          approved_by: string | null;
+          created_at: string;
+          device_created_at: string | null;
+          device_id: string | null;
+          employee_id: string | null;
+          id: string;
+          organization_id: string;
+          reason: string;
+          station_id: string;
+          transaction_id: string;
+        };
+        Insert: {
+          approved_by?: string | null;
+          created_at?: string;
+          device_created_at?: string | null;
+          device_id?: string | null;
+          employee_id?: string | null;
+          id?: string;
+          organization_id: string;
+          reason: string;
+          station_id: string;
+          transaction_id: string;
+        };
+        Update: {
+          approved_by?: string | null;
+          created_at?: string;
+          device_created_at?: string | null;
+          device_id?: string | null;
+          employee_id?: string | null;
+          id?: string;
+          organization_id?: string;
+          reason?: string;
+          station_id?: string;
+          transaction_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'voids_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'voids_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'voids_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'voids_transaction_id_station_id_fkey';
+            columns: ['transaction_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'transactions';
+            referencedColumns: ['id', 'station_id'];
+          },
+        ];
+      };
+    };
+    Views: {
+      current_fuel_prices: {
+        Row: {
+          effective_at: string | null;
+          fuel_product_code: Database['public']['Enums']['fuel_code'] | null;
+          organization_id: string | null;
+          price_change_id: string | null;
+          price_fcfa_per_litre: number | null;
+          station_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'price_changes_fuel_product_code_fkey';
+            columns: ['fuel_product_code'];
+            isOneToOne: false;
+            referencedRelation: 'fuel_products';
+            referencedColumns: ['code'];
+          },
+          {
+            foreignKeyName: 'price_changes_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+    };
+    Functions: {
+      current_device_id: { Args: never; Returns: string };
+      current_device_organization_id: { Args: never; Returns: string };
+      current_device_station_id: { Args: never; Returns: string };
+      current_org_ids: { Args: never; Returns: string[] };
+      current_station_ids: { Args: never; Returns: string[] };
+      is_org_owner: { Args: { p_org_id: string }; Returns: boolean };
+      set_employee_pin: {
+        Args: { p_employee_id: string; p_pin: string };
+        Returns: undefined;
+      };
+      volume_from_calibration: {
+        Args: { p_height_mm: number; p_tank_id: string };
+        Returns: number;
+      };
+    };
+    Enums: {
+      alert_severity: 'info' | 'warning' | 'critical';
+      alert_type:
+        | 'cash_variance'
+        | 'tank_variance'
+        | 'handover_mismatch'
+        | 'delivery_variance'
+        | 'void_requested'
+        | 'missing_evidence'
+        | 'credit_limit'
+        | 'price_change'
+        | 'blind_count_variance'
+        | 'unknown_device'
+        | 'other';
+      audit_action: 'INSERT' | 'UPDATE' | 'DELETE';
+      blind_count_status: 'requested' | 'submitted' | 'cancelled';
+      credit_entry_kind: 'sale' | 'repayment' | 'adjustment';
+      employee_role: 'manager' | 'pump_attendant' | 'shop_cashier' | 'mechanic' | 'washer';
+      evidence_kind:
+        | 'meter_photo'
+        | 'tank_gauge'
+        | 'delivery_note'
+        | 'bank_slip'
+        | 'vehicle_plate'
+        | 'count_photo'
+        | 'other';
+      fuel_code: 'super' | 'gasoil';
+      handover_status: 'pending' | 'signed' | 'disputed';
+      inventory_movement_kind:
+        | 'purchase'
+        | 'sale'
+        | 'work_order'
+        | 'wash'
+        | 'loss'
+        | 'adjustment'
+        | 'transfer'
+        | 'count_correction';
+      meter_reading_kind: 'open' | 'close' | 'handover';
+      org_member_role: 'owner' | 'supervisor';
+      payment_method: 'cash' | 'card' | 'wave' | 'orange_money' | 'credit';
+      plan_code: 'solo' | 'groupe' | 'reseau';
+      product_category: 'shop' | 'garage_part' | 'lubricant' | 'wash_supply' | 'gas';
+      product_unit: 'unit' | 'cl';
+      reconciliation_kind: 'tank' | 'cash' | 'mobile_money';
+      reconciliation_status: 'ok' | 'variance' | 'pending';
+      shift_status: 'open' | 'closing' | 'closed';
+      transaction_kind: 'fuel' | 'shop' | 'garage' | 'wash' | 'adjustment';
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
   };
 };
+
+type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>;
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, 'public'>];
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
+      Row: infer R;
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+    ? (DefaultSchema['Tables'] & DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R;
+      }
+      ? R
+      : never
+    : never;
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    keyof DefaultSchema['Tables'] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+      Insert: infer I;
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I;
+      }
+      ? I
+      : never
+    : never;
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    keyof DefaultSchema['Tables'] | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+      Update: infer U;
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+    ? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U;
+      }
+      ? U
+      : never
+    : never;
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    keyof DefaultSchema['Enums'] | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
+    : never) = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
+    ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
+    : never;
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    keyof DefaultSchema['CompositeTypes'] | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals;
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
+    ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
+    : never;
+
+export const Constants = {
+  public: {
+    Enums: {
+      alert_severity: ['info', 'warning', 'critical'],
+      alert_type: [
+        'cash_variance',
+        'tank_variance',
+        'handover_mismatch',
+        'delivery_variance',
+        'void_requested',
+        'missing_evidence',
+        'credit_limit',
+        'price_change',
+        'blind_count_variance',
+        'unknown_device',
+        'other',
+      ],
+      audit_action: ['INSERT', 'UPDATE', 'DELETE'],
+      blind_count_status: ['requested', 'submitted', 'cancelled'],
+      credit_entry_kind: ['sale', 'repayment', 'adjustment'],
+      employee_role: ['manager', 'pump_attendant', 'shop_cashier', 'mechanic', 'washer'],
+      evidence_kind: [
+        'meter_photo',
+        'tank_gauge',
+        'delivery_note',
+        'bank_slip',
+        'vehicle_plate',
+        'count_photo',
+        'other',
+      ],
+      fuel_code: ['super', 'gasoil'],
+      handover_status: ['pending', 'signed', 'disputed'],
+      inventory_movement_kind: [
+        'purchase',
+        'sale',
+        'work_order',
+        'wash',
+        'loss',
+        'adjustment',
+        'transfer',
+        'count_correction',
+      ],
+      meter_reading_kind: ['open', 'close', 'handover'],
+      org_member_role: ['owner', 'supervisor'],
+      payment_method: ['cash', 'card', 'wave', 'orange_money', 'credit'],
+      plan_code: ['solo', 'groupe', 'reseau'],
+      product_category: ['shop', 'garage_part', 'lubricant', 'wash_supply', 'gas'],
+      product_unit: ['unit', 'cl'],
+      reconciliation_kind: ['tank', 'cash', 'mobile_money'],
+      reconciliation_status: ['ok', 'variance', 'pending'],
+      shift_status: ['open', 'closing', 'closed'],
+      transaction_kind: ['fuel', 'shop', 'garage', 'wash', 'adjustment'],
+    },
+  },
+} as const;

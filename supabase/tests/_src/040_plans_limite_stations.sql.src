@@ -1,0 +1,40 @@
+-- Garde-fou 2 : limite de stations selon le plan.
+create or replace function pg_temp.org_with_plan(p_plan public.plan_code) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  insert into public.organizations (id, name, plan_code) values (v_id, 'Org ' || p_plan, p_plan);
+  return v_id;
+end $$;
+
+create temporary table ctx as
+select pg_temp.org_with_plan('solo') as org_solo,
+       pg_temp.org_with_plan('groupe') as org_groupe,
+       pg_temp.org_with_plan('reseau') as org_reseau;
+grant select on ctx to authenticated, service_role, anon;
+
+-- solo : 1 station puis refus
+select lives_ok(format('insert into public.stations (organization_id, name) values (%L, %L)', (select org_solo from ctx), 'Solo 1'), 'plan solo : 1re station acceptée');
+select throws_like(format('insert into public.stations (organization_id, name) values (%L, %L)', (select org_solo from ctx), 'Solo 2'), 'STATION_LIMIT%', 'plan solo : 2e station refusée');
+select is((select count(*) from public.stations where organization_id = (select org_solo from ctx)), 1::bigint, 'plan solo : une seule station en base');
+
+-- groupe : 5 stations puis refus
+select lives_ok(
+  format('insert into public.stations (organization_id, name) select %L, %L || g from generate_series(1, 5) g', (select org_groupe from ctx), 'Groupe '),
+  'plan groupe : 5 stations acceptées'
+);
+select throws_like(format('insert into public.stations (organization_id, name) values (%L, %L)', (select org_groupe from ctx), 'Groupe 6'), 'STATION_LIMIT%', 'plan groupe : 6e station refusée');
+select is((select count(*) from public.stations where organization_id = (select org_groupe from ctx)), 5::bigint, 'plan groupe : 5 stations en base');
+
+-- reseau : illimité
+select lives_ok(
+  format('insert into public.stations (organization_id, name) select %L, %L || g from generate_series(1, 12) g', (select org_reseau from ctx), 'Réseau '),
+  'plan reseau : 12 stations acceptées'
+);
+select is((select count(*) from public.stations where organization_id = (select org_reseau from ctx)), 12::bigint, 'plan reseau : pas de limite');
+
+-- La limite s'applique aussi à l'owner authentifié (démo = groupe, 3 stations déjà)
+select pg_temp.login(pg_temp.owner_demo());
+select lives_ok(format('insert into public.stations (organization_id, name) values (%L, %L)', pg_temp.org_demo(), 'Démo 4'), 'owner démo : 4e station acceptée');
+select lives_ok(format('insert into public.stations (organization_id, name) values (%L, %L)', pg_temp.org_demo(), 'Démo 5'), 'owner démo : 5e station acceptée');
+select throws_like(format('insert into public.stations (organization_id, name) values (%L, %L)', pg_temp.org_demo(), 'Démo 6'), 'STATION_LIMIT%', 'owner démo : 6e station refusée');
+select pg_temp.logout();

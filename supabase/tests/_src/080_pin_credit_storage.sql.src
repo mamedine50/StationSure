@@ -1,0 +1,72 @@
+-- PIN hashés, plafond de crédit, bucket de preuves.
+create temporary table ctx as
+select pg_temp.new_auth_user('supervisor-a@test.local') as supervisor_a,
+       gen_random_uuid() as account;
+grant select on ctx to authenticated, service_role, anon;
+insert into public.org_members (organization_id, user_id, role) select pg_temp.org_demo(), supervisor_a, 'supervisor' from ctx;
+
+-- ---- PIN
+select is((select count(*) from public.employee_pins), 9::bigint, 'seed : 9 PIN hashés');
+select is(
+  (select count(*) from public.employee_pins where pin_hash = extensions.crypt('1234', pin_hash)),
+  9::bigint, 'seed : tous les PIN de démo valent 1234 (bcrypt)'
+);
+select is((select count(*) from public.employee_pins where pin_hash like '$2a$%' or pin_hash like '$2b$%'), 9::bigint, 'les PIN sont hashés en bcrypt (gen_salt bf)');
+
+select pg_temp.login(pg_temp.owner_demo());
+select throws_ok('select * from public.employee_pins', '42501', null, 'owner : ne lit pas les hash de PIN');
+select lives_ok(format('select public.set_employee_pin(%L, %L)', pg_temp.employee('mbour', 'Awa Diop'), '4321'), 'owner : définit un PIN via set_employee_pin');
+select throws_like(format('select public.set_employee_pin(%L, %L)', pg_temp.employee('mbour', 'Awa Diop'), '12'), 'PIN_INVALID%', 'un PIN trop court est refusé');
+select pg_temp.logout();
+select is(
+  (select pin_hash = extensions.crypt('4321', pin_hash) from public.employee_pins where employee_id = pg_temp.employee('mbour', 'Awa Diop')),
+  true, 'le nouveau PIN est bien hashé'
+);
+select pg_temp.login((select supervisor_a from ctx));
+select throws_like(format('select public.set_employee_pin(%L, %L)', pg_temp.employee('mbour', 'Awa Diop'), '9999'), 'FORBIDDEN%', 'supervisor : ne définit pas de PIN');
+select pg_temp.logout();
+select pg_temp.login(pg_temp.device_user('mbour'));
+select throws_like(format('select public.set_employee_pin(%L, %L)', pg_temp.employee('mbour', 'Awa Diop'), '9999'), 'FORBIDDEN%', 'appareil : ne définit pas de PIN');
+select pg_temp.logout();
+
+-- ---- Crédit client : plafond en base
+insert into public.credit_accounts (id, organization_id, station_id, customer_name, limit_fcfa)
+select account, pg_temp.org_demo(), pg_temp.station('mbour'), 'Transport Ndiaye', 50000 from ctx;
+select lives_ok(
+  format('insert into public.credit_entries (organization_id, station_id, device_id, employee_id, credit_account_id, kind, amount_fcfa, device_created_at)
+          values (%L, %L, %L, %L, %L, %L, 30000, now())',
+         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), (select account from ctx), 'sale'),
+  'crédit : vente de 30 000 sous le plafond'
+);
+select throws_like(
+  format('insert into public.credit_entries (organization_id, station_id, device_id, employee_id, credit_account_id, kind, amount_fcfa, device_created_at)
+          values (%L, %L, %L, %L, %L, %L, 30000, now())',
+         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), (select account from ctx), 'sale'),
+  'CREDIT_LIMIT%', 'crédit : la 2e vente dépasse le plafond et est refusée'
+);
+select lives_ok(
+  format('insert into public.credit_entries (organization_id, station_id, device_id, employee_id, credit_account_id, kind, amount_fcfa, device_created_at)
+          values (%L, %L, %L, %L, %L, %L, -30000, now())',
+         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), (select account from ctx), 'repayment'),
+  'crédit : remboursement accepté'
+);
+select pg_temp.login(pg_temp.device_user('mbour'));
+select throws_ok(
+  format('insert into public.credit_accounts (organization_id, station_id, customer_name, limit_fcfa) values (%L, %L, %L, 1000000)',
+         pg_temp.org_demo(), pg_temp.station('mbour'), 'Client pirate'),
+  '42501', null, 'appareil : ne crée pas de compte crédit (plafond = propriétaire)'
+);
+select pg_temp.logout();
+
+-- ---- Storage : bucket privé + policies alignées
+select is((select public from storage.buckets where id = 'evidence'), false, 'bucket evidence privé');
+select is((select count(*) from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname like 'evidence_%' and cmd in ('UPDATE', 'DELETE')), 0::bigint, 'storage : aucune policy update/delete sur les preuves');
+select is((select count(*) from pg_policies where schemaname = 'storage' and tablename = 'objects' and policyname = 'evidence_objects_insert' and cmd = 'INSERT'), 1::bigint, 'storage : policy d''insertion appareil présente');
+-- Une preuve doit être rangée dans {organization_id}/{station_id}/
+select throws_ok(
+  format('insert into public.evidence_files (organization_id, station_id, device_id, employee_id, kind, storage_path, sha256, captured_at_device, device_created_at)
+          values (%L, %L, %L, %L, %L, %L, %L, now(), now())',
+         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Awa Diop'),
+         'meter_photo', 'ailleurs/photo.jpg', repeat('b', 64)),
+  '23514', null, 'evidence_files : chemin hors du dossier organisation/station refusé'
+);

@@ -1,0 +1,203 @@
+-- GÉNÉRÉ par _build.sh à partir de _src/030_appareil.sql.src — ne pas éditer à la main.
+begin;
+create extension if not exists pgtap with schema extensions;
+select no_plan();
+
+-- Préambule commun (copié en tête de chaque fichier de test, les fichiers étant
+-- exécutés dans des transactions séparées). Simule un JWT Supabase.
+create or replace function pg_temp.login(p_uid uuid) returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', p_uid::text, 'role', 'authenticated', 'aud', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+end $$;
+create or replace function pg_temp.logout() returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims', '', true);
+  perform set_config('role', 'postgres', true);
+end $$;
+create or replace function pg_temp.as_service() returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims', '', true);
+  perform set_config('role', 'service_role', true);
+end $$;
+create or replace function pg_temp.as_anon() returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims', '', true);
+  perform set_config('role', 'anon', true);
+end $$;
+-- Identifiants de la seed
+create or replace function pg_temp.org_demo() returns uuid language sql as $$ select md5('org:demo')::uuid $$;
+create or replace function pg_temp.owner_demo() returns uuid language sql as $$ select md5('user:owner@demo.local')::uuid $$;
+create or replace function pg_temp.station(p_slug text) returns uuid language sql as $$ select md5('station:' || p_slug)::uuid $$;
+create or replace function pg_temp.device(p_slug text) returns uuid language sql as $$ select md5('device:' || p_slug)::uuid $$;
+create or replace function pg_temp.device_user(p_slug text) returns uuid language sql as $$ select md5('user:device-' || p_slug || '@demo.local')::uuid $$;
+create or replace function pg_temp.employee(p_slug text, p_name text) returns uuid language sql as $$ select md5('employee:' || p_slug || ':' || p_name)::uuid $$;
+create or replace function pg_temp.tank(p_slug text, p_fuel text) returns uuid language sql as $$ select md5('tank:' || p_slug || ':' || p_fuel)::uuid $$;
+create or replace function pg_temp.nozzle(p_slug text, p_label text) returns uuid language sql as $$ select md5('nozzle:' || p_slug || ':' || p_label)::uuid $$;
+-- Crée un utilisateur auth de test
+create or replace function pg_temp.new_auth_user(p_email text) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+    raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+    confirmation_token, recovery_token, email_change_token_new, email_change, is_sso_user)
+  values ('00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated', p_email,
+    extensions.crypt('test', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}',
+    now(), now(), '', '', '', '', false);
+  return v_id;
+end $$;
+-- Ouvre un shift + une preuve pour une station de la seed (en tant que postgres)
+create or replace function pg_temp.open_shift(p_slug text, p_employee text) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  insert into public.shifts (id, organization_id, station_id, device_id, opened_by, opened_at, device_created_at)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug),
+          pg_temp.employee(p_slug, p_employee), now(), now());
+  return v_id;
+end $$;
+create or replace function pg_temp.new_evidence(p_slug text, p_employee text) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  insert into public.evidence_files (id, organization_id, station_id, device_id, employee_id, kind, storage_path, sha256,
+    captured_at_device, device_created_at)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_employee),
+    'meter_photo', pg_temp.org_demo()::text || '/' || pg_temp.station(p_slug)::text || '/' || v_id::text || '.jpg',
+    repeat('a', 64), now(), now());
+  return v_id;
+end $$;
+
+-- L'appareil d'une station : lit sa station, insère ses opérations, rien d'autre.
+create temporary table ctx as
+select
+  pg_temp.open_shift('thies', 'Fatou Faye') as shift_thies,
+  pg_temp.open_shift('mbour', 'Awa Diop') as shift_mbour,
+  pg_temp.new_evidence('thies', 'Fatou Faye') as evidence_thies,
+  pg_temp.new_evidence('mbour', 'Awa Diop') as evidence_mbour;
+grant select on ctx to authenticated, service_role, anon;
+
+insert into public.meter_readings (organization_id, station_id, device_id, employee_id, shift_id, nozzle_id, kind, index_cl, evidence_id, device_created_at)
+select pg_temp.org_demo(), pg_temp.station('thies'), pg_temp.device('thies'), pg_temp.employee('thies', 'Fatou Faye'),
+       shift_thies, pg_temp.nozzle('thies', 'P1-A'), 'open', 19840210, evidence_thies, now() from ctx;
+
+insert into public.transactions (organization_id, station_id, device_id, employee_id, shift_id, kind, total_fcfa, device_created_at)
+select pg_temp.org_demo(), pg_temp.station('thies'), pg_temp.device('thies'), pg_temp.employee('thies', 'Fatou Faye'),
+       shift_thies, 'fuel', 25000, now() from ctx;
+
+insert into public.products (id, organization_id, category, name) values (md5('product:test')::uuid, pg_temp.org_demo(), 'shop', 'Eau 1,5 L');
+insert into public.inventory_movements (organization_id, station_id, device_id, employee_id, product_id, kind, quantity, device_created_at)
+values (pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Khady Fall'),
+        md5('product:test')::uuid, 'purchase', 24, now());
+
+-- ---- appareil de Mbour
+select pg_temp.login(pg_temp.device_user('mbour'));
+
+select is(public.current_device_station_id(), pg_temp.station('mbour'), 'helper : station de l''appareil');
+select is(public.current_device_id(), pg_temp.device('mbour'), 'helper : id de l''appareil');
+select is((select count(*) from public.current_org_ids()), 0::bigint, 'helper : un appareil n''est membre d''aucune organisation');
+
+-- Lecture limitée à sa station
+select is((select count(*) from public.stations), 1::bigint, 'appareil Mbour : voit une seule station');
+select is((select count(*) from public.shifts where station_id = pg_temp.station('thies')), 0::bigint, 'appareil Mbour : aucun shift de Thiès');
+select is((select count(*) from public.shifts), 1::bigint, 'appareil Mbour : voit son shift');
+select is((select count(*) from public.meter_readings), 0::bigint, 'appareil Mbour : aucun relevé de Thiès');
+select is((select count(*) from public.transactions), 0::bigint, 'appareil Mbour : aucune transaction de Thiès');
+select is((select count(*) from public.employees), 6::bigint, 'appareil Mbour : voit les 6 employés de Mbour');
+select is((select count(*) from public.nozzles), 6::bigint, 'appareil Mbour : voit ses 6 pistolets');
+select is((select count(*) from public.current_fuel_prices), 2::bigint, 'appareil Mbour : lit les prix en vigueur de sa station');
+select is((select count(*) from public.products), 1::bigint, 'appareil Mbour : lit le catalogue de l''organisation');
+select is((select count(*) from public.inventory_movements), 0::bigint, 'appareil Mbour : ne lit JAMAIS les mouvements de stock (inventaire à l''aveugle)');
+select is((select count(*) from public.audit_log), 0::bigint, 'appareil Mbour : ne lit pas le journal d''audit');
+select throws_ok('select * from public.employee_pins', '42501', null, 'appareil Mbour : employee_pins inaccessible');
+
+-- Interdictions d'écriture
+select throws_ok(
+  format('insert into public.price_changes (organization_id, station_id, fuel_product_code, price_fcfa_per_litre, created_by) values (%L, %L, %L, %s, %L)',
+         pg_temp.org_demo(), pg_temp.station('mbour'), 'super', 1000, pg_temp.device_user('mbour')),
+  '42501', null, 'appareil : ne peut pas insérer dans price_changes'
+);
+select throws_ok(
+  format('insert into public.price_changes (organization_id, station_id, fuel_product_code, price_fcfa_per_litre, created_by) values (%L, %L, %L, %s, %L)',
+         pg_temp.org_demo(), pg_temp.station('mbour'), 'super', 1000, pg_temp.owner_demo()),
+  '42501', null, 'appareil : ne peut pas insérer dans price_changes même en usurpant created_by'
+);
+select throws_ok(
+  format('insert into public.stations (organization_id, name) values (%L, %L)', pg_temp.org_demo(), 'Station pirate'),
+  '42501', null, 'appareil : ne peut pas créer de station'
+);
+select throws_ok(
+  format('insert into public.employees (organization_id, station_id, full_name, role) values (%L, %L, %L, %L)',
+         pg_temp.org_demo(), pg_temp.station('mbour'), 'Pirate', 'manager'),
+  '42501', null, 'appareil : ne peut pas créer d''employé'
+);
+select lives_ok(
+  format('update public.employees set full_name = %L where id = %L', 'Pirate', pg_temp.employee('mbour', 'Awa Diop')),
+  'appareil : update employé sans erreur…'
+);
+select throws_ok(
+  format('insert into public.devices (organization_id, station_id, auth_user_id, label) values (%L, %L, %L, %L)',
+         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device_user('mbour'), 'Pirate'),
+  null, null, 'appareil : ne peut pas enregistrer un appareil'
+);
+select throws_ok(
+  format('insert into public.alerts (organization_id, station_id, type) values (%L, %L, %L)', pg_temp.org_demo(), pg_temp.station('mbour'), 'other'),
+  '42501', null, 'appareil : ne peut pas créer d''alerte'
+);
+select throws_ok(
+  format('insert into public.reconciliations (organization_id, station_id, kind, expected, actual) values (%L, %L, %L, 1, 1)', pg_temp.org_demo(), pg_temp.station('mbour'), 'cash'),
+  '42501', null, 'appareil : ne peut pas créer de rapprochement'
+);
+
+-- Insertions autorisées : ses opérations, sur sa station, avec son device_id
+select lives_ok(
+  format('insert into public.meter_readings (organization_id, station_id, device_id, employee_id, shift_id, nozzle_id, kind, index_cl, evidence_id, device_created_at)
+          values (%L, %L, %L, %L, %L, %L, %L, %s, %L, now())',
+         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Awa Diop'),
+         (select shift_mbour from ctx), pg_temp.nozzle('mbour', 'P1-A'), 'open', 19840210, (select evidence_mbour from ctx)),
+  'appareil Mbour : insère un relevé d''index sur sa station'
+);
+select throws_ok(
+  format('insert into public.meter_readings (organization_id, station_id, device_id, employee_id, shift_id, nozzle_id, kind, index_cl, evidence_id, device_created_at)
+          values (%L, %L, %L, %L, %L, %L, %L, %s, %L, now())',
+         pg_temp.org_demo(), pg_temp.station('thies'), pg_temp.device('thies'), pg_temp.employee('thies', 'Fatou Faye'),
+         (select shift_thies from ctx), pg_temp.nozzle('thies', 'P1-A'), 'open', 19840210, (select evidence_thies from ctx)),
+  '42501', null, 'appareil Mbour : ne peut pas insérer un relevé pour Thiès'
+);
+select throws_ok(
+  format('insert into public.meter_readings (organization_id, station_id, device_id, employee_id, shift_id, nozzle_id, kind, index_cl, evidence_id, device_created_at)
+          values (%L, %L, %L, %L, %L, %L, %L, %s, %L, now())',
+         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('thies'), pg_temp.employee('mbour', 'Awa Diop'),
+         (select shift_mbour from ctx), pg_temp.nozzle('mbour', 'P1-A'), 'open', 19840210, (select evidence_mbour from ctx)),
+  null, null, 'appareil Mbour : ne peut pas se faire passer pour un autre appareil'
+);
+select lives_ok(
+  format('insert into public.inventory_movements (organization_id, station_id, device_id, employee_id, product_id, kind, quantity, device_created_at)
+          values (%L, %L, %L, %L, %L, %L, %s, now())',
+         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Khady Fall'),
+         md5('product:test')::uuid, 'sale', -2),
+  'appareil Mbour : insère un mouvement de stock (sans pouvoir le relire)'
+);
+select lives_ok(
+  format('update public.shifts set status = %L where id = %L', 'closing', (select shift_mbour from ctx)),
+  'appareil Mbour : fait avancer son shift'
+);
+select lives_ok(
+  format('update public.shifts set status = %L where id = %L', 'closing', (select shift_thies from ctx)),
+  'appareil Mbour : update du shift de Thiès sans erreur…'
+);
+select pg_temp.logout();
+
+select is((select full_name from public.employees where id = pg_temp.employee('mbour', 'Awa Diop')), 'Awa Diop', '… l''employé n''a pas été modifié');
+select is((select status from public.shifts where id = (select shift_mbour from ctx)), 'closing'::public.shift_status, 'le shift de Mbour est passé à closing');
+select is((select status from public.shifts where id = (select shift_thies from ctx)), 'open'::public.shift_status, '… le shift de Thiès n''a pas bougé');
+select is((select count(*) from public.meter_readings where station_id = pg_temp.station('mbour')), 1::bigint, 'le relevé de Mbour est bien enregistré');
+
+-- Un appareil désactivé ne voit plus rien
+update public.devices set active = false where id = pg_temp.device('mbour');
+select pg_temp.login(pg_temp.device_user('mbour'));
+select is((select count(*) from public.stations), 0::bigint, 'appareil désactivé : ne voit plus sa station');
+select is((select count(*) from public.shifts), 0::bigint, 'appareil désactivé : ne voit plus les shifts');
+select pg_temp.logout();
+
+select * from finish();
+rollback;

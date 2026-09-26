@@ -1,0 +1,68 @@
+-- Tests génériques : RLS partout, aucune policy « true », anon sans aucun accès.
+select is(
+  (select count(*) from pg_tables where schemaname = 'public' and not rowsecurity),
+  0::bigint,
+  'RLS activée sur 100 % des tables du schéma public'
+);
+
+select is(
+  (select count(*) from pg_policies where schemaname = 'public' and (qual = 'true' or with_check = 'true')),
+  0::bigint,
+  'Aucune policy using (true) / with check (true)'
+);
+
+select is(
+  (select count(*) from information_schema.role_table_grants
+   where grantee = 'anon' and table_schema = 'public'),
+  0::bigint,
+  'anon n''a aucun privilège sur les tables public'
+);
+
+select is(
+  (select count(*) from pg_tables t
+   where t.schemaname = 'public'
+     and has_table_privilege('anon', format('%I.%I', t.schemaname, t.tablename), 'SELECT')),
+  0::bigint,
+  'anon ne peut lire aucune table public'
+);
+
+select is(
+  (select count(*) from information_schema.role_routine_grants
+   where grantee = 'anon' and specific_schema = 'public'),
+  0::bigint,
+  'anon ne peut appeler aucune fonction public'
+);
+
+-- Toutes les tables porteuses de station_id portent aussi organization_id (convention RLS).
+select is(
+  (select count(*) from information_schema.columns c
+   where c.table_schema = 'public' and c.column_name = 'station_id'
+     and not exists (select 1 from information_schema.columns o
+                     where o.table_schema = 'public' and o.table_name = c.table_name and o.column_name = 'organization_id')),
+  0::bigint,
+  'Chaque table avec station_id porte organization_id'
+);
+
+-- Chaque table public a au moins une policy, sauf employee_pins (verrouillée volontairement).
+select is(
+  (select count(*) from pg_tables t
+   where t.schemaname = 'public' and t.tablename <> 'employee_pins'
+     and not exists (select 1 from pg_policies p where p.schemaname = 'public' and p.tablename = t.tablename)),
+  0::bigint,
+  'Chaque table (hors employee_pins) a au moins une policy'
+);
+
+select is(
+  (select count(*) from pg_policies where schemaname = 'public' and tablename = 'employee_pins'),
+  0::bigint,
+  'employee_pins n''a aucune policy : inaccessible par l''API'
+);
+
+-- anon en pratique
+select pg_temp.as_anon();
+select throws_ok('select count(*) from public.stations', '42501', null, 'anon : select stations refusé');
+select throws_ok('select count(*) from public.employees', '42501', null, 'anon : select employees refusé');
+select throws_ok('select count(*) from public.transactions', '42501', null, 'anon : select transactions refusé');
+select throws_ok('select count(*) from public.current_fuel_prices', '42501', null, 'anon : select current_fuel_prices refusé');
+select throws_ok('select public.current_org_ids()', '42501', null, 'anon : helpers RLS inaccessibles');
+select pg_temp.logout();

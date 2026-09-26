@@ -73,14 +73,41 @@ Refaire `npx expo prebuild` après toute modification de `app.json` ou ajout d'u
 
 ## Supabase local
 
+Ports locaux : API `54721`, Postgres `54722`, Studio `54723`, Inbucket (mails) `54724`.
+
 ```bash
-supabase start      # démarre Postgres, Auth, Storage… dans Docker
-supabase status     # affiche l'URL de l'API et la clé anon à copier dans les .env
-supabase stop
+pnpm db:start       # démarre Postgres, Auth, Storage… dans Docker (= supabase start)
+supabase status     # affiche l'URL de l'API et la clé publishable à copier dans les .env
+pnpm db:reset       # rejoue les migrations puis supabase/seed.sql
+pnpm db:lint        # supabase db lint
+pnpm db:test        # assemble et lance les tests pgTAP (supabase/tests)
+pnpm db:types       # régénère packages/database/src/types.generated.ts
+pnpm db:stop
 ```
 
-Aucune migration métier en phase 0 (`supabase/migrations/` est vide). Les types TypeScript seront
-générés en phase 1 avec `pnpm --filter @stationsure/database gen:types`.
+Le schéma, la matrice RLS et les garde-fous sont décrits dans [docs/schema.md](docs/schema.md).
+
+### Données de démo (local uniquement)
+
+`supabase/seed.sql` ne doit **jamais** être poussé en ligne. Comptes de développement :
+
+| Compte             | E-mail                      | Mot de passe             |
+| ------------------ | --------------------------- | ------------------------ |
+| Propriétaire (web) | `owner@demo.local`          | `Demo-StationSure-2026!` |
+| Appareil Mbour     | `device-mbour@demo.local`   | `Demo-Appareil-2026!`    |
+| Appareil Thiès     | `device-thies@demo.local`   | `Demo-Appareil-2026!`    |
+| Appareil Kaolack   | `device-kaolack@demo.local` | `Demo-Appareil-2026!`    |
+
+Organisation « Démo StationSûre » (plan groupe), stations Mbour, Thiès, Kaolack, employés de la
+maquette avec le PIN de démo `1234`, 2 cuves + barémage, 3 pompes et 6 pistolets par station. Les
+prix de la seed sont fictifs.
+
+### Envoyer le schéma en ligne (à faire manuellement, jamais par un agent)
+
+```bash
+supabase link --project-ref <ref-du-projet>
+supabase db push          # n'envoie QUE supabase/migrations/, jamais seed.sql
+```
 
 ## Structure du repo
 
@@ -93,7 +120,7 @@ stationsure/
 │   ├── core/             règles métier pures, 0 dépendance, testées (Vitest)
 │   ├── ui/               design tokens (dark mode) + preset Tailwind partagé web / NativeWind
 │   ├── i18n/             libellés FR (défaut) + EN, i18next
-│   ├── database/         types générés Supabase (placeholder en phase 0)
+│   ├── database/         types générés Supabase (pnpm db:types)
 │   └── config/           tsconfig, eslint, prettier partagés
 ├── supabase/             config.toml, migrations/ (vide), functions/ (vide)
 └── docs/                 architecture v2 et maquette validée (ne pas modifier)
