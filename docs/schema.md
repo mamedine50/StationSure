@@ -29,6 +29,8 @@ Conventions :
 | 0009 | `20260926090009_identite_enums.sql` | valeurs d'enum `pin_lockout`, `device_paired`, `device_revoked` ; enum `session_end_reason` |
 | 0011 | `20260926090011_carburant_enums.sql` | `shift_status.opening`, `session_end_reason.handover`, alertes `meter_regression`, `delivery_shortfall`, `shift_opened` ; enums `tank_reading_kind`, `handover_side`, `delivery_status` |
 | 0012 | `20260926090012_carburant_cycle.sql` | `tank_calibration_versions` (+ `version_id` sur `tank_calibrations`), `create_calibration_version()`, `volume_from_calibration(tank, mm, at)`, `evidence_uploads` + `confirm_evidence_upload()`, colonnes de passation / régression sur `meter_readings`, `shift_id` / `kind` / `expected_cl` sur `tank_readings`, `theoretical_stock_cl()`, rapprochement cuve, `open_shift()`, `close_shift_fuel()`, `shift_fuel_summary()`, passation (`start_handover`, `sign_handover_outgoing`, `sign_handover_incoming`, `compare_handover`, `report_handover_discrepancy`), `fuel_delivery_sessions` + `start_delivery`, `advance_delivery`, `sign_delivery`, `reverse_delivery`, `nozzle_is_paused()` |
+| 0013 | `20260926090013_caisse_enums.sql` | `meter_reading_kind.price_change`, `transaction_kind.credit_repayment`, alertes caisse, enums `payment_match_status`, `mobile_money_provider`, `approval_decision`, `credit_account_status`, `cash_variance_decision`, `deposit_mode` |
+| 0014 | `20260926090014_caisse.sql` | paiements (référence unique par opérateur, `card_last4`), `record_sale()`, rapprochement mobile money (`mobile_money_imports`, `mobile_money_statement_lines`, `payment_matches`, `import_mobile_money_statement()`, `flag_pending_mobile_money()`), crédit (`request_credit_account()`, `decide_credit_account()`, `record_credit_repayment()`, `credit_account_statement()`), annulations (`voids.amount_fcfa`, `void_approvals`, `void_role_limits`, `request_void()`, `decide_void()`), tranches de prix (`meter_readings.price_change_id`, `shift_price_changes()`, `shift_expected_fuel()`), billetage (`cash_counts`), `shift_cash_summary()`, `close_shift_cash()`, `cash_closings`, `cash_variance_decisions`, `decide_cash_variance()`, versements (`bank_deposit_shifts`, `declare_bank_deposit()`, `flag_missing_deposits()`), `pending_validations()`, pg_cron |
 | 0010 | `20260926090010_identite.sql` | `create_organization()`, `device_pairing_codes`, `pairing_rate_limits`, `create_pairing_code()`, `consume_pairing_code()`, `register_paired_device()`, `revoke_device()`, `employee_sessions`, `pin_attempts`, `verify_employee_pin()`, `end_employee_session()`, `current_employee_id()`, `current_employee_session()`, `employees_with_pin()`, PIN non trivial, durcissement des policies d'insertion |
 
 ## Tables et relations
@@ -118,6 +120,24 @@ attribuer une opération qu'à l'employé connecté par PIN sur lui.
 | `fuel_deliveries` | résultat figé : `received_cl` = après − avant (serveur), `variance_pct`, `signed_with_reserve` obligatoire si \|écart\| > 0,3 % + alerte `delivery_shortfall` ; correction par `reverse_delivery` (ligne négative, `reverses_id`) |
 
 Équivalences core ↔ SQL testées : `volumeDepuisBaremageMm` ↔ `volume_from_calibration`, `comparerPassation` ↔ `compare_handover`, `litresVendus` ↔ `shift_fuel_summary`, `ecartLivraisonPourcent` ↔ `sign_delivery`, `validerBaremage` ↔ `private.validate_calibration_points`.
+
+### Caisse et clôture (phase 4)
+
+| Objet | Rôle |
+| --- | --- |
+| `payments` | Wave / Orange Money : `external_ref` obligatoire et **unique par organisation et opérateur** ; carte : `card_last4` (jamais de numéro). Statut de rapprochement via `payment_match_status(payment_id)` (pending → matched / unmatched) |
+| `record_sale(jsonb)` | vente atomique (transaction + ligne + paiement + écriture crédit) ; refuse un pistolet en pause, une référence en double, un compte crédit inactif ou un plafond dépassé, une vente à crédit sans photo du bon |
+| `mobile_money_*`, `payment_matches` | import d'un relevé marchand (lignes normalisées `{reference, amount_fcfa, paid_at, raw}` produites côté web par `lireReleveMobileMoney` + mapping de colonnes) ; rapprochement référence + montant + date ± 24 h ; ligne sans paiement → alerte `mobile_money_unmatched` ; paiement pending > 24 h → alerte `mobile_money_pending` (pg_cron). L'interface `AdaptateurReleveMarchand` (core) permettra l'API marchand |
+| `credit_accounts` / `credit_entries` | statut `pending` (demandé par le gérant, plafond 0) → `active` par l'owner (`decide_credit_account`) ; vente à crédit = bon signé obligatoire (`evidence_id`) ; remboursement = transaction `credit_repayment` + paiement + écriture négative ; `credit_account_statement()` |
+| `voids`, `void_approvals`, `void_role_limits` | demande depuis l'appareil (montant, motif) ; décision owner append-only ; seule une annulation **approuvée** diminue l'attendu ; montant > plafond du rôle → alerte `void_over_limit` |
+| `meter_readings.price_change_id` | relevé intermédiaire obligatoire à l'heure d'un changement de prix ; `shift_expected_fuel()` découpe chaque pistolet en tranches (= `attenduCarburantParTranches` de core) et bloque la clôture si un relevé manque |
+| `cash_counts` | billetage à l'aveugle : `total_fcfa` calculé par le serveur, un seul comptage sauf décision « recomptage », figé (append-only). **Aucun appareil ne peut obtenir l'attendu avant** : `shift_cash_summary` lève `CASH_COUNT_REQUIRED`, `shift_expected_fuel` est réservé aux membres |
+| `cash_closings` | clôture figée : attendu par nature, encaissé par mode, espèces attendues / comptées, écart, justification obligatoire si écart ≠ 0, mode de versement ; `close_shift_cash()` exige billetage, preuves de fin, relevés de changement de prix ; le shift passe en `closed` (immuable) ; écart → alerte `cash_variance` |
+| `cash_variance_decisions` | décision de l'owner (accepter la perte, retenue sur salaire, recomptage), auteur et date, append-only |
+| `bank_deposits`, `bank_deposit_shifts` | `declare_bank_deposit()` (gérant, photo du bordereau) pour un ou plusieurs shifts clos ; versé ≠ espèces comptées → `deposit_mismatch` ; aucun bordereau 24 h après une clôture « à faire » → `deposit_missing` (pg_cron `flag_missing_deposits`) |
+| `pending_validations()` | compteurs « À valider » (écarts non tranchés, annulations, comptes demandés, versements en alerte) |
+
+Formules (core ↔ SQL testées) : attendu total = carburant (tranches) + boutique + lavage + garage + remboursements crédit − annulations approuvées ; attendu espèces = total − Wave − OM − carte − crédit ; écart = espèces comptées − espèces attendues. Cas de la maquette 04 dans la seed : 2 385 000 / 1 155 000 / −35 000.
 
 ### Transversal
 
@@ -211,7 +231,8 @@ JWT Supabase (`pg_temp.login(uid)`, `logout()`, `as_service()`, `as_anon()`).
    `policy_insert_device(t, colonne_employé)` (+ `policy_update_device` si statut) pour les
    opérations. Jamais de `using (true)`.
    Une RPC qui enregistre un échec (compteur, tentative) doit **renvoyer** l'échec, pas lever une
-   exception, sinon l'écriture est annulée.
+   exception, sinon l'écriture est annulée. Une fonction SQL est exécutable par `authenticated` par
+   défaut : révoquer explicitement (`revoke … from authenticated`) ce qui doit rester serveur.
 5. Table de mouvement → `private.enable_append_only` + `revoke update, delete … from authenticated`.
    Table de configuration → `private.enable_audit` + `private.enable_updated_at`.
 6. `pnpm db:reset && pnpm db:lint && pnpm db:test` : le test générique `010` vérifie la RLS, l'absence

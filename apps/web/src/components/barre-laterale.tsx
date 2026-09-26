@@ -14,10 +14,12 @@ function LienNavigation({
   entree,
   actif,
   pied,
+  compteur,
 }: {
   entree: EntreeNavigation;
   actif: boolean;
   pied?: boolean;
+  compteur?: number | undefined;
 }) {
   const base = 'flex h-10 items-center rounded-sm px-3 text-[14px] no-underline transition-colors';
   const etat = actif
@@ -28,10 +30,15 @@ function LienNavigation({
   return (
     <Link
       href={entree.href}
-      className={`${base} ${etat}`}
+      className={`${base} justify-between ${etat}`}
       aria-current={actif ? 'page' : undefined}
     >
-      {t(`nav.${entree.cle}`)}
+      <span>{t(`nav.${entree.cle}`)}</span>
+      {compteur ? (
+        <span className="flex h-[22px] min-w-[22px] items-center justify-center rounded-pilule bg-accent px-1.5 text-[12px] font-bold text-accent-texte">
+          {compteur}
+        </span>
+      ) : null}
     </Link>
   );
 }
@@ -40,10 +47,12 @@ export function BarreLaterale({
   organisation,
   email,
   role,
+  aValider = 0,
 }: {
   organisation: string;
   email: string;
   role: 'owner' | 'supervisor';
+  aValider?: number;
 }) {
   const pathname = usePathname();
   const estActif = (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href));
@@ -66,7 +75,12 @@ export function BarreLaterale({
         </span>
       </div>
       {NAVIGATION.map((entree) => (
-        <LienNavigation key={entree.cle} entree={entree} actif={estActif(entree.href)} />
+        <LienNavigation
+          key={entree.cle}
+          entree={entree}
+          actif={estActif(entree.href)}
+          compteur={entree.cle === 'validate' ? aValider : undefined}
+        />
       ))}
       <div className="mt-auto flex flex-col gap-1">
         <LienNavigation entree={NAVIGATION_PIED} actif={estActif(NAVIGATION_PIED.href)} pied />

@@ -169,3 +169,91 @@ export const schemaPrix = z.object({
     .string()
     .refine((v) => v === '' || !Number.isNaN(Date.parse(v)), { error: 'validation.date' }),
 });
+
+// ---------------------------------------------------------------------------
+// Phase 4 — caisse, approbations, crédit, mobile money
+// ---------------------------------------------------------------------------
+export const DECISIONS_ECART = ['accept_loss', 'salary_deduction', 'recount'] as const;
+export const OPERATEURS_MM = ['wave', 'orange_money'] as const;
+export const FORMATS_DATE = ['iso', 'dmy', 'epoch'] as const;
+
+export const schemaDecisionEcart = z.object({
+  closingId: z.guid(),
+  decision: z.enum(DECISIONS_ECART, { error: 'validation.decision' }),
+  note: z.string().trim().max(300).optional().or(z.literal('')),
+});
+
+export const schemaDecisionAnnulation = z.object({
+  voidId: z.guid(),
+  approuver: z.enum(['true', 'false']),
+  note: z.string().trim().max(300).optional().or(z.literal('')),
+});
+
+export const schemaDecisionCompteCredit = z
+  .object({
+    accountId: z.guid(),
+    approuver: z.enum(['true', 'false']),
+    plafond: z.coerce
+      .number({ error: 'validation.amount' })
+      .int({ error: 'validation.amount' })
+      .min(0, { error: 'validation.amount' }),
+  })
+  .refine((v) => v.approuver === 'false' || v.plafond > 0, {
+    error: 'validation.amount',
+    path: ['plafond'],
+  });
+
+/** Import d'un relevé : lignes déjà normalisées par le client (core.lireReleveMobileMoney). */
+export const schemaImportReleve = z.object({
+  operateur: z.enum(OPERATEURS_MM, { error: 'validation.invalid' }),
+  fichier: z.string().trim().max(200).optional().or(z.literal('')),
+  mapping: z.string().transform((texte, ctx) => {
+    try {
+      const m = JSON.parse(texte) as {
+        reference?: string;
+        montant?: string;
+        date?: string;
+        formatDate?: string;
+      };
+      if (!m.reference || !m.montant || !m.date) throw new Error();
+      return {
+        reference: m.reference,
+        montant: m.montant,
+        date: m.date,
+        formatDate: (m.formatDate ?? 'iso') as (typeof FORMATS_DATE)[number],
+      };
+    } catch {
+      ctx.addIssue({ code: 'custom', message: 'validation.mapping' });
+      return { reference: '', montant: '', date: '', formatDate: 'iso' as const };
+    }
+  }),
+  lignes: z.string().transform((texte, ctx) => {
+    try {
+      const brut = JSON.parse(texte) as unknown;
+      if (!Array.isArray(brut) || brut.length === 0) throw new Error();
+      return brut.map((l) => {
+        const o = l as {
+          reference: unknown;
+          amount_fcfa: unknown;
+          paid_at: unknown;
+          raw?: unknown;
+        };
+        if (
+          typeof o.reference !== 'string' ||
+          typeof o.amount_fcfa !== 'number' ||
+          typeof o.paid_at !== 'string'
+        )
+          throw new Error();
+        return {
+          reference: o.reference,
+          amount_fcfa: o.amount_fcfa,
+          paid_at: o.paid_at,
+          raw: (o.raw ?? {}) as Record<string, string>,
+        };
+      });
+    } catch {
+      ctx.addIssue({ code: 'custom', message: 'validation.invalid' });
+      return [];
+    }
+  }),
+});

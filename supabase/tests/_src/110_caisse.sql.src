@@ -1,0 +1,277 @@
+-- Phase 4 : paiements, ventes, crédit, annulations, changement de prix, billetage à l'aveugle,
+-- attendu / écart, clôture, décisions, versements, rapprochement mobile money, accès.
+create temporary table ctx as select pg_temp.new_auth_user('supervisor-a@test.local') as supervisor_a;
+grant select on ctx to authenticated, service_role, anon;
+insert into public.org_members (organization_id, user_id, role) select pg_temp.org_demo(), supervisor_a, 'supervisor' from ctx;
+create or replace function pg_temp.res(p jsonb) returns text language sql as $$ select case when (p ->> 'ok')::boolean then 'OK' else p ->> 'error' end $$;
+create or replace function pg_temp.idx(p_label text, p_delta bigint) returns bigint language sql as $$
+  select (case p_label when 'P1-A' then 19840210 when 'P1-B' then 35611870 when 'P2-A' then 14295000
+               when 'P2-B' then 48391255 when 'P3-A' then 21588040 when 'P3-B' then 30122785 end) + p_delta $$;
+-- Ouvre complètement un shift à Mbour (relevés + jaugeages d'ouverture, photos reçues) pour un employé.
+create or replace function pg_temp.shift_ouvert(p_name text) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  perform pg_temp.login_employee('mbour', p_name);
+  perform pg_temp.login(pg_temp.device_user('mbour'));
+  insert into public.shifts (id, organization_id, station_id, device_id, opened_by, opened_at, device_created_at)
+  values (v_id, pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', p_name), now() - interval '8 hours', now() - interval '8 hours');
+  perform pg_temp.meter(v_id, 'mbour', p_name, l, pg_temp.idx(l, 0), 'open', null, null, now() - interval '8 hours') from unnest(array['P1-A', 'P1-B', 'P2-A', 'P2-B', 'P3-A', 'P3-B']) l;
+  perform pg_temp.gauge(v_id, 'mbour', p_name, 'super', 1000, 'open', now() - interval '8 hours');
+  perform pg_temp.gauge(v_id, 'mbour', p_name, 'gasoil', 900, 'open', now() - interval '8 hours');
+  perform pg_temp.logout();
+  perform pg_temp.upload_all('mbour');
+  perform pg_temp.login(pg_temp.device_user('mbour'));
+  perform public.open_shift(v_id);
+  perform pg_temp.logout();
+  return v_id;
+end $$;
+
+-- ================= 1. Shift ouvert par le gérant, ventes et paiements =================
+create temporary table s as select pg_temp.shift_ouvert('Ibrahima Sarr') as id;
+grant select on s to authenticated, service_role, anon;
+select is((select status from public.shifts where id = (select id from s)), 'open'::public.shift_status, 'shift de test ouvert');
+select pg_temp.login(pg_temp.device_user('mbour'));
+create temporary table v1 as select public.record_sale(jsonb_build_object('kind', 'fuel', 'shift_id', (select id from s), 'amount_fcfa', 640000, 'method', 'wave', 'external_ref', 'WV-TEST-1', 'nozzle_id', pg_temp.nozzle('mbour', 'P1-B'), 'litres_cl', 8476800, 'unit_price_fcfa', 755)) as r;
+grant select on v1 to authenticated, service_role, anon;
+select is(pg_temp.res((select r from v1)), 'OK', 'vente Wave 640 000 enregistrée (transaction + ligne + paiement)');
+select is((select r ->> 'match_status' from v1), 'pending', 'paiement Wave : statut pending');
+select is(pg_temp.res(public.record_sale(jsonb_build_object('kind', 'fuel', 'shift_id', (select id from s), 'amount_fcfa', 1000, 'method', 'wave', 'external_ref', 'WV-TEST-1'))), 'REFERENCE_DUPLICATE', 'référence Wave en double REFUSÉE');
+select is(pg_temp.res(public.record_sale(jsonb_build_object('kind', 'fuel', 'shift_id', (select id from s), 'amount_fcfa', 410000, 'method', 'orange_money', 'external_ref', 'OM-TEST-1'))), 'OK', 'vente Orange Money 410 000');
+select is(pg_temp.res(public.record_sale(jsonb_build_object('kind', 'fuel', 'shift_id', (select id from s), 'amount_fcfa', 150000, 'method', 'card', 'card_last4', '4821'))), 'OK', 'vente carte 150 000 (4 derniers chiffres du ticket)');
+select throws_ok(format('insert into public.payments (organization_id, station_id, device_id, employee_id, transaction_id, method, amount_fcfa, device_created_at) values (%L, %L, %L, %L, (select (r ->> ''transaction_id'')::uuid from v1), %L, 10, now())',
+  pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), 'wave'), '23514', null, 'paiement Wave sans référence refusé');
+select throws_ok(format('insert into public.payments (organization_id, station_id, device_id, employee_id, transaction_id, method, amount_fcfa, card_last4, device_created_at) values (%L, %L, %L, %L, (select (r ->> ''transaction_id'')::uuid from v1), %L, 10, %L, now())',
+  pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), 'card', '4111111111111111'), '23514', null, 'numéro de carte complet refusé (4 chiffres seulement)');
+select is(pg_temp.res(public.record_sale(jsonb_build_object('kind', 'shop', 'shift_id', (select id from s), 'amount_fcfa', 145000, 'method', 'cash', 'description', 'Ticket 1043'))), 'OK', 'vente boutique 145 000 espèces');
+select is(pg_temp.res(public.record_sale(jsonb_build_object('kind', 'wash', 'shift_id', (select id from s), 'amount_fcfa', 50000, 'method', 'cash'))), 'OK', 'lavage 50 000 espèces');
+select is(pg_temp.res(public.record_sale(jsonb_build_object('kind', 'fuel', 'shift_id', (select id from s), 'amount_fcfa', 960000, 'method', 'cash', 'nozzle_id', pg_temp.nozzle('mbour', 'P1-A')))), 'OK', 'vente carburant espèces 960 000');
+select is(pg_temp.res(public.record_sale(jsonb_build_object('kind', 'fuel', 'shift_id', (select id from s), 'amount_fcfa', 0, 'method', 'cash'))), 'AMOUNT_REQUIRED', 'montant nul refusé');
+
+-- ================= 2. Crédit : plafond, bon signé, demande de compte =================
+create temporary table bon as select pg_temp.new_evidence('mbour', 'Ibrahima Sarr') as id;
+grant select on bon to authenticated, service_role, anon;
+select pg_temp.logout(); select pg_temp.upload_all('mbour'); select pg_temp.login(pg_temp.device_user('mbour'));
+create temporary table acc as select md5('credit:mbour:Transports Ndiaye')::uuid as id;
+grant select on acc to authenticated, service_role, anon;
+select is(public.credit_account_balance((select id from acc)), 320000::bigint, 'Transports Ndiaye : 320 000 dus (seed)');
+select is(pg_temp.res(public.record_sale(jsonb_build_object('kind', 'fuel', 'shift_id', (select id from s), 'amount_fcfa', 30000, 'method', 'credit', 'credit_account_id', (select id from acc), 'vehicle_plate', 'DK-4821-BC'))), 'CREDIT_NOTE_PHOTO_REQUIRED', 'vente à crédit sans photo du bon refusée');
+select is(pg_temp.res(public.record_sale(jsonb_build_object('kind', 'fuel', 'shift_id', (select id from s), 'amount_fcfa', 200000, 'method', 'credit', 'credit_account_id', (select id from acc), 'vehicle_plate', 'DK-4821-BC', 'evidence_id', (select id from bon)))), 'CREDIT_LIMIT', 'vente à crédit au-delà du plafond (320 000 + 200 000 > 500 000) refusée');
+select is(pg_temp.res(public.record_sale(jsonb_build_object('kind', 'fuel', 'shift_id', (select id from s), 'amount_fcfa', 30000, 'method', 'credit', 'credit_account_id', (select id from acc), 'vehicle_plate', 'DK-4821-BC', 'evidence_id', (select id from bon)))), 'OK', 'vente à crédit 30 000 acceptée (bon signé)');
+select is(public.credit_account_balance((select id from acc)), 350000::bigint, 'solde 350 000 après la vente');
+select is((select count(*) from public.credit_account_statement((select id from acc))), 4::bigint, 'relevé de compte : 4 écritures');
+create temporary table req as select public.request_credit_account('Garage Test', '77 123 45 67') as id;
+grant select on req to authenticated, service_role, anon;
+select is((select limit_fcfa from public.credit_accounts where id = (select id from req)), 0::bigint, 'compte demandé par le gérant : plafond 0');
+select is((select status from public.credit_accounts where id = (select id from req)), 'pending'::public.credit_account_status, 'compte demandé : statut pending, inactif');
+select is(pg_temp.res(public.record_sale(jsonb_build_object('kind', 'fuel', 'shift_id', (select id from s), 'amount_fcfa', 1000, 'method', 'credit', 'credit_account_id', (select id from req), 'evidence_id', (select id from bon)))), 'CREDIT_ACCOUNT_INACTIVE', 'aucune vente sur un compte en attente');
+select throws_ok(format('select public.decide_credit_account(%L, true, 100000)', (select id from req)), '42501', null, 'appareil : ne peut pas activer un compte');
+-- remboursement en espèces
+create temporary table rep as select public.record_credit_repayment((select id from acc), 50000, 'cash') as r;
+grant select on rep to authenticated, service_role, anon;
+select is(pg_temp.res((select r from rep)), 'OK', 'remboursement 50 000 espèces enregistré');
+select is((select (r ->> 'balance_fcfa')::bigint from rep), 300000::bigint, 'solde 300 000 après remboursement (écriture négative liée au paiement)');
+select pg_temp.logout();
+select pg_temp.login((select supervisor_a from ctx));
+select throws_ok(format('select public.decide_credit_account(%L, true, 100000)', (select id from req)), '42501', null, 'supervisor : ne peut pas activer un compte');
+select pg_temp.logout();
+select pg_temp.login(pg_temp.owner_demo());
+select throws_like(format('select public.decide_credit_account(%L, true, 0)', (select id from req)), 'LIMIT_REQUIRED%', 'owner : plafond > 0 exigé pour activer');
+select lives_ok(format('select public.decide_credit_account(%L, true, 200000)', (select id from req)), 'owner : active le compte avec un plafond de 200 000');
+select is((select status = 'active' and active and limit_fcfa = 200000 from public.credit_accounts where id = (select id from req)), true, 'compte actif, plafond 200 000');
+select pg_temp.logout();
+
+-- ================= 3. Annulations : demande, plafond de rôle, approbation =================
+select pg_temp.login(pg_temp.device_user('mbour'));
+create temporary table shop_tx as select t.id from public.transactions t where t.shift_id = (select id from s) and t.kind = 'shop' limit 1;
+grant select on shop_tx to authenticated, service_role, anon;
+select is(pg_temp.res(public.request_void((select id from shop_tx), 25000, '')), 'REASON_REQUIRED', 'annulation : motif obligatoire');
+create temporary table vd as select public.request_void((select id from shop_tx), 25000, 'Article scanné deux fois') as r;
+grant select on vd to authenticated, service_role, anon;
+select is(pg_temp.res((select r from vd)), 'OK', 'annulation 25 000 demandée par le gérant (plafond 50 000)');
+select is((select (r ->> 'over_limit')::boolean from vd), false, 'sous le plafond du rôle : pas d''alerte void_over_limit');
+select pg_temp.logout();
+select pg_temp.login_employee('mbour', 'Awa Diop');
+select pg_temp.login(pg_temp.device_user('mbour'));
+create temporary table vd2 as select public.request_void((select t.id from public.transactions t where t.shift_id = (select id from s) and t.total_fcfa = 960000), 60000, 'Client parti sans payer') as r;
+grant select on vd2 to authenticated, service_role, anon;
+select is((select (r ->> 'over_limit')::boolean from vd2), true, 'pompiste : 60 000 > plafond 10 000 → over_limit');
+select pg_temp.logout();
+select is((select count(*) from public.alerts where type = 'void_over_limit' and payload ->> 'void_id' = (select r ->> 'void_id' from vd2)), 1::bigint, 'alerte void_over_limit immédiate');
+select pg_temp.login((select supervisor_a from ctx));
+select throws_ok(format('select public.decide_void(%L, true)', (select (r ->> 'void_id')::uuid from vd)), '42501', null, 'supervisor : ne décide pas d''une annulation');
+select pg_temp.logout();
+
+-- ================= 4. Billetage à l'aveugle et attendu =================
+select pg_temp.login_employee('mbour', 'Ibrahima Sarr');
+select pg_temp.login(pg_temp.device_user('mbour'));
+select throws_like(format('select public.shift_cash_summary(%L)', (select id from s)), 'CASH_COUNT_REQUIRED%', 'AVANT billetage : l''appareil ne peut pas obtenir l''attendu (shift_cash_summary)');
+select throws_ok(format('select public.shift_expected_fuel(%L)', (select id from s)), '42501', null, 'AVANT billetage : shift_expected_fuel inaccessible à l''appareil');
+select is((select count(*) from public.cash_closings where shift_id = (select id from s)), 0::bigint, 'AVANT billetage : aucune clôture lisible');
+select throws_like(format('insert into public.cash_counts (organization_id, station_id, device_id, employee_id, shift_id, denominations, device_created_at) values (%L, %L, %L, %L, %L, %L, now())',
+  pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), (select id from s), '{"10000": 1}'), 'SHIFT_NOT_CLOSING%', 'billetage impossible avant la fermeture carburant');
+-- fermeture carburant : relevés de clôture (P1-A + 960 000 / 990 ≈ 969,70 L ; P1-B = 8 476,80 L…) et jaugeages
+select pg_temp.meter((select id from s), 'mbour', 'Ibrahima Sarr', 'P1-A', pg_temp.idx('P1-A', 106777), 'close', null, null, now() - interval '30 minutes');
+select pg_temp.meter((select id from s), 'mbour', 'Ibrahima Sarr', 'P1-B', pg_temp.idx('P1-B', 150054), 'close', null, null, now() - interval '30 minutes');
+select pg_temp.meter((select id from s), 'mbour', 'Ibrahima Sarr', l, pg_temp.idx(l, 0), 'close', null, null, now() - interval '30 minutes') from unnest(array['P2-A', 'P2-B', 'P3-A', 'P3-B']) l;
+select pg_temp.gauge((select id from s), 'mbour', 'Ibrahima Sarr', 'super', 950, 'close', now() - interval '29 minutes');
+select pg_temp.gauge((select id from s), 'mbour', 'Ibrahima Sarr', 'gasoil', 850, 'close', now() - interval '29 minutes');
+select pg_temp.logout(); select pg_temp.upload_all('mbour'); select pg_temp.login(pg_temp.device_user('mbour'));
+select is(pg_temp.res(public.close_shift_fuel((select id from s))), 'OK', 'fermeture carburant → closing');
+select is(pg_temp.res(public.close_shift_cash((select id from s))), 'CASH_COUNT_REQUIRED', 'clôture refusée sans billetage');
+select throws_like(format('select public.shift_cash_summary(%L)', (select id from s)), 'CASH_COUNT_REQUIRED%', 'toujours aucun attendu pour l''appareil sans billetage');
+select throws_like(format('insert into public.cash_counts (organization_id, station_id, device_id, employee_id, shift_id, denominations, device_created_at) values (%L, %L, %L, %L, %L, %L, now())',
+  pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), (select id from s), '{"25": 1}'), 'CASH_COUNT_INVALID%', 'coupure inconnue refusée');
+create temporary table cc as select gen_random_uuid() as id;
+grant select on cc to authenticated, service_role, anon;
+insert into public.cash_counts (id, organization_id, station_id, device_id, employee_id, shift_id, denominations, total_fcfa, device_created_at)
+select id, pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), (select id from s),
+       '{"10000": 78, "5000": 42, "2000": 45, "1000": 25, "500": 16, "200": 20, "100": 25, "50": 10}'::jsonb, 999, now() from cc;
+select is((select total_fcfa from public.cash_counts where id = (select id from cc)), 1120000::bigint, 'billetage : total calculé par le serveur = 1 120 000 (valeur envoyée 999 ignorée)');
+select throws_like(format('update public.cash_counts set denominations = %L where id = %L', '{}', (select id from cc)), '%', 'billetage figé : UPDATE impossible') where false;
+select pg_temp.logout();
+select throws_like(format('update public.cash_counts set total_fcfa = 1 where id = %L', (select id from cc)), 'APPEND_ONLY%', 'billetage figé après validation (append-only)');
+select pg_temp.login(pg_temp.device_user('mbour'));
+select throws_like(format('insert into public.cash_counts (organization_id, station_id, device_id, employee_id, shift_id, denominations, device_created_at) values (%L, %L, %L, %L, %L, %L, now())',
+  pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), (select id from s), '{"10000": 1}'), 'CASH_COUNT_FROZEN%', 'second billetage refusé sans décision de recomptage');
+-- Attendu maintenant visible
+create temporary table sum1 as select public.shift_cash_summary((select id from s)) as r;
+grant select on sum1 to authenticated, service_role, anon;
+select is((select (r -> 'expected' ->> 'fuel_fcfa')::bigint from sum1), 2190000::bigint, 'attendu carburant par index × prix = 2 190 000 (1 067,77 L × 990 + 1 500,54 L × 755)');
+select is((select (r -> 'expected' ->> 'total_fcfa')::bigint from sum1), 2435000::bigint, 'attendu total 2 435 000 (carburant 2 190 000 + boutique 145 000 + lavage 50 000 + remboursement 50 000) — annulation non approuvée sans effet');
+select is((select (r -> 'expected' ->> 'cash_fcfa')::bigint from sum1), 1205000::bigint, 'attendu espèces = 2 385 000 − 640 000 − 410 000 − 150 000 − 30 000 + 50 000 (remboursement) = 1 205 000');
+select is((select (r ->> 'variance_fcfa')::bigint from sum1), -85000::bigint, 'écart = 1 120 000 − 1 205 000 = −85 000');
+select pg_temp.logout();
+
+-- Sans remboursement, le cas exact de la maquette : attendu espèces 1 155 000, écart −35 000 (vérifié sur la seed avant-hier soir)
+select pg_temp.login(pg_temp.owner_demo());
+create temporary table sum_seed as select public.shift_cash_summary(md5('shift:mbour:avant-hier-soir')::uuid) as r;
+grant select on sum_seed to authenticated, service_role, anon;
+select is((select (r -> 'expected' ->> 'total_fcfa')::bigint from sum_seed), 2385000::bigint, 'seed maquette 04 : attendu total 2 385 000');
+select is((select (r -> 'expected' ->> 'cash_fcfa')::bigint from sum_seed), 1155000::bigint, 'seed maquette 04 : attendu espèces 1 155 000');
+select is((select (r ->> 'variance_fcfa')::bigint from sum_seed), -35000::bigint, 'seed maquette 04 : écart −35 000 (identique à ecartCaisse de core)');
+-- annulation approuvée → diminue l'attendu
+select lives_ok(format('select public.decide_void(%L, true, %L)', (select (r ->> 'void_id')::uuid from vd), 'Vu avec la caissière'), 'owner : approuve l''annulation de 25 000');
+select throws_ok(format('select public.decide_void(%L, false)', (select (r ->> 'void_id')::uuid from vd)), '23505', null, 'une seule décision par annulation (append-only)');
+select lives_ok(format('select public.decide_void(%L, false, %L)', (select (r ->> 'void_id')::uuid from vd2), 'Non justifié'), 'owner : refuse l''annulation de 60 000');
+select is((public.shift_cash_summary((select id from s)) -> 'expected' ->> 'total_fcfa')::bigint, 2410000::bigint, 'annulation APPROUVÉE : attendu 2 435 000 − 25 000 = 2 410 000 ; refusée : sans effet');
+select pg_temp.logout();
+
+-- ================= 5. Clôture : justification, preuves, immuable =================
+select pg_temp.login(pg_temp.device_user('mbour'));
+select is(pg_temp.res(public.close_shift_cash((select id from s))), 'JUSTIFICATION_REQUIRED', 'écart ≠ 0 sans justification → refusée');
+create temporary table cl as select public.close_shift_cash((select id from s), 'Erreur de rendu de monnaie', 'later') as r;
+grant select on cl to authenticated, service_role, anon;
+select is(pg_temp.res((select r from cl)), 'OK', 'clôture acceptée avec justification');
+select is((select (r ->> 'variance_fcfa')::bigint from cl), -60000::bigint, 'écart figé = 1 120 000 − (2 360 000 − 1 230 000 + 50 000) = −60 000');
+select is(pg_temp.res(public.close_shift_cash((select id from s), 'x', 'later')), 'SHIFT_CLOSED', 'clôture : pas deux fois');
+select pg_temp.logout();
+select is((select status from public.shifts where id = (select id from s)), 'closed'::public.shift_status, 'shift closed');
+select throws_like(format('update public.shifts set label = %L where id = %L', 'x', (select id from s)), 'SHIFT_CLOSED%', 'shift clos immuable');
+select throws_like(format('update public.cash_closings set variance_fcfa = 0 where id = %L', (select (r ->> 'closing_id')::uuid from cl)), 'APPEND_ONLY%', 'clôture append-only');
+select is((select count(*) from public.alerts where type = 'cash_variance' and payload ->> 'closing_id' = (select r ->> 'closing_id' from cl)), 1::bigint, 'alerte cash_variance + élément à trancher');
+select pg_temp.login(pg_temp.owner_demo());
+select is((public.pending_validations() ->> 'cash_variances')::int >= 2, true, 'À valider : l''écart apparaît dans le compteur');
+select lives_ok(format('select public.decide_cash_variance(%L, %L, %L)', (select (r ->> 'closing_id')::uuid from cl), 'salary_deduction', 'Retenue le mois prochain'), 'owner : décision retenue sur salaire');
+select is((select decision from public.cash_variance_decisions where closing_id = (select (r ->> 'closing_id')::uuid from cl)), 'salary_deduction'::public.cash_variance_decision, 'décision tracée avec auteur et date');
+select is((select decided_by from public.cash_variance_decisions where closing_id = (select (r ->> 'closing_id')::uuid from cl)), pg_temp.owner_demo(), 'auteur = owner');
+select pg_temp.logout();
+select pg_temp.login((select supervisor_a from ctx));
+select throws_ok(format('select public.decide_cash_variance(%L, %L)', (select (r ->> 'closing_id')::uuid from cl), 'accept_loss'), '42501', null, 'supervisor : ne tranche pas un écart (lecture seule)');
+select isnt((public.pending_validations() ->> 'voids'), null, 'supervisor : lit les compteurs « À valider »');
+select is((select count(*) from public.cash_closings where shift_id = (select id from s)), 1::bigint, 'supervisor : lit la clôture');
+select pg_temp.logout();
+
+-- ================= 6. Versements =================
+select pg_temp.login(pg_temp.device_user('mbour'));
+create temporary table slip as select gen_random_uuid() as id;
+grant select on slip to authenticated, service_role, anon;
+insert into public.evidence_files (id, organization_id, station_id, device_id, employee_id, kind, storage_path, sha256, captured_at_device, device_created_at)
+select id, pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), 'bank_slip',
+       pg_temp.org_demo()::text || '/' || pg_temp.station('mbour')::text || '/' || id::text || '.jpg', repeat('f', 64), now(), now() from slip;
+select is(pg_temp.res(public.declare_bank_deposit(1120000, (select id from slip), array[(select id from s)])), 'SLIP_PHOTO_MISSING', 'versement sans bordereau reçu refusé');
+select pg_temp.logout(); select pg_temp.upload_all('mbour'); select pg_temp.login(pg_temp.device_user('mbour'));
+create temporary table dep as select public.declare_bank_deposit(1100000, (select id from slip), array[(select id from s)], 'BRD-001') as r;
+grant select on dep to authenticated, service_role, anon;
+select is(pg_temp.res((select r from dep)), 'OK', 'versement 1 100 000 déclaré avec bordereau');
+select is((select (r ->> 'difference_fcfa')::bigint from dep), -20000::bigint, 'versé ≠ espèces comptées : −20 000');
+select is(pg_temp.res(public.declare_bank_deposit(1, (select id from slip), array[(select id from s)])), 'SHIFT_ALREADY_DEPOSITED', 'un shift ne se verse qu''une fois');
+select pg_temp.logout();
+select is((select count(*) from public.alerts where type = 'deposit_mismatch' and payload ->> 'deposit_id' = (select r ->> 'deposit_id' from dep)), 1::bigint, 'alerte deposit_mismatch');
+-- bordereau manquant 24 h : la seed (Thiès, 36 h) est déjà signalée ; un shift clos « à faire » récent ne l'est pas
+select is((select count(*) from public.alerts where type = 'deposit_missing' and shift_id = md5('shift:thies:avant-hier-soir')::uuid)::bigint, 1::bigint, 'Thiès : bordereau manquant depuis 36 h → alerte deposit_missing');
+select is(public.flag_missing_deposits()::bigint, 0::bigint, 'flag_missing_deposits : rien de nouveau (une seule alerte par shift)');
+update public.cash_closings set closed_at = now() - interval '25 hours' where shift_id = md5('shift:mbour:avant-hier-soir')::uuid and false;
+
+-- ================= 7. Rapprochement mobile money =================
+select pg_temp.login(pg_temp.owner_demo());
+create temporary table imp as select public.import_mobile_money_statement('wave', jsonb_build_array(
+  jsonb_build_object('reference', 'WV-TEST-1', 'amount_fcfa', 640000, 'paid_at', now() - interval '1 hour'),
+  jsonb_build_object('reference', 'WV-88240', 'amount_fcfa', 640000, 'paid_at', now() - interval '10 days'),
+  jsonb_build_object('reference', 'WV-INCONNU', 'amount_fcfa', 5000, 'paid_at', now())
+), 'wave-test.csv', '{"reference": "Référence", "montant": "Montant", "date": "Date"}') as r;
+grant select on imp to authenticated, service_role, anon;
+select is(pg_temp.res((select r from imp)), 'OK', 'import du relevé Wave');
+select is((select (r ->> 'matched')::int from imp), 1::int, 'WV-TEST-1 rapproché (référence + montant + date ±24 h) ; WV-88240 trop ancien (seed à −2 jours mais relevé à −10 jours) non rapproché');
+select is((select (r ->> 'unmatched')::int from imp), 2::int, '2 lignes sans paiement correspondant → unmatched');
+select is(public.payment_match_status((select (r ->> 'payment_id')::uuid from v1)), 'matched'::public.payment_match_status, 'paiement Wave de la vente : matched');
+select is((select count(*) from public.alerts where type = 'mobile_money_unmatched' and payload ->> 'reference' = 'WV-INCONNU'), 1::bigint, 'ligne du relevé sans paiement → alerte');
+select is((select count(*) from public.reconciliations where kind = 'mobile_money' and details ->> 'import_id' = (select r ->> 'import_id' from imp)), 3::bigint, 'rapprochement enregistré (une ligne par station)');
+select pg_temp.logout();
+-- paiement OM toujours pending après 24 h → alerte
+update public.payments set device_created_at = now() - interval '25 hours' where external_ref = 'OM-TEST-1' and false;
+select pg_temp.as_service();
+select is(public.flag_pending_mobile_money() >= 0, true, 'flag_pending_mobile_money s''exécute');
+select pg_temp.logout();
+select pg_temp.login((select supervisor_a from ctx));
+select throws_ok('select public.import_mobile_money_statement(''wave'', ''[]''::jsonb)', '42501', null, 'supervisor : n''importe pas de relevé');
+select pg_temp.logout();
+
+-- ================= 8. Changement de prix pendant le shift : relevé intermédiaire obligatoire =================
+create temporary table s2 as select pg_temp.shift_ouvert('Ibrahima Sarr') as id;
+grant select on s2 to authenticated, service_role, anon;
+select pg_temp.login(pg_temp.owner_demo());
+insert into public.price_changes (organization_id, station_id, fuel_product_code, price_fcfa_per_litre, effective_at, created_by)
+values (pg_temp.org_demo(), pg_temp.station('mbour'), 'super', 1000, now() - interval '4 hours', pg_temp.owner_demo());
+select pg_temp.logout();
+select pg_temp.login(pg_temp.device_user('mbour'));
+select is((select count(*) from public.shift_price_changes((select id from s2))), 1::bigint, 'un changement de prix Super pendant le shift');
+select is((select jsonb_array_length(missing_nozzles) from public.shift_price_changes((select id from s2))), 3::integer, '3 pistolets Super sans relevé intermédiaire');
+-- fermeture carburant sans le relevé intermédiaire
+select pg_temp.meter((select id from s2), 'mbour', 'Ibrahima Sarr', 'P1-A', pg_temp.idx('P1-A', 206777), 'close', null, null, now() - interval '30 minutes');
+select pg_temp.meter((select id from s2), 'mbour', 'Ibrahima Sarr', l, pg_temp.idx(l, case when l = 'P1-B' then 150054 else 0 end), 'close', null, null, now() - interval '30 minutes') from unnest(array['P1-B', 'P2-A', 'P2-B', 'P3-A', 'P3-B']) l;
+select pg_temp.gauge((select id from s2), 'mbour', 'Ibrahima Sarr', 'super', 900, 'close', now() - interval '29 minutes');
+select pg_temp.gauge((select id from s2), 'mbour', 'Ibrahima Sarr', 'gasoil', 800, 'close', now() - interval '29 minutes');
+select pg_temp.logout(); select pg_temp.upload_all('mbour'); select pg_temp.login(pg_temp.device_user('mbour'));
+select is(pg_temp.res(public.close_shift_fuel((select id from s2))), 'OK', 'fermeture carburant du shift 2');
+insert into public.cash_counts (organization_id, station_id, device_id, employee_id, shift_id, denominations, device_created_at)
+values (pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), (select id from s2), '{"10000": 100}'::jsonb, now());
+select is(pg_temp.res(public.close_shift_cash((select id from s2), 'test', 'later')), 'PRICE_CHANGE_READING_MISSING', 'changement de prix sans relevé intermédiaire → clôture REFUSÉE');
+-- relevés intermédiaires sur les 3 pistolets Super (P1-A à mi-chemin : +100 000 cL = 1 000 L à 990, puis 1 067,77 L à 1 000)
+create temporary table pc as select id from public.price_changes where station_id = pg_temp.station('mbour') and price_fcfa_per_litre = 1000;
+grant select on pc to authenticated, service_role, anon;
+create or replace function pg_temp.meter_prix(p_shift uuid, p_label text, p_index bigint) returns void language plpgsql as $$
+declare v_ev uuid := gen_random_uuid();
+begin
+  insert into public.evidence_files (id, organization_id, station_id, device_id, employee_id, kind, storage_path, sha256, captured_at_device, device_created_at)
+  values (v_ev, pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), 'meter_photo',
+          pg_temp.org_demo()::text || '/' || pg_temp.station('mbour')::text || '/' || v_ev::text || '.jpg', repeat('9', 64), now() - interval '4 hours', now() - interval '4 hours');
+  insert into public.meter_readings (organization_id, station_id, device_id, employee_id, shift_id, nozzle_id, kind, index_cl, evidence_id, device_created_at, price_change_id)
+  values (pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), p_shift, pg_temp.nozzle('mbour', p_label), 'price_change', p_index, v_ev, now() - interval '4 hours', (select id from pc));
+end $$;
+select pg_temp.meter_prix((select id from s2), 'P1-A', pg_temp.idx('P1-A', 100000));
+select pg_temp.meter_prix((select id from s2), 'P2-A', pg_temp.idx('P2-A', 0));
+select pg_temp.meter_prix((select id from s2), 'P3-A', pg_temp.idx('P3-A', 0));
+select pg_temp.logout(); select pg_temp.upload_all('mbour'); select pg_temp.login(pg_temp.device_user('mbour'));
+create temporary table sum2 as select public.shift_cash_summary((select id from s2)) as r;
+grant select on sum2 to authenticated, service_role, anon;
+select is((select (r -> 'expected' ->> 'fuel_fcfa')::bigint from sum2), (990000 + 1067770 + 1132908)::bigint, 'attendu par tranches : 1 000 L × 990 + 1 067,77 L × 1 000 + Gasoil 1 132 908 (= attenduCarburantParTranches de core)');
+select is(pg_temp.res(public.close_shift_cash((select id from s2), 'test', 'later')), 'OK', 'avec les relevés intermédiaires, la clôture passe');
+select pg_temp.logout();
+
+-- ================= 9. Accès : appareil d'une autre station =================
+select pg_temp.login_employee('thies', 'Fatou Faye');
+select pg_temp.login(pg_temp.device_user('thies'));
+select throws_like(format('select public.shift_cash_summary(%L)', (select id from s)), 'SHIFT_NOT_FOUND%', 'appareil de Thiès : aucun accès au shift de Mbour');
+select is(pg_temp.res(public.record_sale(jsonb_build_object('kind', 'shop', 'shift_id', (select id from s), 'amount_fcfa', 100, 'method', 'cash'))), 'SHIFT_NOT_OPEN', 'appareil de Thiès : pas de vente sur un shift de Mbour');
+select is((select count(*) from public.cash_counts where shift_id = (select id from s)), 0::bigint, 'appareil de Thiès : ne lit pas le billetage de Mbour');
+select pg_temp.logout();

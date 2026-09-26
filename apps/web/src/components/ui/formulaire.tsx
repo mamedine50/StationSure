@@ -131,5 +131,11 @@ export function Message({ etat }: { etat: EtatFormulaire }) {
 }
 
 function traduireSiCle(texte: string): string {
-  return /^[a-zA-Z]+(\.[a-zA-Z_]+)+$/.test(texte) ? t(texte) : texte;
+  const [cle, ...args] = texte.split('|');
+  if (cle && /^[a-zA-Z]+(\.[a-zA-Z_]+)+$/.test(cle)) {
+    if (cle === 'cashPage.imported')
+      return t(cle, { matched: args[0] ?? '0', unmatched: args[1] ?? '0' });
+    return t(cle);
+  }
+  return texte;
 }

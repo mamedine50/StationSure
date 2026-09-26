@@ -46,7 +46,7 @@ export async function chargerShiftCourant(): Promise<Shift | null> {
   const { data } = await supabase
     .from('shifts')
     .select('id, status, opened_by, opened_at, label, fuel_closed_at')
-    .in('status', ['opening', 'open'])
+    .in('status', ['opening', 'open', 'closing'])
     .order('opened_at', { ascending: false })
     .limit(1)
     .maybeSingle();

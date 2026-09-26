@@ -16,9 +16,9 @@ insert into public.transactions (id, organization_id, station_id, device_id, emp
 select tx, pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'),
        shift, 'fuel', 25000, now() from ctx;
 
-insert into public.payments (id, organization_id, station_id, device_id, employee_id, transaction_id, method, amount_fcfa, device_created_at)
+insert into public.payments (id, organization_id, station_id, device_id, employee_id, transaction_id, method, amount_fcfa, external_ref, device_created_at)
 select payment, pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'),
-       tx, 'wave', 25000, now() from ctx;
+       tx, 'wave', 25000, 'WV-TEST-050', now() from ctx;
 
 insert into public.products (id, organization_id, category, name) values (md5('product:test')::uuid, pg_temp.org_demo(), 'shop', 'Eau 1,5 L');
 insert into public.inventory_movements (id, organization_id, station_id, device_id, employee_id, product_id, kind, quantity, device_created_at)

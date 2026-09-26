@@ -146,7 +146,7 @@ select is((select count(*) from public.stations), 1::bigint, 'appareil Mbour : v
 select is((select count(*) from public.shifts where station_id = pg_temp.station('thies')), 0::bigint, 'appareil Mbour : aucun shift de Thiès');
 select is((select count(*) from public.shifts where id = (select shift_mbour from ctx)), 1::bigint, 'appareil Mbour : voit son shift');
 select is((select count(*) from public.meter_readings where station_id = pg_temp.station('thies')), 0::bigint, 'appareil Mbour : aucun relevé de Thiès');
-select is((select count(*) from public.transactions), 0::bigint, 'appareil Mbour : aucune transaction de Thiès');
+select is((select count(*) from public.transactions where station_id = pg_temp.station('thies')), 0::bigint, 'appareil Mbour : aucune transaction de Thiès');
 select is((select count(*) from public.employees), 6::bigint, 'appareil Mbour : voit les 6 employés de Mbour');
 select is((select count(*) from public.nozzles), 6::bigint, 'appareil Mbour : voit ses 6 pistolets');
 select is((select count(*) from public.current_fuel_prices), 2::bigint, 'appareil Mbour : lit les prix en vigueur de sa station');

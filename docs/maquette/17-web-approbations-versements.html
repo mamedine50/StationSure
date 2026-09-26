@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StationSûre — Approbations et versements</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0E1311;font-family:'IBM Plex Sans',sans-serif;color:#EEF2EF}
+button,input{font-family:inherit}
+a{color:#F2A541}a:hover{color:#F7C47E}
+</style>
+</head>
+<body>
+<div style="width: 1440px; height: 900px; display: flex; background: #0E1311; color: #EEF2EF; font-family: 'IBM Plex Sans', sans-serif">
+  <nav style="width: 232px; flex-shrink: 0; box-sizing: border-box; padding: 24px 14px; display: flex; flex-direction: column; gap: 4px; background: #111816; border-right: 1px solid #2A3530">
+    <div style="display: flex; align-items: center; gap: 8px; padding: 0 10px 20px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A541" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h12"></path><path d="M4 9h10"></path><path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"></path><path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0V9.83a2 2 0 0 0-.59-1.42L18 5"></path></svg>
+      <span style="font-family: Sora, sans-serif; font-weight: 700; font-size: 15px">StationSûre</span>
+    </div>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Tableau de bord</a>
+    <a href="#" style="display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; border-radius: 10px; background: #221C10; color: #F2A541; font-size: 14px; font-weight: 600; text-decoration: none"><span>À valider</span><span style="min-width: 22px; height: 22px; border-radius: 11px; background: #F2A541; color: #1A1206; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center">5</span></a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Stations</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Carburant et cuves</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Caisse et shifts</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Crédit clients</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Stock</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Employés</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Alertes</a>
+    <a href="#" style="margin-top: auto; display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #A3B0AA; font-size: 14px; text-decoration: none">Paramètres</a>
+  </nav>
+
+  <main style="flex-grow: 1; min-width: 0; box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <h1 style="margin: 0; font-family: Sora, sans-serif; font-size: 26px; font-weight: 700">À valider</h1>
+      <span style="font-size: 14px; color: #A3B0AA">Tout ce qui touche à l'argent sans preuve automatique passe par vous. Chaque décision est tracée.</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; flex-direction: column; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+          <div style="display: flex; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #2A3530"><span style="font-weight: 600; font-size: 15px">Écarts de caisse à trancher</span><span style="font-size: 13px; color: #A3B0AA">1</span></div>
+          <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px 18px">
+            <div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-weight: 600">Mbour · shift soir 25/09 · I. Sarr</span><span style="font-family: 'IBM Plex Mono', monospace; color: #FF7A66; font-weight: 600">−35 000</span></div>
+            <span style="font-size: 13px; color: #C9D3CE">Justification : « Erreur de rendu de monnaie sur un gros billet. »</span>
+            <div style="display: flex; gap: 8px">
+              <button style="height: 38px; padding: 0 14px; border-radius: 10px; background: transparent; border: 1px solid #4A5852; color: #EEF2EF; font-size: 13px">Accepter la perte</button>
+              <button style="height: 38px; padding: 0 14px; border-radius: 10px; background: #F2A541; border: none; color: #1A1206; font-size: 13px; font-weight: 600">Retenue sur salaire</button>
+              <button style="height: 38px; padding: 0 14px; border-radius: 10px; background: transparent; border: 1px solid #4A5852; color: #EEF2EF; font-size: 13px">Demander un recomptage</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+          <div style="display: flex; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #2A3530"><span style="font-weight: 600; font-size: 15px">Annulations demandées</span><span style="font-size: 13px; color: #A3B0AA">2</span></div>
+          <div style="display: grid; grid-template-columns: 1.4fr 0.8fr 1.4fr auto; gap: 10px; align-items: center; padding: 12px 18px; border-bottom: 1px solid #2A3530; font-size: 13px">
+            <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Boutique · ticket 1043</span><span style="font-size: 12px; color: #A3B0AA">Mbour · Khady Fall · 15:08</span></span>
+            <span style="font-family: 'IBM Plex Mono', monospace">25 000</span>
+            <span style="color: #C9D3CE">Motif : erreur de saisie (article scanné deux fois)</span>
+            <span style="display: flex; gap: 6px"><button style="height: 34px; padding: 0 10px; border-radius: 8px; background: transparent; border: 1px solid #4A5852; color: #EEF2EF; font-size: 12px">Refuser</button><button style="height: 34px; padding: 0 10px; border-radius: 8px; background: #F2A541; border: none; color: #1A1206; font-size: 12px; font-weight: 600">Approuver</button></span>
+          </div>
+          <div style="display: grid; grid-template-columns: 1.4fr 0.8fr 1.4fr auto; gap: 10px; align-items: center; padding: 12px 18px; font-size: 13px">
+            <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Carburant · vente 8812</span><span style="font-size: 12px; color: #A3B0AA">Kaolack · Cheikh Mbaye · 11:52</span></span>
+            <span style="font-family: 'IBM Plex Mono', monospace">10 000</span>
+            <span style="color: #C9D3CE">Motif : client parti sans payer</span>
+            <span style="display: flex; gap: 6px"><button style="height: 34px; padding: 0 10px; border-radius: 8px; background: transparent; border: 1px solid #4A5852; color: #EEF2EF; font-size: 12px">Refuser</button><button style="height: 34px; padding: 0 10px; border-radius: 8px; background: #F2A541; border: none; color: #1A1206; font-size: 12px; font-weight: 600">Approuver</button></span>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+          <div style="display: flex; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #2A3530"><span style="font-weight: 600; font-size: 15px">Comptes crédit demandés</span><span style="font-size: 13px; color: #A3B0AA">1</span></div>
+          <div style="display: grid; grid-template-columns: 1.4fr 1fr auto; gap: 10px; align-items: center; padding: 12px 18px; font-size: 13px">
+            <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Garage Diallo</span><span style="font-size: 12px; color: #A3B0AA">Mbour · demandé par I. Sarr · 10:12 · 77 000 00 00</span></span>
+            <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #A3B0AA">Plafond accordé (FCFA)
+              <input value="200 000" style="height: 36px; box-sizing: border-box; padding: 0 10px; border-radius: 8px; background: #0E1311; border: 1px solid #4A5852; color: #EEF2EF; font-family: 'IBM Plex Mono', monospace; font-size: 14px">
+            </label>
+            <span style="display: flex; gap: 6px"><button style="height: 34px; padding: 0 10px; border-radius: 8px; background: transparent; border: 1px solid #4A5852; color: #EEF2EF; font-size: 12px">Refuser</button><button style="height: 34px; padding: 0 10px; border-radius: 8px; background: #F2A541; border: none; color: #1A1206; font-size: 12px; font-weight: 600">Ouvrir le compte</button></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+        <div style="display: flex; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #2A3530"><span style="font-weight: 600; font-size: 15px">Versements bancaires</span><a href="#" style="font-size: 13px">Historique</a></div>
+        <div style="display: grid; grid-template-columns: 1.3fr 1fr 1fr 64px; gap: 10px; padding: 10px 18px; font-size: 11px; letter-spacing: 1px; color: #A3B0AA; border-bottom: 1px solid #2A3530"><span>SHIFT</span><span style="text-align: right">ESPÈCES COMPTÉES</span><span style="text-align: right">VERSÉ</span><span style="text-align: center">BORDEREAU</span></div>
+        <div style="display: grid; grid-template-columns: 1.3fr 1fr 1fr 64px; gap: 10px; align-items: center; min-height: 64px; padding: 0 18px; font-size: 13px; border-bottom: 1px solid #2A3530">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Mbour · soir 25/09</span><span style="font-size: 12px; color: #A3B0AA">I. Sarr</span></span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">1 120 000</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; color: #F2A541">en attente</span>
+          <span style="justify-self: center; font-size: 12px; color: #F2A541">à faire</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.3fr 1fr 1fr 64px; gap: 10px; align-items: center; min-height: 64px; padding: 0 18px; font-size: 13px; border-bottom: 1px solid #2A3530">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Mbour · matin 25/09</span><span style="font-size: 12px; color: #A3B0AA">A. Diop</span></span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">860 000</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; color: #4CC38A">860 000</span>
+          <span style="justify-self: center; width: 36px; height: 44px; border-radius: 4px; background: #E9E4D8; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2F6B4C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.3fr 1fr 1fr 64px; gap: 10px; align-items: center; min-height: 64px; padding: 0 18px; font-size: 13px; border-bottom: 1px solid #2A3530; background: #2A1512">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Thiès · soir 24/09</span><span style="font-size: 12px; color: #E8C9C3">F. Faye</span></span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">940 000</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; color: #FF7A66">940 000 ?</span>
+          <span style="justify-self: center; font-size: 12px; color: #FF7A66; font-weight: 600">manquant</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.3fr 1fr 1fr 64px; gap: 10px; align-items: center; min-height: 64px; padding: 0 18px; font-size: 13px; border-bottom: 1px solid #2A3530">
+          <span style="display: flex; flex-direction: column"><span style="font-weight: 600">Kaolack · soir 24/09</span><span style="font-size: 12px; color: #A3B0AA">C. Mbaye</span></span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace">710 000</span>
+          <span style="text-align: right; font-family: 'IBM Plex Mono', monospace; color: #FF7A66">690 000</span>
+          <span style="justify-self: center; width: 36px; height: 44px; border-radius: 4px; background: #E9E4D8; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9A3A2C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5"></path><path d="M12 16h.01"></path></svg></span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 18px; font-size: 13px; color: #C9D3CE">
+          <span>Kaolack 24/09 : il manque <b style="color: #FF7A66">20 000 FCFA</b> entre les espèces comptées et le bordereau.</span>
+          <span>Thiès 24/09 : aucun bordereau photographié depuis 36 h.</span>
+          <div style="display: flex; gap: 8px; padding-top: 4px">
+            <button style="height: 38px; padding: 0 14px; border-radius: 10px; background: #F2A541; border: none; color: #1A1206; font-size: 13px; font-weight: 600">Relancer par WhatsApp</button>
+            <button style="height: 38px; padding: 0 14px; border-radius: 10px; background: transparent; border: 1px solid #4A5852; color: #EEF2EF; font-size: 13px">Exporter pour le comptable</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

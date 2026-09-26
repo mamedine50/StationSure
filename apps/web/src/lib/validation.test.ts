@@ -1,9 +1,12 @@
-import { lireBaremageCsv, validerBaremage } from '@stationsure/core';
+import { lireBaremageCsv, lireReleveMobileMoney, validerBaremage } from '@stationsure/core';
 import { describe, expect, it } from 'vitest';
 
 import {
   schemaBaremage,
   schemaCuve,
+  schemaDecisionCompteCredit,
+  schemaDecisionEcart,
+  schemaImportReleve,
   schemaPrix,
   premiereErreur,
   schemaDefinirPin,
@@ -163,5 +166,75 @@ describe('configuration carburant (phase 3)', () => {
         effectiveAt: 'demain',
       }).success,
     ).toBe(false);
+  });
+});
+
+describe('caisse et approbations (phase 4)', () => {
+  it('décision sur un écart : décision connue, note facultative', () => {
+    expect(
+      schemaDecisionEcart.safeParse({ closingId: UUID, decision: 'salary_deduction', note: '' })
+        .success,
+    ).toBe(true);
+    const r = schemaDecisionEcart.safeParse({ closingId: UUID, decision: 'pardon' });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(premiereErreur(r)).toBe('validation.decision');
+  });
+  it('compte crédit : plafond > 0 pour ouvrir, 0 accepté pour refuser', () => {
+    expect(
+      schemaDecisionCompteCredit.safeParse({
+        accountId: UUID,
+        approuver: 'true',
+        plafond: '200000',
+      }).success,
+    ).toBe(true);
+    expect(
+      schemaDecisionCompteCredit.safeParse({ accountId: UUID, approuver: 'false', plafond: '0' })
+        .success,
+    ).toBe(true);
+    const r = schemaDecisionCompteCredit.safeParse({
+      accountId: UUID,
+      approuver: 'true',
+      plafond: '0',
+    });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(premiereErreur(r)).toBe('validation.amount');
+  });
+  it('import de relevé : mapping et lignes normalisées par core', () => {
+    const csv = 'Date;Référence;Montant\n25/09/2026 16:42;WV-1;15 000\n25/09/2026 17:00;;10';
+    const lu = lireReleveMobileMoney(csv, {
+      reference: 'Référence',
+      montant: 'Montant',
+      date: 'Date',
+      formatDate: 'dmy',
+    });
+    expect(lu.lignes).toHaveLength(1);
+    const r = schemaImportReleve.safeParse({
+      operateur: 'wave',
+      fichier: 'wave.csv',
+      mapping: JSON.stringify({
+        reference: 'Référence',
+        montant: 'Montant',
+        date: 'Date',
+        formatDate: 'dmy',
+      }),
+      lignes: JSON.stringify(
+        lu.lignes.map((l) => ({
+          reference: l.reference,
+          amount_fcfa: l.montantFcfa,
+          paid_at: l.payeLe.toISOString(),
+          raw: l.brut,
+        })),
+      ),
+    });
+    expect(r.success).toBe(true);
+    if (r.success)
+      expect(r.data.lignes[0]).toMatchObject({ reference: 'WV-1', amount_fcfa: 15000 });
+    const mauvais = schemaImportReleve.safeParse({
+      operateur: 'wave',
+      mapping: '{"reference":"x"}',
+      lignes: '[]',
+    });
+    expect(mauvais.success).toBe(false);
+    if (!mauvais.success) expect(premiereErreur(mauvais)).toBe('validation.mapping');
   });
 });

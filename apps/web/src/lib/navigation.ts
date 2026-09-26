@@ -3,6 +3,7 @@ import type { Route } from 'next';
 /** Clés de page : identiques aux clés `nav.*` et `empty.*` de @stationsure/i18n. */
 export type ClePage =
   | 'dashboard'
+  | 'validate'
   | 'stations'
   | 'fuel'
   | 'cash'
@@ -25,6 +26,7 @@ export interface EntreeNavigation {
 /** Ordre identique à la barre latérale de la maquette 05, avec « Stock » ajouté. */
 export const NAVIGATION: readonly EntreeNavigation[] = [
   { cle: 'dashboard', href: '/', phase: 5 },
+  { cle: 'validate', href: '/a-valider', phase: 4 },
   { cle: 'stations', href: '/stations', phase: 1 },
   { cle: 'fuel', href: '/carburant', phase: 3 },
   { cle: 'cash', href: '/caisse', phase: 4 },

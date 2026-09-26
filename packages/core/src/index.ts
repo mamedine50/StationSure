@@ -10,3 +10,5 @@ export * from './format';
 export * from './pin';
 export * from './baremage';
 export * from './livraison';
+export * from './cloture';
+export * from './mobile-money';

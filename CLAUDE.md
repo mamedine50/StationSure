@@ -87,6 +87,24 @@ error}` au lieu de lever une exception : une exception annulerait l'écriture du
   `src/lib/session.tsx` ; inactivité `INACTIVITE_MINUTES` (10) dans `src/lib/env.ts`.
 - Hors ligne : rien d'implémenté, options dans `docs/decisions/offline-pin.md`.
 
+## Caisse et clôture (phase 4)
+
+- Vente = `record_sale(jsonb)` (jamais d'insert direct de paiement depuis l'app). Wave / OM : référence
+  obligatoire et unique par opérateur ; carte : 4 derniers chiffres seulement.
+- Attendu d'un shift = `shift_cash_summary` (serveur). Un appareil ne l'obtient qu'après un
+  `cash_counts` validé (`CASH_COUNT_REQUIRED`) ; `shift_expected_fuel` est réservé aux membres.
+  Changement de prix pendant un shift → relevé `price_change` obligatoire sinon `close_shift_cash`
+  refuse (`PRICE_CHANGE_READING_MISSING`).
+- Seule une annulation **approuvée** (`void_approvals`) diminue l'attendu ; les comptes crédit
+  demandés par le gérant sont `pending` / plafond 0 jusqu'à `decide_credit_account`.
+- Clôture = `close_shift_cash` → `cash_closings` + shift `closed` immuable ; écart → alerte +
+  `cash_variance_decisions`. Versements = `declare_bank_deposit` ; pg_cron : `flag_missing_deposits`,
+  `flag_pending_mobile_money`.
+- Rapprochement mobile money : le web normalise le CSV (`lireReleveMobileMoney` + mapping), la base
+  rapproche (`import_mobile_money_statement`). Interface `AdaptateurReleveMarchand` pour l'API.
+- Règles core ↔ SQL : `attenduCarburantParTranches`, `montantAttenduShift`, `montantAttenduEspeces`,
+  `totalBilletage` (packages/core/src/cloture.ts).
+
 ## Cycle carburant (phase 3)
 
 - Toute opération mobile passe par : photo caméra (jamais la galerie) → `creerPreuve()` (compression
@@ -116,17 +134,17 @@ error}` au lieu de lever une exception : une exception annulerait l'écriture du
 
 ## Phases
 
-| Phase | Contenu                                                                                                                                           | État                                  |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| 0     | Fondations : monorepo, apps vides stylées, `packages/core` testé                                                                                  | **faite**                             |
-| 1     | Schéma Supabase : tables métier (hors garage / Car Wash), RLS, garde-fous, tests pgTAP, seed de démo, types générés                               | **faite**                             |
-| 2     | Auth propriétaire, onboarding, jumelage des tablettes, PIN et sessions employé — écran 01                                                         | **faite** (mode kiosque : plus tard)  |
-| 3     | Cycle carburant : configuration web (écran 13), relevés photo (02), jaugeage (11), passation à l'aveugle (03), livraison (12), rapprochement cuve | **faite** (offline complet : phase 6) |
-| 4     | Clôture de caisse : attendu vs encaissé (espèces, carte, Wave, OM, crédit), justification, versements — écran 04                                  | à venir                               |
-| 5     | Dashboard propriétaire et rapport WhatsApp / SMS — écrans 05 et 06                                                                                | à venir                               |
-| 6     | Offline-first (PowerSync ou WatermelonDB), prix verrouillés, livraisons et barémage en production _(proposition, ordre à valider)_                | à venir                               |
-| 7     | Boutique : POS, codes-barres, comptage surprise à l'aveugle — écran 07                                                                            | à venir                               |
-| 8     | Garage (ordres de travail) et Car Wash (tickets) — écrans 08 et 09                                                                                | à venir                               |
-| 9     | Stock unifié et ratios de contrôle — écran 10                                                                                                     | à venir                               |
+| Phase | Contenu                                                                                                                                                                       | État                                  |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| 0     | Fondations : monorepo, apps vides stylées, `packages/core` testé                                                                                                              | **faite**                             |
+| 1     | Schéma Supabase : tables métier (hors garage / Car Wash), RLS, garde-fous, tests pgTAP, seed de démo, types générés                                                           | **faite**                             |
+| 2     | Auth propriétaire, onboarding, jumelage des tablettes, PIN et sessions employé — écran 01                                                                                     | **faite** (mode kiosque : plus tard)  |
+| 3     | Cycle carburant : configuration web (écran 13), relevés photo (02), jaugeage (11), passation à l'aveugle (03), livraison (12), rapprochement cuve                             | **faite** (offline complet : phase 6) |
+| 4     | Caisse : paiements (Wave/OM/carte/crédit), rapprochement mobile money, crédit client, annulations, billetage à l'aveugle, clôture, décisions, versements — écrans 04, 14 à 17 | **faite**                             |
+| 5     | Dashboard propriétaire et rapport WhatsApp / SMS — écrans 05 et 06                                                                                                            | à venir                               |
+| 6     | Offline-first (PowerSync ou WatermelonDB), prix verrouillés, livraisons et barémage en production _(proposition, ordre à valider)_                                            | à venir                               |
+| 7     | Boutique : POS, codes-barres, comptage surprise à l'aveugle — écran 07                                                                                                        | à venir                               |
+| 8     | Garage (ordres de travail) et Car Wash (tickets) — écrans 08 et 09                                                                                                            | à venir                               |
+| 9     | Stock unifié et ratios de contrôle — écran 10                                                                                                                                 | à venir                               |
 
 Ne commencer une phase que sur demande explicite.

@@ -134,6 +134,20 @@ PIN de démo (non triviaux, **local uniquement**) :
    employés de la station → PIN → accueil → « Changer d'employé ».
 4. Révocation : web › Appareils › Révoquer : la tablette revient à l'écran de jumelage.
 
+### Caisse et clôture (phase 4)
+
+Mobile (shift ouvert) : « Encaisser » (espèces, Wave / Orange Money avec référence, carte avec
+4 derniers chiffres), « Vente à crédit » (gérant : compte actif, plafond, plaque, photo du bon ;
+demande de compte ; remboursement), « Demander une annulation ». Après « Fermer le shift » :
+« Clôturer la caisse » → billetage à l'aveugle (l'attendu n'est jamais affiché avant validation) →
+attendu / encaissé / écart → justification si écart → bordereau ou « à faire » → clôture définitive.
+« Versement bancaire » (gérant) : montant + photo du bordereau pour un ou plusieurs shifts clos.
+Web : « À valider » (écarts, annulations, comptes crédit, versements, export comptable), « Caisse et
+shifts » (liste, détail, import du relevé Wave / OM avec mapping des colonnes), « Crédit clients »
+(soldes, relevé exportable). Seed : shift soir de Mbour avec l'écart −35 000 de la maquette,
+Transports Ndiaye (500 000 / 320 000), demande « Garage Diallo », annulation en attente, bordereau
+manquant à Thiès.
+
 ### Cycle carburant (phase 3)
 
 Web : Carburant et cuves (owner) → cuves, barémage (import CSV `hauteur_mm;volume_l`, certificat

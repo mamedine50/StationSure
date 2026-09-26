@@ -13,7 +13,7 @@ export type Database = {
           payload: Json;
           severity: Database['public']['Enums']['alert_severity'];
           shift_id: string | null;
-          station_id: string;
+          station_id: string | null;
           type: Database['public']['Enums']['alert_type'];
         };
         Insert: {
@@ -25,7 +25,7 @@ export type Database = {
           payload?: Json;
           severity?: Database['public']['Enums']['alert_severity'];
           shift_id?: string | null;
-          station_id: string;
+          station_id?: string | null;
           type: Database['public']['Enums']['alert_type'];
         };
         Update: {
@@ -37,7 +37,7 @@ export type Database = {
           payload?: Json;
           severity?: Database['public']['Enums']['alert_severity'];
           shift_id?: string | null;
-          station_id?: string;
+          station_id?: string | null;
           type?: Database['public']['Enums']['alert_type'];
         };
         Relationships: [
@@ -99,6 +99,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      bank_deposit_shifts: {
+        Row: {
+          deposit_id: string;
+          organization_id: string;
+          shift_id: string;
+          station_id: string;
+        };
+        Insert: {
+          deposit_id: string;
+          organization_id: string;
+          shift_id: string;
+          station_id: string;
+        };
+        Update: {
+          deposit_id?: string;
+          organization_id?: string;
+          shift_id?: string;
+          station_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'bank_deposit_shifts_deposit_id_fkey';
+            columns: ['deposit_id'];
+            isOneToOne: false;
+            referencedRelation: 'bank_deposits';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'bank_deposit_shifts_shift_id_fkey';
+            columns: ['shift_id'];
+            isOneToOne: false;
+            referencedRelation: 'shifts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       bank_deposits: {
         Row: {
           amount_fcfa: number;
@@ -111,7 +147,7 @@ export type Database = {
           evidence_id: string;
           id: string;
           organization_id: string;
-          shift_id: string;
+          shift_id: string | null;
           station_id: string;
         };
         Insert: {
@@ -125,7 +161,7 @@ export type Database = {
           evidence_id: string;
           id?: string;
           organization_id: string;
-          shift_id: string;
+          shift_id?: string | null;
           station_id: string;
         };
         Update: {
@@ -139,7 +175,7 @@ export type Database = {
           evidence_id?: string;
           id?: string;
           organization_id?: string;
-          shift_id?: string;
+          shift_id?: string | null;
           station_id?: string;
         };
         Relationships: [
@@ -322,41 +358,295 @@ export type Database = {
           },
         ];
       };
+      cash_closings: {
+        Row: {
+          approved_voids_fcfa: number;
+          card_fcfa: number;
+          cash_count_id: string;
+          closed_at: string;
+          counted_cash_fcfa: number;
+          created_at: string;
+          credit_fcfa: number;
+          credit_repayments_fcfa: number;
+          deposit_mode: Database['public']['Enums']['deposit_mode'];
+          details: Json;
+          device_id: string;
+          employee_id: string;
+          expected_cash_fcfa: number;
+          expected_fuel_fcfa: number;
+          expected_garage_fcfa: number;
+          expected_shop_fcfa: number;
+          expected_total_fcfa: number;
+          expected_wash_fcfa: number;
+          id: string;
+          justification: string | null;
+          orange_money_fcfa: number;
+          organization_id: string;
+          shift_id: string;
+          station_id: string;
+          variance_fcfa: number;
+          wave_fcfa: number;
+        };
+        Insert: {
+          approved_voids_fcfa?: number;
+          card_fcfa?: number;
+          cash_count_id: string;
+          closed_at?: string;
+          counted_cash_fcfa: number;
+          created_at?: string;
+          credit_fcfa?: number;
+          credit_repayments_fcfa?: number;
+          deposit_mode: Database['public']['Enums']['deposit_mode'];
+          details?: Json;
+          device_id: string;
+          employee_id: string;
+          expected_cash_fcfa: number;
+          expected_fuel_fcfa: number;
+          expected_garage_fcfa?: number;
+          expected_shop_fcfa?: number;
+          expected_total_fcfa: number;
+          expected_wash_fcfa?: number;
+          id?: string;
+          justification?: string | null;
+          orange_money_fcfa?: number;
+          organization_id: string;
+          shift_id: string;
+          station_id: string;
+          variance_fcfa: number;
+          wave_fcfa?: number;
+        };
+        Update: {
+          approved_voids_fcfa?: number;
+          card_fcfa?: number;
+          cash_count_id?: string;
+          closed_at?: string;
+          counted_cash_fcfa?: number;
+          created_at?: string;
+          credit_fcfa?: number;
+          credit_repayments_fcfa?: number;
+          deposit_mode?: Database['public']['Enums']['deposit_mode'];
+          details?: Json;
+          device_id?: string;
+          employee_id?: string;
+          expected_cash_fcfa?: number;
+          expected_fuel_fcfa?: number;
+          expected_garage_fcfa?: number;
+          expected_shop_fcfa?: number;
+          expected_total_fcfa?: number;
+          expected_wash_fcfa?: number;
+          id?: string;
+          justification?: string | null;
+          orange_money_fcfa?: number;
+          organization_id?: string;
+          shift_id?: string;
+          station_id?: string;
+          variance_fcfa?: number;
+          wave_fcfa?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'cash_closings_cash_count_id_shift_id_fkey';
+            columns: ['cash_count_id', 'shift_id'];
+            isOneToOne: false;
+            referencedRelation: 'cash_counts';
+            referencedColumns: ['id', 'shift_id'];
+          },
+          {
+            foreignKeyName: 'cash_closings_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'cash_closings_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'cash_closings_shift_id_station_id_fkey';
+            columns: ['shift_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'shifts';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'cash_closings_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      cash_counts: {
+        Row: {
+          created_at: string;
+          denominations: Json;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          id: string;
+          organization_id: string;
+          shift_id: string;
+          station_id: string;
+          total_fcfa: number;
+        };
+        Insert: {
+          created_at?: string;
+          denominations: Json;
+          device_created_at: string;
+          device_id: string;
+          employee_id: string;
+          id?: string;
+          organization_id: string;
+          shift_id: string;
+          station_id: string;
+          total_fcfa?: number;
+        };
+        Update: {
+          created_at?: string;
+          denominations?: Json;
+          device_created_at?: string;
+          device_id?: string;
+          employee_id?: string;
+          id?: string;
+          organization_id?: string;
+          shift_id?: string;
+          station_id?: string;
+          total_fcfa?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'cash_counts_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'cash_counts_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'cash_counts_shift_id_station_id_fkey';
+            columns: ['shift_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'shifts';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'cash_counts_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      cash_variance_decisions: {
+        Row: {
+          closing_id: string;
+          created_at: string;
+          decided_by: string;
+          decision: Database['public']['Enums']['cash_variance_decision'];
+          id: string;
+          note: string | null;
+          organization_id: string;
+          station_id: string;
+        };
+        Insert: {
+          closing_id: string;
+          created_at?: string;
+          decided_by: string;
+          decision: Database['public']['Enums']['cash_variance_decision'];
+          id?: string;
+          note?: string | null;
+          organization_id: string;
+          station_id: string;
+        };
+        Update: {
+          closing_id?: string;
+          created_at?: string;
+          decided_by?: string;
+          decision?: Database['public']['Enums']['cash_variance_decision'];
+          id?: string;
+          note?: string | null;
+          organization_id?: string;
+          station_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'cash_variance_decisions_closing_id_fkey';
+            columns: ['closing_id'];
+            isOneToOne: false;
+            referencedRelation: 'cash_closings';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       credit_accounts: {
         Row: {
           active: boolean;
           created_at: string;
           customer_name: string;
+          decided_at: string | null;
+          decided_by: string | null;
           id: string;
           limit_fcfa: number;
           organization_id: string;
           phone: string | null;
+          requested_at: string | null;
+          requested_by_employee_id: string | null;
           station_id: string;
+          status: Database['public']['Enums']['credit_account_status'];
           updated_at: string;
         };
         Insert: {
           active?: boolean;
           created_at?: string;
           customer_name: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
           id?: string;
           limit_fcfa?: number;
           organization_id: string;
           phone?: string | null;
+          requested_at?: string | null;
+          requested_by_employee_id?: string | null;
           station_id: string;
+          status?: Database['public']['Enums']['credit_account_status'];
           updated_at?: string;
         };
         Update: {
           active?: boolean;
           created_at?: string;
           customer_name?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
           id?: string;
           limit_fcfa?: number;
           organization_id?: string;
           phone?: string | null;
+          requested_at?: string | null;
+          requested_by_employee_id?: string | null;
           station_id?: string;
+          status?: Database['public']['Enums']['credit_account_status'];
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'credit_accounts_requested_fk';
+            columns: ['requested_by_employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
           {
             foreignKeyName: 'credit_accounts_station_id_organization_id_fkey';
             columns: ['station_id', 'organization_id'];
@@ -374,12 +664,14 @@ export type Database = {
           device_created_at: string;
           device_id: string;
           employee_id: string;
+          evidence_id: string | null;
           id: string;
           kind: Database['public']['Enums']['credit_entry_kind'];
           organization_id: string;
           payment_id: string | null;
           station_id: string;
           transaction_id: string | null;
+          vehicle_plate: string | null;
         };
         Insert: {
           amount_fcfa: number;
@@ -388,12 +680,14 @@ export type Database = {
           device_created_at: string;
           device_id: string;
           employee_id: string;
+          evidence_id?: string | null;
           id?: string;
           kind: Database['public']['Enums']['credit_entry_kind'];
           organization_id: string;
           payment_id?: string | null;
           station_id: string;
           transaction_id?: string | null;
+          vehicle_plate?: string | null;
         };
         Update: {
           amount_fcfa?: number;
@@ -402,12 +696,14 @@ export type Database = {
           device_created_at?: string;
           device_id?: string;
           employee_id?: string;
+          evidence_id?: string | null;
           id?: string;
           kind?: Database['public']['Enums']['credit_entry_kind'];
           organization_id?: string;
           payment_id?: string | null;
           station_id?: string;
           transaction_id?: string | null;
+          vehicle_plate?: string | null;
         };
         Relationships: [
           {
@@ -429,6 +725,13 @@ export type Database = {
             columns: ['employee_id', 'station_id'];
             isOneToOne: false;
             referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'credit_entries_evidence_fk';
+            columns: ['evidence_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'evidence_files';
             referencedColumns: ['id', 'station_id'];
           },
           {
@@ -1175,6 +1478,7 @@ export type Database = {
           nozzle_id: string;
           organization_id: string;
           previous_index_cl: number | null;
+          price_change_id: string | null;
           shift_id: string;
           station_id: string;
         };
@@ -1196,6 +1500,7 @@ export type Database = {
           nozzle_id: string;
           organization_id: string;
           previous_index_cl?: number | null;
+          price_change_id?: string | null;
           shift_id: string;
           station_id: string;
         };
@@ -1217,6 +1522,7 @@ export type Database = {
           nozzle_id?: string;
           organization_id?: string;
           previous_index_cl?: number | null;
+          price_change_id?: string | null;
           shift_id?: string;
           station_id?: string;
         };
@@ -1257,6 +1563,20 @@ export type Database = {
             referencedColumns: ['id', 'station_id'];
           },
           {
+            foreignKeyName: 'meter_readings_price_change_id_fkey';
+            columns: ['price_change_id'];
+            isOneToOne: false;
+            referencedRelation: 'current_fuel_prices';
+            referencedColumns: ['price_change_id'];
+          },
+          {
+            foreignKeyName: 'meter_readings_price_change_id_fkey';
+            columns: ['price_change_id'];
+            isOneToOne: false;
+            referencedRelation: 'price_changes';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'meter_readings_shift_id_station_id_fkey';
             columns: ['shift_id', 'station_id'];
             isOneToOne: false;
@@ -1269,6 +1589,104 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'stations';
             referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
+      mobile_money_imports: {
+        Row: {
+          created_at: string;
+          filename: string | null;
+          id: string;
+          imported_by: string | null;
+          line_count: number;
+          mapping: Json;
+          matched_count: number;
+          organization_id: string;
+          provider: Database['public']['Enums']['mobile_money_provider'];
+          unmatched_count: number;
+        };
+        Insert: {
+          created_at?: string;
+          filename?: string | null;
+          id?: string;
+          imported_by?: string | null;
+          line_count?: number;
+          mapping?: Json;
+          matched_count?: number;
+          organization_id: string;
+          provider: Database['public']['Enums']['mobile_money_provider'];
+          unmatched_count?: number;
+        };
+        Update: {
+          created_at?: string;
+          filename?: string | null;
+          id?: string;
+          imported_by?: string | null;
+          line_count?: number;
+          mapping?: Json;
+          matched_count?: number;
+          organization_id?: string;
+          provider?: Database['public']['Enums']['mobile_money_provider'];
+          unmatched_count?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mobile_money_imports_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mobile_money_statement_lines: {
+        Row: {
+          amount_fcfa: number;
+          created_at: string;
+          id: string;
+          import_id: string;
+          organization_id: string;
+          paid_at: string;
+          provider: Database['public']['Enums']['mobile_money_provider'];
+          raw: Json;
+          reference: string;
+        };
+        Insert: {
+          amount_fcfa: number;
+          created_at?: string;
+          id?: string;
+          import_id: string;
+          organization_id: string;
+          paid_at: string;
+          provider: Database['public']['Enums']['mobile_money_provider'];
+          raw?: Json;
+          reference: string;
+        };
+        Update: {
+          amount_fcfa?: number;
+          created_at?: string;
+          id?: string;
+          import_id?: string;
+          organization_id?: string;
+          paid_at?: string;
+          provider?: Database['public']['Enums']['mobile_money_provider'];
+          raw?: Json;
+          reference?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mobile_money_statement_lines_import_id_fkey';
+            columns: ['import_id'];
+            isOneToOne: false;
+            referencedRelation: 'mobile_money_imports';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mobile_money_statement_lines_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
           },
         ];
       };
@@ -1415,9 +1833,55 @@ export type Database = {
         };
         Relationships: [];
       };
+      payment_matches: {
+        Row: {
+          created_at: string;
+          id: string;
+          organization_id: string;
+          payment_id: string | null;
+          statement_line_id: string | null;
+          station_id: string | null;
+          status: Database['public']['Enums']['payment_match_status'];
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          organization_id: string;
+          payment_id?: string | null;
+          statement_line_id?: string | null;
+          station_id?: string | null;
+          status: Database['public']['Enums']['payment_match_status'];
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          organization_id?: string;
+          payment_id?: string | null;
+          statement_line_id?: string | null;
+          station_id?: string | null;
+          status?: Database['public']['Enums']['payment_match_status'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'payment_matches_payment_id_fkey';
+            columns: ['payment_id'];
+            isOneToOne: false;
+            referencedRelation: 'payments';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'payment_matches_statement_line_id_fkey';
+            columns: ['statement_line_id'];
+            isOneToOne: false;
+            referencedRelation: 'mobile_money_statement_lines';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       payments: {
         Row: {
           amount_fcfa: number;
+          card_last4: string | null;
           created_at: string;
           credit_account_id: string | null;
           device_created_at: string;
@@ -1432,6 +1896,7 @@ export type Database = {
         };
         Insert: {
           amount_fcfa: number;
+          card_last4?: string | null;
           created_at?: string;
           credit_account_id?: string | null;
           device_created_at: string;
@@ -1446,6 +1911,7 @@ export type Database = {
         };
         Update: {
           amount_fcfa?: number;
+          card_last4?: string | null;
           created_at?: string;
           credit_account_id?: string | null;
           device_created_at?: string;
@@ -2420,8 +2886,79 @@ export type Database = {
           },
         ];
       };
+      void_approvals: {
+        Row: {
+          decided_at: string;
+          decided_by: string;
+          decision: Database['public']['Enums']['approval_decision'];
+          id: string;
+          note: string | null;
+          organization_id: string;
+          station_id: string;
+          void_id: string;
+        };
+        Insert: {
+          decided_at?: string;
+          decided_by: string;
+          decision: Database['public']['Enums']['approval_decision'];
+          id?: string;
+          note?: string | null;
+          organization_id: string;
+          station_id: string;
+          void_id: string;
+        };
+        Update: {
+          decided_at?: string;
+          decided_by?: string;
+          decision?: Database['public']['Enums']['approval_decision'];
+          id?: string;
+          note?: string | null;
+          organization_id?: string;
+          station_id?: string;
+          void_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'void_approvals_void_id_fkey';
+            columns: ['void_id'];
+            isOneToOne: true;
+            referencedRelation: 'voids';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      void_role_limits: {
+        Row: {
+          max_fcfa: number;
+          organization_id: string;
+          role: Database['public']['Enums']['employee_role'];
+          updated_at: string;
+        };
+        Insert: {
+          max_fcfa: number;
+          organization_id: string;
+          role: Database['public']['Enums']['employee_role'];
+          updated_at?: string;
+        };
+        Update: {
+          max_fcfa?: number;
+          organization_id?: string;
+          role?: Database['public']['Enums']['employee_role'];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'void_role_limits_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       voids: {
         Row: {
+          amount_fcfa: number;
           approved_by: string | null;
           created_at: string;
           device_created_at: string | null;
@@ -2430,10 +2967,12 @@ export type Database = {
           id: string;
           organization_id: string;
           reason: string;
+          shift_id: string | null;
           station_id: string;
           transaction_id: string;
         };
         Insert: {
+          amount_fcfa: number;
           approved_by?: string | null;
           created_at?: string;
           device_created_at?: string | null;
@@ -2442,10 +2981,12 @@ export type Database = {
           id?: string;
           organization_id: string;
           reason: string;
+          shift_id?: string | null;
           station_id: string;
           transaction_id: string;
         };
         Update: {
+          amount_fcfa?: number;
           approved_by?: string | null;
           created_at?: string;
           device_created_at?: string | null;
@@ -2454,6 +2995,7 @@ export type Database = {
           id?: string;
           organization_id?: string;
           reason?: string;
+          shift_id?: string | null;
           station_id?: string;
           transaction_id?: string;
         };
@@ -2470,6 +3012,13 @@ export type Database = {
             columns: ['employee_id', 'station_id'];
             isOneToOne: false;
             referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'voids_shift_fk';
+            columns: ['shift_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'shifts';
             referencedColumns: ['id', 'station_id'];
           },
           {
@@ -2526,6 +3075,14 @@ export type Database = {
         Args: { p_at?: string; p_tank_id: string };
         Returns: string;
       };
+      close_shift_cash: {
+        Args: {
+          p_deposit_mode?: Database['public']['Enums']['deposit_mode'];
+          p_justification?: string;
+          p_shift_id: string;
+        };
+        Returns: Json;
+      };
       close_shift_fuel: { Args: { p_shift_id: string }; Returns: Json };
       compare_handover: {
         Args: { p_handover_id: string };
@@ -2562,6 +3119,24 @@ export type Database = {
         Returns: string;
       };
       create_pairing_code: { Args: { p_station_id: string }; Returns: Json };
+      credit_account_balance: {
+        Args: { p_account_id: string };
+        Returns: number;
+      };
+      credit_account_statement: {
+        Args: { p_account_id: string };
+        Returns: {
+          amount_fcfa: number;
+          at: string;
+          balance_fcfa: number;
+          employee_name: string;
+          entry_id: string;
+          kind: Database['public']['Enums']['credit_entry_kind'];
+          payment_id: string;
+          transaction_id: string;
+          vehicle_plate: string;
+        }[];
+      };
       current_device_id: { Args: never; Returns: string };
       current_device_organization_id: { Args: never; Returns: string };
       current_device_station_id: { Args: never; Returns: string };
@@ -2569,6 +3144,36 @@ export type Database = {
       current_employee_session: { Args: never; Returns: Json };
       current_org_ids: { Args: never; Returns: string[] };
       current_station_ids: { Args: never; Returns: string[] };
+      decide_cash_variance: {
+        Args: {
+          p_closing_id: string;
+          p_decision: Database['public']['Enums']['cash_variance_decision'];
+          p_note?: string;
+        };
+        Returns: undefined;
+      };
+      decide_credit_account: {
+        Args: {
+          p_account_id: string;
+          p_approve: boolean;
+          p_limit_fcfa?: number;
+        };
+        Returns: undefined;
+      };
+      decide_void: {
+        Args: { p_approve: boolean; p_note?: string; p_void_id: string };
+        Returns: undefined;
+      };
+      declare_bank_deposit: {
+        Args: {
+          p_amount_fcfa: number;
+          p_bank_ref?: string;
+          p_deposited_at?: string;
+          p_evidence_id: string;
+          p_shift_ids: string[];
+        };
+        Returns: Json;
+      };
       employees_with_pin: { Args: never; Returns: string[] };
       end_employee_session: {
         Args: {
@@ -2580,6 +3185,25 @@ export type Database = {
       evidence_is_uploaded: {
         Args: { p_evidence_id: string };
         Returns: boolean;
+      };
+      flag_missing_deposits: { Args: never; Returns: number };
+      flag_pending_mobile_money: { Args: never; Returns: number };
+      fuel_price_at: {
+        Args: {
+          p_at: string;
+          p_product: Database['public']['Enums']['fuel_code'];
+          p_station_id: string;
+        };
+        Returns: number;
+      };
+      import_mobile_money_statement: {
+        Args: {
+          p_filename?: string;
+          p_lines: Json;
+          p_mapping?: Json;
+          p_provider: Database['public']['Enums']['mobile_money_provider'];
+        };
+        Returns: Json;
       };
       is_org_owner: { Args: { p_org_id: string }; Returns: boolean };
       last_closing_index: {
@@ -2599,14 +3223,51 @@ export type Database = {
           reading_id: string;
         }[];
       };
+      latest_cash_count: {
+        Args: { p_shift_id: string };
+        Returns: {
+          created_at: string;
+          denominations: Json;
+          id: string;
+          total_fcfa: number;
+        }[];
+      };
       nozzle_is_paused: { Args: { p_nozzle_id: string }; Returns: boolean };
       open_shift: { Args: { p_shift_id: string }; Returns: Json };
+      payment_match_status: {
+        Args: { p_payment_id: string };
+        Returns: Database['public']['Enums']['payment_match_status'];
+      };
+      pending_validations: { Args: never; Returns: Json };
+      record_credit_repayment: {
+        Args: {
+          p_account_id: string;
+          p_amount_fcfa: number;
+          p_external_ref?: string;
+          p_method: Database['public']['Enums']['payment_method'];
+          p_shift_id?: string;
+        };
+        Returns: Json;
+      };
+      record_sale: { Args: { p: Json }; Returns: Json };
       register_paired_device: {
         Args: { p_auth_user_id: string; p_label: string; p_pairing_id: string };
         Returns: string;
       };
       report_handover_discrepancy: {
         Args: { p_handover_id: string; p_reason: string };
+        Returns: Json;
+      };
+      request_credit_account: {
+        Args: { p_customer_name: string; p_phone?: string };
+        Returns: string;
+      };
+      request_void: {
+        Args: {
+          p_amount_fcfa: number;
+          p_reason: string;
+          p_transaction_id: string;
+        };
         Returns: Json;
       };
       reverse_delivery: {
@@ -2618,10 +3279,22 @@ export type Database = {
         Args: { p_employee_id: string; p_pin: string };
         Returns: undefined;
       };
+      shift_cash_summary: { Args: { p_shift_id: string }; Returns: Json };
+      shift_expected_fuel: { Args: { p_shift_id: string }; Returns: Json };
       shift_fuel_summary: { Args: { p_shift_id: string }; Returns: Json };
       shift_missing_items: {
         Args: { p_kind: string; p_shift_id: string };
         Returns: Json;
+      };
+      shift_price_changes: {
+        Args: { p_shift_id: string };
+        Returns: {
+          effective_at: string;
+          fuel_product_code: Database['public']['Enums']['fuel_code'];
+          missing_nozzles: Json;
+          price_change_id: string;
+          price_fcfa_per_litre: number;
+        }[];
       };
       sign_delivery: {
         Args: {
@@ -2667,6 +3340,14 @@ export type Database = {
         Args: { p_employee_id: string; p_pin: string };
         Returns: Json;
       };
+      void_is_approved: { Args: { p_void_id: string }; Returns: boolean };
+      void_limit_for: {
+        Args: {
+          p_org: string;
+          p_role: Database['public']['Enums']['employee_role'];
+        };
+        Returns: number;
+      };
       volume_from_calibration: {
         Args: { p_at?: string; p_height_mm: number; p_tank_id: string };
         Returns: number;
@@ -2691,12 +3372,23 @@ export type Database = {
         | 'device_revoked'
         | 'meter_regression'
         | 'delivery_shortfall'
-        | 'shift_opened';
+        | 'shift_opened'
+        | 'void_over_limit'
+        | 'deposit_mismatch'
+        | 'deposit_missing'
+        | 'mobile_money_unmatched'
+        | 'mobile_money_pending'
+        | 'credit_account_requested'
+        | 'price_change_reading_missing';
+      approval_decision: 'approved' | 'rejected';
       audit_action: 'INSERT' | 'UPDATE' | 'DELETE';
       blind_count_status: 'requested' | 'submitted' | 'cancelled';
+      cash_variance_decision: 'accept_loss' | 'salary_deduction' | 'recount';
+      credit_account_status: 'pending' | 'active' | 'rejected' | 'closed';
       credit_entry_kind: 'sale' | 'repayment' | 'adjustment';
       delivery_status:
         'gauging_before' | 'unloading' | 'gauging_after' | 'signing' | 'signed' | 'cancelled';
+      deposit_mode: 'slip' | 'later';
       employee_role: 'manager' | 'pump_attendant' | 'shop_cashier' | 'mechanic' | 'washer';
       evidence_kind:
         | 'meter_photo'
@@ -2705,7 +3397,9 @@ export type Database = {
         | 'bank_slip'
         | 'vehicle_plate'
         | 'count_photo'
-        | 'other';
+        | 'other'
+        | 'credit_note'
+        | 'card_receipt';
       fuel_code: 'super' | 'gasoil';
       handover_side: 'outgoing' | 'incoming';
       handover_status: 'pending' | 'signed' | 'disputed';
@@ -2718,8 +3412,10 @@ export type Database = {
         | 'adjustment'
         | 'transfer'
         | 'count_correction';
-      meter_reading_kind: 'open' | 'close' | 'handover';
+      meter_reading_kind: 'open' | 'close' | 'handover' | 'price_change';
+      mobile_money_provider: 'wave' | 'orange_money';
       org_member_role: 'owner' | 'supervisor';
+      payment_match_status: 'pending' | 'matched' | 'unmatched';
       payment_method: 'cash' | 'card' | 'wave' | 'orange_money' | 'credit';
       plan_code: 'solo' | 'groupe' | 'reseau';
       product_category: 'shop' | 'garage_part' | 'lubricant' | 'wash_supply' | 'gas';
@@ -2729,7 +3425,7 @@ export type Database = {
       session_end_reason: 'logout' | 'replaced' | 'expired' | 'revoked' | 'inactivity' | 'handover';
       shift_status: 'opening' | 'open' | 'closing' | 'closed';
       tank_reading_kind: 'open' | 'close' | 'delivery_before' | 'delivery_after' | 'spot';
-      transaction_kind: 'fuel' | 'shop' | 'garage' | 'wash' | 'adjustment';
+      transaction_kind: 'fuel' | 'shop' | 'garage' | 'wash' | 'adjustment' | 'credit_repayment';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -2870,9 +3566,19 @@ export const Constants = {
         'meter_regression',
         'delivery_shortfall',
         'shift_opened',
+        'void_over_limit',
+        'deposit_mismatch',
+        'deposit_missing',
+        'mobile_money_unmatched',
+        'mobile_money_pending',
+        'credit_account_requested',
+        'price_change_reading_missing',
       ],
+      approval_decision: ['approved', 'rejected'],
       audit_action: ['INSERT', 'UPDATE', 'DELETE'],
       blind_count_status: ['requested', 'submitted', 'cancelled'],
+      cash_variance_decision: ['accept_loss', 'salary_deduction', 'recount'],
+      credit_account_status: ['pending', 'active', 'rejected', 'closed'],
       credit_entry_kind: ['sale', 'repayment', 'adjustment'],
       delivery_status: [
         'gauging_before',
@@ -2882,6 +3588,7 @@ export const Constants = {
         'signed',
         'cancelled',
       ],
+      deposit_mode: ['slip', 'later'],
       employee_role: ['manager', 'pump_attendant', 'shop_cashier', 'mechanic', 'washer'],
       evidence_kind: [
         'meter_photo',
@@ -2891,6 +3598,8 @@ export const Constants = {
         'vehicle_plate',
         'count_photo',
         'other',
+        'credit_note',
+        'card_receipt',
       ],
       fuel_code: ['super', 'gasoil'],
       handover_side: ['outgoing', 'incoming'],
@@ -2905,8 +3614,10 @@ export const Constants = {
         'transfer',
         'count_correction',
       ],
-      meter_reading_kind: ['open', 'close', 'handover'],
+      meter_reading_kind: ['open', 'close', 'handover', 'price_change'],
+      mobile_money_provider: ['wave', 'orange_money'],
       org_member_role: ['owner', 'supervisor'],
+      payment_match_status: ['pending', 'matched', 'unmatched'],
       payment_method: ['cash', 'card', 'wave', 'orange_money', 'credit'],
       plan_code: ['solo', 'groupe', 'reseau'],
       product_category: ['shop', 'garage_part', 'lubricant', 'wash_supply', 'gas'],
@@ -2916,7 +3627,7 @@ export const Constants = {
       session_end_reason: ['logout', 'replaced', 'expired', 'revoked', 'inactivity', 'handover'],
       shift_status: ['opening', 'open', 'closing', 'closed'],
       tank_reading_kind: ['open', 'close', 'delivery_before', 'delivery_after', 'spot'],
-      transaction_kind: ['fuel', 'shop', 'garage', 'wash', 'adjustment'],
+      transaction_kind: ['fuel', 'shop', 'garage', 'wash', 'adjustment', 'credit_repayment'],
     },
   },
 } as const;

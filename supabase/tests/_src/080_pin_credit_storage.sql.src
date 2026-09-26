@@ -42,16 +42,23 @@ select pg_temp.logout();
 -- ---- Crédit client : plafond en base
 insert into public.credit_accounts (id, organization_id, station_id, customer_name, limit_fcfa)
 select account, pg_temp.org_demo(), pg_temp.station('mbour'), 'Transport Ndiaye', 50000 from ctx;
+create temporary table bon_credit as select pg_temp.new_evidence('mbour', 'Ibrahima Sarr') as id;
 select lives_ok(
+  format('insert into public.credit_entries (organization_id, station_id, device_id, employee_id, credit_account_id, kind, amount_fcfa, evidence_id, device_created_at)
+          values (%L, %L, %L, %L, %L, %L, 30000, %L, now())',
+         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), (select account from ctx), 'sale', (select id from bon_credit)),
+  'crédit : vente de 30 000 sous le plafond (bon signé joint)'
+);
+select throws_ok(
   format('insert into public.credit_entries (organization_id, station_id, device_id, employee_id, credit_account_id, kind, amount_fcfa, device_created_at)
-          values (%L, %L, %L, %L, %L, %L, 30000, now())',
+          values (%L, %L, %L, %L, %L, %L, 1000, now())',
          pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), (select account from ctx), 'sale'),
-  'crédit : vente de 30 000 sous le plafond'
+  '23514', null, 'crédit : vente sans photo du bon signé refusée'
 );
 select throws_like(
-  format('insert into public.credit_entries (organization_id, station_id, device_id, employee_id, credit_account_id, kind, amount_fcfa, device_created_at)
-          values (%L, %L, %L, %L, %L, %L, 30000, now())',
-         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), (select account from ctx), 'sale'),
+  format('insert into public.credit_entries (organization_id, station_id, device_id, employee_id, credit_account_id, kind, amount_fcfa, evidence_id, device_created_at)
+          values (%L, %L, %L, %L, %L, %L, 30000, %L, now())',
+         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Ibrahima Sarr'), (select account from ctx), 'sale', (select id from bon_credit)),
   'CREDIT_LIMIT%', 'crédit : la 2e vente dépasse le plafond et est refusée'
 );
 select lives_ok(
