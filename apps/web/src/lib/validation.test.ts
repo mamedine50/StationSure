@@ -2,19 +2,23 @@ import { lireBaremageCsv, lireReleveMobileMoney, validerBaremage } from '@statio
 import { describe, expect, it } from 'vitest';
 
 import {
+  premiereErreur,
   schemaBaremage,
   schemaCuve,
   schemaDecisionCompteCredit,
   schemaDecisionEcart,
-  schemaImportReleve,
-  schemaPrix,
-  premiereErreur,
   schemaDefinirPin,
+  schemaDestinataire,
   schemaEmploye,
+  schemaImportReleve,
   schemaInscription,
   schemaOrganisation,
   schemaPin,
+  schemaPrix,
+  schemaRoutage,
+  schemaSeuils,
   schemaStation,
+  schemaSurchargeStation,
 } from './validation';
 
 const UUID = '0d7e2f5a-1b2c-4d3e-8f90-123456789abc';
@@ -236,5 +240,82 @@ describe('caisse et approbations (phase 4)', () => {
     });
     expect(mauvais.success).toBe(false);
     if (!mauvais.success) expect(premiereErreur(mauvais)).toBe('validation.mapping');
+  });
+});
+
+describe('phase 5 : paramètres et destinataires', () => {
+  it('normalise un numéro sénégalais et refuse un numéro invalide', () => {
+    const ok = schemaDestinataire.safeParse({
+      nom: 'Propriétaire',
+      telephone: '77 000 00 01',
+      rapport: 'on',
+    });
+    expect(ok.success).toBe(true);
+    if (ok.success) {
+      expect(ok.data.telephone).toBe('+221770000001');
+      expect(ok.data.rapport).toBe(true);
+      expect(ok.data.alertes).toBe(false);
+    }
+    const ko = schemaDestinataire.safeParse({ nom: 'X Y', telephone: '12', rapport: 'on' });
+    expect(ko.success).toBe(false);
+    if (!ko.success) expect(premiereErreur(ko)).toBe('validation.phone');
+  });
+
+  it('seuils : bornes et heure', () => {
+    expect(
+      schemaSeuils.safeParse({
+        tankVariance: '0.5',
+        deliveryVariance: '0.3',
+        cashTolerance: '1000',
+        depositHours: '24',
+        reportMode: 'fixed_time',
+        reportTime: '22:30',
+      }).success,
+    ).toBe(true);
+    expect(
+      schemaSeuils.safeParse({
+        tankVariance: '150',
+        deliveryVariance: '0.3',
+        cashTolerance: '1000',
+        depositHours: '24',
+        reportMode: 'fixed_time',
+        reportTime: '22:30',
+      }).success,
+    ).toBe(false);
+    expect(
+      schemaSeuils.safeParse({
+        tankVariance: '0.5',
+        deliveryVariance: '0.3',
+        cashTolerance: '1000',
+        depositHours: '24',
+        reportMode: 'fixed_time',
+        reportTime: '25:00',
+      }).success,
+    ).toBe(false);
+  });
+
+  it('surcharge station : champ vide = hérite', () => {
+    const lu = schemaSurchargeStation.safeParse({
+      stationId: 'd5dbe140-2ff9-ed16-6a77-9625b57475b8',
+      tankVariance: '',
+      deliveryVariance: '0.2',
+      cashTolerance: '',
+      depositHours: '',
+    });
+    expect(lu.success).toBe(true);
+    if (lu.success)
+      expect(lu.data).toMatchObject({
+        tankVariance: null,
+        deliveryVariance: 0.2,
+        cashTolerance: null,
+        depositHours: null,
+      });
+  });
+
+  it('routage : seuls les types connus et les deux routes', () => {
+    expect(
+      schemaRoutage.safeParse({ cash_variance: 'immediate', tank_variance: 'report' }).success,
+    ).toBe(true);
+    expect(schemaRoutage.safeParse({ cash_variance: 'demain' }).success).toBe(false);
   });
 });

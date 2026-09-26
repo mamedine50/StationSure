@@ -5,13 +5,18 @@ import { revalidatePath } from 'next/cache';
 import type { EtatFormulaire } from '@/components/ui/formulaire';
 import { obtenirContexte } from '@/lib/auth/contexte';
 import { creerClientServeur } from '@/lib/supabase/server';
-import { lireFormulaire, premiereErreur, schemaDefinirPin, schemaEmploye } from '@/lib/validation';
+import {
+  lireFormulaire,
+  premiereErreur,
+  schemaDefinirPin,
+  schemaEmployeAvecTelephone,
+} from '@/lib/validation';
 
 export async function creerEmploye(
   _etat: EtatFormulaire,
   formData: FormData,
 ): Promise<EtatFormulaire> {
-  const lu = schemaEmploye.safeParse(lireFormulaire(formData));
+  const lu = schemaEmployeAvecTelephone.safeParse(lireFormulaire(formData));
   if (!lu.success) return { erreur: premiereErreur(lu) };
   const contexte = await obtenirContexte();
   if (!contexte.membre || !contexte.estProprietaire) return { erreur: 'common.error' };
@@ -21,6 +26,7 @@ export async function creerEmploye(
     station_id: lu.data.stationId,
     full_name: lu.data.nomComplet,
     role: lu.data.role,
+    phone_e164: lu.data.telephone,
   });
   if (error) return { erreur: error.message };
   revalidatePath('/employes');

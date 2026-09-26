@@ -159,11 +159,31 @@ gérant (jauge avant, dépotage avec pistolets en pause, jauge après, photo du 
 réserve si l'écart dépasse 0,3 %). Toutes les photos viennent de la caméra et partent en file
 d'attente ; une opération reste « en attente d'envoi » tant que sa photo n'est pas confirmée.
 
+### Propriétaire à distance (phase 5)
+
+1. `cp supabase/functions/.env.example supabase/functions/.env` (adaptateur `dev` : aucun envoi réel),
+   puis `pnpm db:functions:serve` dans un terminal et `pnpm dev` dans un autre.
+2. Web `owner@demo.local` : **Tableau de bord** (filtres aujourd'hui / 7 jours / 30 jours, toutes les
+   stations ou une seule, KPIs, alertes du jour avec accusé de réception, score d'écart 30 jours),
+   **Alertes** (filtres type / station / gravité / date), **Paramètres** (seuils, surcharge par
+   station, plafonds d'annulation, invitation de superviseur → courriel dans Mailpit
+   <http://127.0.0.1:54724>, destinataires `+221 77 000 00 01/02`, routage, moment du rapport, SMS de
+   secours, bandeau « mode test »).
+3. **Messages de test** : `/dev/messages` (lien du bandeau) montre le rapport du soir de Mbour (écran 06)
+   et l'alerte de passation ; « Traiter la file maintenant » appelle le worker (ce que pg_cron fait
+   chaque minute quand les fonctions tournent) : les statuts passent `en file → délivré`.
+4. Modifier un seuil (ex. tolérance espèces 50 000) puis regarder « À valider » : l'écart −35 000 de
+   Mbour n'est plus à trancher ; remettre 1 000.
+5. « À valider » › Versements : **Relancer F. Faye par WhatsApp** (Thiès, bordereau manquant) crée
+   une relance dans `/dev/messages` ; un gérant sans numéro a le bouton désactivé.
+
+Envoi WhatsApp réel : `docs/whatsapp-modeles.md` (compte Meta, modèles, clés, `NOTIFIER=meta`).
+
 ### Tests
 
 - `pnpm test` : Vitest (`packages/core`, validation des formulaires web).
 - `pnpm db:test` : pgTAP (RLS, garde-fous, jumelage, PIN, sessions).
-- `pnpm db:functions:test` : tests Deno de l'Edge Function `pair-device`.
+- `pnpm db:functions:test` : tests Deno des Edge Functions (`pair-device`, `notify-worker`, `notify-webhook`, `invite-supervisor`).
 
 ### Envoyer le schéma en ligne (à faire manuellement, jamais par un agent)
 

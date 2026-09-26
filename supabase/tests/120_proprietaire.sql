@@ -1,0 +1,331 @@
+-- GÉNÉRÉ par _build.sh à partir de _src/120_proprietaire.sql.src — ne pas éditer à la main.
+begin;
+create extension if not exists pgtap with schema extensions;
+select no_plan();
+
+-- Préambule commun (copié en tête de chaque fichier de test, les fichiers étant
+-- exécutés dans des transactions séparées). Simule un JWT Supabase.
+create or replace function pg_temp.login(p_uid uuid) returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', p_uid::text, 'role', 'authenticated', 'aud', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+end $$;
+create or replace function pg_temp.logout() returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims', '', true);
+  perform set_config('role', 'postgres', true);
+end $$;
+create or replace function pg_temp.as_service() returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims', '', true);
+  perform set_config('role', 'service_role', true);
+end $$;
+create or replace function pg_temp.as_anon() returns void language plpgsql as $$
+begin
+  perform set_config('request.jwt.claims', '', true);
+  perform set_config('role', 'anon', true);
+end $$;
+-- Identifiants de la seed
+create or replace function pg_temp.org_demo() returns uuid language sql as $$ select md5('org:demo')::uuid $$;
+create or replace function pg_temp.owner_demo() returns uuid language sql as $$ select md5('user:owner@demo.local')::uuid $$;
+create or replace function pg_temp.station(p_slug text) returns uuid language sql as $$ select md5('station:' || p_slug)::uuid $$;
+create or replace function pg_temp.device(p_slug text) returns uuid language sql as $$ select md5('device:' || p_slug)::uuid $$;
+create or replace function pg_temp.device_user(p_slug text) returns uuid language sql as $$ select md5('user:device-' || p_slug || '@demo.local')::uuid $$;
+create or replace function pg_temp.employee(p_slug text, p_name text) returns uuid language sql as $$ select md5('employee:' || p_slug || ':' || p_name)::uuid $$;
+create or replace function pg_temp.tank(p_slug text, p_fuel text) returns uuid language sql as $$ select md5('tank:' || p_slug || ':' || p_fuel)::uuid $$;
+create or replace function pg_temp.nozzle(p_slug text, p_label text) returns uuid language sql as $$ select md5('nozzle:' || p_slug || ':' || p_label)::uuid $$;
+-- Crée un utilisateur auth de test
+create or replace function pg_temp.new_auth_user(p_email text) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+    raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+    confirmation_token, recovery_token, email_change_token_new, email_change, is_sso_user)
+  values ('00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated', p_email,
+    extensions.crypt('test', extensions.gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{}',
+    now(), now(), '', '', '', '', false);
+  return v_id;
+end $$;
+-- Ouvre un shift + une preuve pour une station de la seed (en tant que postgres)
+create or replace function pg_temp.open_shift(p_slug text, p_employee text) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  insert into public.shifts (id, organization_id, station_id, device_id, opened_by, opened_at, status, device_created_at)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug),
+          pg_temp.employee(p_slug, p_employee), now(), 'open', now());
+  return v_id;
+end $$;
+create or replace function pg_temp.new_evidence(p_slug text, p_employee text) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  insert into public.evidence_files (id, organization_id, station_id, device_id, employee_id, kind, storage_path, sha256,
+    captured_at_device, device_created_at)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_employee),
+    'meter_photo', pg_temp.org_demo()::text || '/' || pg_temp.station(p_slug)::text || '/' || v_id::text || '.jpg',
+    repeat('a', 64), now(), now());
+  return v_id;
+end $$;
+-- Ouvre une session employé sur l'appareil d'une station (en tant que postgres), comme verify_employee_pin le ferait.
+create or replace function pg_temp.login_employee(p_slug text, p_name text) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  update public.employee_sessions set ended_at = now(), ended_reason = 'replaced'
+  where device_id = pg_temp.device(p_slug) and ended_at is null;
+  insert into public.employee_sessions (id, organization_id, station_id, device_id, employee_id, expires_at)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), now() + interval '12 hours');
+  return v_id;
+end $$;
+
+-- Marque comme reçues (bucket) toutes les preuves de la station (en tant que postgres).
+create or replace function pg_temp.upload_all(p_slug text) returns void language sql as $$
+  insert into public.evidence_uploads (evidence_id, organization_id, station_id, object_size)
+  select e.id, e.organization_id, e.station_id, 1000 from public.evidence_files e
+  where e.station_id = pg_temp.station(p_slug) on conflict do nothing $$;
+-- Preuve + relevé d'index, exécutés avec les droits de l'appelant (appareil + session employé).
+create or replace function pg_temp.meter(p_shift uuid, p_slug text, p_name text, p_label text, p_index bigint, p_kind text,
+  p_handover uuid default null, p_side text default null, p_at timestamptz default now()) returns uuid language plpgsql as $$
+declare v_ev uuid := gen_random_uuid(); v_id uuid := gen_random_uuid();
+begin
+  insert into public.evidence_files (id, organization_id, station_id, device_id, employee_id, kind, storage_path, sha256, captured_at_device, device_created_at)
+  values (v_ev, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), 'meter_photo',
+          pg_temp.org_demo()::text || '/' || pg_temp.station(p_slug)::text || '/' || v_ev::text || '.jpg', repeat('c', 64), p_at, p_at);
+  insert into public.meter_readings (id, organization_id, station_id, device_id, employee_id, shift_id, nozzle_id, kind, index_cl, evidence_id,
+    device_created_at, handover_id, handover_side)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), p_shift,
+          pg_temp.nozzle(p_slug, p_label), p_kind::public.meter_reading_kind, p_index, v_ev, p_at, p_handover, p_side::public.handover_side);
+  return v_id;
+end $$;
+-- Preuve + jaugeage (volume envoyé volontairement faux : le serveur l'impose).
+create or replace function pg_temp.gauge(p_shift uuid, p_slug text, p_name text, p_fuel text, p_height integer, p_kind text, p_at timestamptz default now())
+returns uuid language plpgsql as $$
+declare v_ev uuid := gen_random_uuid(); v_id uuid := gen_random_uuid();
+begin
+  insert into public.evidence_files (id, organization_id, station_id, device_id, employee_id, kind, storage_path, sha256, captured_at_device, device_created_at)
+  values (v_ev, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), 'tank_gauge',
+          pg_temp.org_demo()::text || '/' || pg_temp.station(p_slug)::text || '/' || v_ev::text || '.jpg', repeat('d', 64), p_at, p_at);
+  insert into public.tank_readings (id, organization_id, station_id, device_id, employee_id, tank_id, height_mm, volume_cl, evidence_id, device_created_at, shift_id, kind)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), pg_temp.tank(p_slug, p_fuel),
+          p_height, 1, v_ev, p_at, p_shift, p_kind::public.tank_reading_kind);
+  return v_id;
+end $$;
+
+-- Phase 5 : paramètres (org → station, verrouillés), destinataires, outbox, rapport du soir,
+-- alertes immédiates / rapport, anti-spam 10 min, score d'écart, invitations superviseurs.
+create temp table ctx_p5 as select
+  md5('org:demo')::uuid as org,
+  md5('station:mbour')::uuid as mbour,
+  md5('station:thies')::uuid as thies,
+  md5('station:kaolack')::uuid as kaolack,
+  md5('cash_closing:mbour:avant-hier-soir')::uuid as closing_mbour,
+  md5('recipient:proprietaire')::uuid as dest_owner,
+  md5('recipient:associe')::uuid as dest_associe;
+grant select on ctx_p5 to authenticated, service_role, anon;
+select pg_temp.new_auth_user('supervisor-p5@test.local') as sup_id \gset
+insert into public.org_members (organization_id, user_id, role) values (pg_temp.org_demo(), :'sup_id', 'supervisor');
+
+-- ---------------------------------------------------------------- Paramètres
+select is((select count(*)::int from public.organization_settings where organization_id = pg_temp.org_demo()), 1, 'paramètres créés avec l''organisation');
+select is(public.effective_setting(pg_temp.station('mbour'), 'tank_variance_pct'), 0.5::numeric, 'défaut écart de cuve 0,5 %');
+select is(public.effective_setting(pg_temp.station('mbour'), 'delivery_variance_pct'), 0.3::numeric, 'défaut écart de livraison 0,3 %');
+select is(public.effective_setting(pg_temp.station('mbour'), 'cash_tolerance_fcfa'), 1000::numeric, 'défaut tolérance espèces 1 000 FCFA');
+select is(public.effective_setting(pg_temp.station('mbour'), 'deposit_missing_hours'), 24::numeric, 'défaut bordereau manquant 24 h');
+
+select pg_temp.login(pg_temp.owner_demo());
+update public.organization_settings set tank_variance_pct = 1.2, cash_tolerance_fcfa = 2500 where organization_id = pg_temp.org_demo();
+select is(public.effective_setting(pg_temp.station('mbour'), 'tank_variance_pct'), 1.2::numeric, 'seuil lu depuis l''organisation');
+select is(public.effective_setting(pg_temp.station('thies'), 'cash_tolerance_fcfa'), 2500::numeric, 'tolérance lue depuis l''organisation');
+insert into public.station_settings (station_id, organization_id, tank_variance_pct) values (pg_temp.station('thies'), pg_temp.org_demo(), 0.2);
+select is(public.effective_setting(pg_temp.station('thies'), 'tank_variance_pct'), 0.2::numeric, 'la surcharge station prime sur l''organisation');
+select is(public.effective_setting(pg_temp.station('mbour'), 'tank_variance_pct'), 1.2::numeric, 'les autres stations gardent la valeur de l''organisation');
+select is((select count(*)::int from public.audit_log where table_name in ('organization_settings', 'station_settings') and at >= now()), 2, 'modifications des paramètres tracées dans l''audit');
+select pg_temp.logout();
+
+-- Verrouillé : aucune colonne pour les tolérances des paiements électroniques / passation / index.
+select hasnt_column('public', 'organization_settings', 'electronic_payment_tolerance_fcfa', 'pas de colonne « tolérance paiements électroniques »');
+select hasnt_column('public', 'organization_settings', 'handover_tolerance_cl', 'pas de colonne « tolérance passation »');
+select is(public.locked_tolerances(), '{"handover_cl": 0, "meter_regression_cl": 0, "electronic_payments_fcfa": 0}'::jsonb, 'tolérances verrouillées à 0');
+
+-- Le superviseur lit mais n'écrit pas ; personne (authentifié) ne modifie le schéma.
+select pg_temp.login(:'sup_id');
+select throws_ok($$ alter table public.organization_settings add column handover_tolerance_cl integer $$, '42501', null, 'un utilisateur authentifié ne peut pas ajouter une colonne de tolérance');
+select is((select tank_variance_pct from public.organization_settings where organization_id = pg_temp.org_demo()), 1.2::numeric, 'le superviseur lit les paramètres');
+update public.organization_settings set tank_variance_pct = 9 where organization_id = pg_temp.org_demo();
+select is((select tank_variance_pct from public.organization_settings where organization_id = pg_temp.org_demo()), 1.2::numeric, 'le superviseur ne modifie pas les paramètres (RLS)');
+select throws_ok($$ insert into public.station_settings (station_id, organization_id, cash_tolerance_fcfa) values (md5('station:mbour')::uuid, md5('org:demo')::uuid, 5) $$, '42501', null, 'le superviseur ne crée pas de surcharge station');
+select pg_temp.logout();
+
+-- (Le rapprochement de cuve et la livraison avec seuils modifiés sont testés dans 100_carburant.)
+select pg_temp.open_shift('mbour', 'Ibrahima Sarr') as shift_p5 \gset
+
+-- Bordereau manquant : délai lu depuis les paramètres (48 h → la clôture de 36 h de Thiès n'est plus en retard).
+select pg_temp.login(pg_temp.owner_demo());
+update public.organization_settings set deposit_missing_hours = 72 where organization_id = pg_temp.org_demo();
+select pg_temp.logout();
+delete from public.alerts where type = 'deposit_missing';
+select is(public.flag_missing_deposits(), 0, 'délai 72 h : aucun bordereau en retard');
+select pg_temp.login(pg_temp.owner_demo());
+update public.organization_settings set deposit_missing_hours = 24 where organization_id = pg_temp.org_demo();
+select pg_temp.logout();
+select is(public.flag_missing_deposits(), 2, 'délai 24 h : Thiès (36 h) et Mbour (avant-hier) sont signalées');
+
+-- ---------------------------------------------------------------- Destinataires
+select pg_temp.login(pg_temp.owner_demo());
+select is((select count(*)::int from public.notification_recipients where organization_id = pg_temp.org_demo()), 2, 'l''owner lit les 2 destinataires de démo');
+select throws_ok($$ insert into public.notification_recipients (organization_id, name, phone_e164) values (md5('org:demo')::uuid, 'Test', '77 000 00 03') $$, '23514', null, 'numéro non E.164 refusé');
+select lives_ok($$ insert into public.notification_recipients (organization_id, name, phone_e164, receives_report, receives_alerts) values (md5('org:demo')::uuid, 'Comptable', '+221770000003', true, false) $$, 'numéro E.164 accepté');
+select pg_temp.logout();
+select pg_temp.login(:'sup_id');
+select is((select count(*)::int from public.notification_recipients), 0, 'le superviseur ne lit aucun numéro de destinataire');
+select is((select count(*)::int from public.notification_outbox), 0, 'le superviseur ne lit pas la file de messages');
+select pg_temp.logout();
+select pg_temp.login(pg_temp.device_user('mbour'));
+select is((select count(*)::int from public.notification_recipients), 0, 'l''appareil ne lit aucun numéro de destinataire');
+select is((select count(*)::int from public.notification_outbox), 0, 'l''appareil ne lit pas la file de messages');
+select is((select count(*)::int from public.organization_settings), 1, 'l''appareil lit les paramètres de son organisation (seuils)');
+select pg_temp.logout();
+
+-- Routage : défauts puis surcharge.
+select is(public.alert_route_for(pg_temp.org_demo(), 'cash_variance'), 'immediate', 'écart de caisse : immédiat par défaut');
+select is(public.alert_route_for(pg_temp.org_demo(), 'pin_lockout'), 'immediate', 'PIN bloqué : immédiat par défaut');
+select is(public.alert_route_for(pg_temp.org_demo(), 'tank_variance'), 'report', 'écart de cuve : rapport du soir par défaut');
+select pg_temp.login(pg_temp.owner_demo());
+insert into public.alert_routing (organization_id, alert_type, route) values (pg_temp.org_demo(), 'tank_variance', 'immediate');
+select pg_temp.logout();
+select is(public.alert_route_for(pg_temp.org_demo(), 'tank_variance'), 'immediate', 'routage modifié par l''owner');
+
+-- ---------------------------------------------------------------- Rapport du soir
+select pg_temp.as_service();
+select is((select count(*)::int from public.notification_outbox where kind = 'evening_report' and idempotency_key like 'report:' || (select closing_mbour from ctx_p5)::text || '%'), 2,
+          'la seed a mis en file UN rapport par destinataire « rapport du soir » (2)');
+select is(public.enqueue_evening_report((select closing_mbour from ctx_p5)), 1, 'remettre en file le même rapport n''ajoute que le nouveau destinataire « Comptable »');
+select is(public.enqueue_evening_report((select closing_mbour from ctx_p5)), 0, 'troisième appel : rien (idempotent)');
+select is((select count(*)::int from public.notification_outbox where kind = 'evening_report' and idempotency_key like 'report:' || (select closing_mbour from ctx_p5)::text || '%'), 3, '3 messages, un par destinataire');
+select is((select body from public.notification_outbox where idempotency_key = 'report:' || (select closing_mbour from ctx_p5)::text || ':' || (select dest_owner from ctx_p5)::text),
+  E'Station Mbour · Clôture du ' || to_char(current_date - 2, 'DD/MM') || E'\n'
+  || E'Chiffre d''affaires : 2 385 000 FCFA\n'
+  || E'Carburant 2 190 000 · Boutique 145 000 · Garage 0 · Lavage 50 000\n'
+  || E'Litres : Super 1 067 · Gasoil 1 500\n'
+  || E'⚠️ Écart caisse Shift soir (démo) : −35 000 FCFA (gérant : Ibrahima Sarr)\n'
+  || E'✅ Passations OK\n'
+  || E'⚠️ Bordereau de versement : manquant\n'
+  || E'⚠️ Wave / Orange Money : 1 050 000 FCFA, en attente de rapprochement\n'
+  || E'✅ Cuves : pas de jaugeage rapproché\n'
+  || E'✅ Photos d''index : 13/13\n'
+  || 'Détail : http://localhost:3000/caisse/' || md5('shift:mbour:avant-hier-soir')::uuid::text,
+  'texte du rapport identique à l''écran 06 et à renderRapportSoir (core)');
+select is((select r ->> 'ca_total_fcfa' from public.build_evening_report((select closing_mbour from ctx_p5)) r), '2385000', 'rapport construit depuis les valeurs figées');
+select is(public.format_fcfa(-35000), '−35 000', 'format_fcfa miroir de formatFCFA');
+select is(public.format_litres(1000), '10,00', 'format_litres miroir de formatLitres');
+select is(public.format_pct(-0.9), '−0,9 %', 'format_pct miroir de formatPourcent');
+select is((select count(*)::int from public.notification_outbox_events e join public.notification_outbox o on o.id = e.outbox_id where o.kind = 'evening_report' and e.status = 'queued'), 3, 'historique : un événement « queued » par message');
+
+-- Mode heure fixe : rien n'est envoyé après une clôture, tout part à l'heure choisie.
+update public.organization_settings set report_mode = 'fixed_time', report_time = (now() at time zone 'Africa/Dakar')::time where organization_id = pg_temp.org_demo();
+select pg_temp.open_shift('thies', 'Fatou Faye') as shift_fixe \gset
+update public.shifts set status = 'closed', closed_at = now() where id = :'shift_fixe';
+insert into public.cash_counts (id, organization_id, station_id, device_id, employee_id, shift_id, denominations, device_created_at)
+values (md5('cash_count:test:fixe')::uuid, pg_temp.org_demo(), pg_temp.station('thies'), pg_temp.device('thies'), pg_temp.employee('thies', 'Fatou Faye'), :'shift_fixe', '{"10000": 10}'::jsonb, now());
+insert into public.cash_closings (organization_id, station_id, device_id, employee_id, shift_id, cash_count_id, expected_fuel_fcfa, expected_total_fcfa, expected_cash_fcfa, counted_cash_fcfa, variance_fcfa, deposit_mode)
+values (pg_temp.org_demo(), pg_temp.station('thies'), pg_temp.device('thies'), pg_temp.employee('thies', 'Fatou Faye'), :'shift_fixe', md5('cash_count:test:fixe')::uuid, 100000, 100000, 100000, 100000, 0, 'later');
+select is((select count(*)::int from public.notification_outbox where kind = 'evening_report' and idempotency_key like 'report:' || (select id from public.cash_closings where shift_id = :'shift_fixe')::text || '%'), 0, 'heure fixe : aucun rapport immédiatement après la clôture');
+select cmp_ok(public.dispatch_scheduled_reports(), '>=', 3, 'heure fixe atteinte : les rapports du jour partent (un par destinataire)');
+select is((select count(*)::int from public.notification_outbox where kind = 'evening_report' and idempotency_key like 'report:' || (select id from public.cash_closings where shift_id = :'shift_fixe')::text || '%'), 3, 'rapport de la clôture du jour en file (3 destinataires)');
+select is(public.dispatch_scheduled_reports(), 0, 'second passage dans la même tranche : rien de plus (idempotent)');
+update public.organization_settings set report_mode = 'after_each_closing' where organization_id = pg_temp.org_demo();
+
+-- Résumé multi-stations (3 stations) : une ligne par station clôturée.
+select is((select jsonb_array_length(r -> 'stations') from public.build_summary_report(pg_temp.org_demo(), current_date - 5) r), 3, 'résumé du J-5 : 3 stations');
+select alike(public.render_summary_report(public.build_summary_report(pg_temp.org_demo(), current_date - 5)), 'Résumé du ' || to_char(current_date - 5, 'DD/MM') || ' · 3 clôture(s) sur 3 station(s)%', 'texte du résumé');
+
+-- ---------------------------------------------------------------- Alertes immédiates + anti-spam
+insert into public.alerts (organization_id, station_id, shift_id, type, severity, payload)
+values (pg_temp.org_demo(), pg_temp.station('mbour'), :'shift_p5', 'cash_variance', 'critical', jsonb_build_object('variance_fcfa', -12000, 'employee_id', pg_temp.employee('mbour', 'Ibrahima Sarr')));
+select is((select count(*)::int from public.notification_outbox where kind = 'alert' and created_at >= now()), 1, 'alerte immédiate → un message pour le seul destinataire « alertes graves »');
+select is((select to_phone from public.notification_outbox where kind = 'alert' and created_at >= now()), '+221770000001', 'envoyé au destinataire qui reçoit les alertes');
+select is((select body from public.notification_outbox where kind = 'alert' and created_at >= now()), E'⚠️ Mbour · Écart de caisse −12 000 FCFA · Ibrahima Sarr\nhttp://localhost:3000/alertes?id=' || (select id from public.alerts where type = 'cash_variance' and shift_id = :'shift_p5')::text, 'message court : quoi, où, qui, montant, lien');
+insert into public.alerts (organization_id, station_id, shift_id, type, severity, payload)
+values (pg_temp.org_demo(), pg_temp.station('mbour'), :'shift_p5', 'cash_variance', 'critical', jsonb_build_object('variance_fcfa', -12000, 'employee_id', pg_temp.employee('mbour', 'Ibrahima Sarr')));
+select is((select count(*)::int from public.notification_outbox where kind = 'alert' and created_at >= now()), 1, 'anti-spam : alerte identique (station + type) dans les 10 min → regroupée');
+select is((select variables ->> 'count' from public.notification_outbox where kind = 'alert' and created_at >= now()), '2', 'le message regroupé compte 2 alertes');
+insert into public.alerts (organization_id, station_id, shift_id, type, severity, payload)
+values (pg_temp.org_demo(), pg_temp.station('thies'), null, 'cash_variance', 'critical', jsonb_build_object('variance_fcfa', -3000));
+select is((select count(*)::int from public.notification_outbox where kind = 'alert' and created_at >= now()), 2, 'même type sur une autre station : nouveau message');
+insert into public.alerts (organization_id, station_id, shift_id, type, severity, payload)
+values (pg_temp.org_demo(), pg_temp.station('mbour'), null, 'void_requested', 'warning', jsonb_build_object('amount_fcfa', 5000));
+select is((select count(*)::int from public.notification_outbox where kind = 'alert' and created_at >= now()), 2, 'annulation demandée : routée « rapport du soir », rien en file');
+
+-- Relance du gérant (écran 17).
+select pg_temp.login(pg_temp.owner_demo());
+select is((select r ->> 'ok' from public.remind_manager(md5('shift:thies:avant-hier-soir')::uuid) r), 'true', 'relance WhatsApp du gérant qui a un numéro');
+select is((select r ->> 'error' from public.remind_manager(md5('shift:thies:avant-hier-soir')::uuid) r), 'ALREADY_SENT', 'seconde relance dans l''heure refusée');
+update public.employees set phone_e164 = null where id = pg_temp.employee('thies', 'Fatou Faye');
+select is((select r ->> 'error' from public.remind_manager(md5('shift:mbour:j-5')::uuid) r), null, 'relance possible pour un autre shift (Ibrahima a un numéro)');
+select is((select r ->> 'error' from public.remind_manager(md5('shift:thies:j-5')::uuid) r), 'NO_PHONE', 'gérant sans numéro : NO_PHONE');
+select pg_temp.logout();
+select pg_temp.login(:'sup_id');
+select throws_ok($$ select public.remind_manager(md5('shift:mbour:j-6')::uuid) $$, '42501', null, 'le superviseur ne relance pas');
+select pg_temp.logout();
+
+-- ---------------------------------------------------------------- Worker (réclamation, statut, secours SMS, webhook)
+select pg_temp.as_service();
+select cmp_ok((select count(*)::int from public.claim_notifications(50)), '>=', 3, 'le worker réclame les messages en file');
+select is((select count(*)::int from public.notification_outbox where status = 'queued' and next_attempt_at <= now()), 0, 'rien ne reste réclamable dans l''instant… ');
+select is((select min(attempts) from public.notification_outbox where kind = 'alert' and created_at >= now()), 1, '…et chaque message compte une tentative');
+select o.id as msg_id from public.notification_outbox o where o.kind = 'alert' and o.to_phone = '+221770000001' and o.created_at >= now() limit 1 \gset
+select public.set_notification_status(:'msg_id', 'sent', null, 'wamid.TEST1');
+select is((select status from public.notification_outbox where id = :'msg_id'), 'sent', 'statut sent');
+select is(public.record_delivery_status('wamid.TEST1', 'delivered'), 1, 'webhook : statut de livraison rattaché par identifiant fournisseur');
+select is((select status from public.notification_outbox where id = :'msg_id'), 'delivered', 'statut delivered');
+select is((select array_agg(status::text order by id) from public.notification_outbox_events where outbox_id = :'msg_id'), array['queued', 'sent', 'delivered'], 'historique append-only : queued → sent → delivered');
+select throws_ok($$ delete from public.notification_outbox_events where outbox_id = (select id from public.notification_outbox limit 1) $$, 'P0001', null, 'l''historique des statuts est append-only');
+-- SMS de secours : activé, un message envoyé mais non délivré depuis 11 min → copie SMS.
+update public.organization_settings set sms_fallback = true where organization_id = pg_temp.org_demo();
+select o.id as msg_sms from public.notification_outbox o where o.kind = 'alert' and o.to_phone = '+221770000001' and o.created_at >= now() and o.id <> :'msg_id' limit 1 \gset
+select public.set_notification_status(:'msg_sms', 'sent', null, 'wamid.TEST2');
+update public.notification_outbox set sent_at = now() - interval '11 minutes' where id = :'msg_sms';
+select is(public.escalate_undelivered(), 1, 'un message WhatsApp non délivré après 10 min → SMS de secours');
+select is((select channel::text from public.notification_outbox where fallback_of = :'msg_sms'), 'sms', 'copie SMS liée au message d''origine');
+select is(public.escalate_undelivered(), 0, 'pas de second SMS');
+
+-- ---------------------------------------------------------------- Score d'écart
+select pg_temp.login(pg_temp.owner_demo());
+select is((select cash_variances from public.employee_variance_scores(30) where full_name = 'Ibrahima Sarr'), 4, 'Ibrahima Sarr : 4 écarts de caisse sur 30 jours');
+select is((select handover_variances from public.employee_variance_scores(30) where full_name = 'Ibrahima Sarr'), 1, 'Ibrahima Sarr : 1 passation attribuée');
+select is((select rejected_voids from public.employee_variance_scores(30) where full_name = 'Khady Fall'), 1, 'Khady Fall : 1 annulation refusée');
+select is((select meter_regressions from public.employee_variance_scores(30) where full_name = 'Moussa Ndiaye'), 1, 'Moussa Ndiaye : 1 index qui recule');
+select is((select score from public.employee_variance_scores(30) where full_name = 'Fatou Faye'), 0, 'Fatou Faye : écarts sous tolérance → score 0');
+select is((select score from public.employee_variance_scores(30) where full_name = 'Ibrahima Sarr'),
+          (select least(100, round(400 * (4 * 1.0 + 1 * 1.0) / greatest(shifts, 1)))::int from public.employee_variance_scores(30) where full_name = 'Ibrahima Sarr'), 'score = min(100, 400 × pondéré / shifts)');
+select is((select score from public.employee_variance_scores(30) where full_name = 'Khady Fall'), 100, 'employée sans shift mais avec un incident : score plafonné à 100');
+select cmp_ok((select score from public.employee_variance_scores(30) where full_name = 'Ibrahima Sarr'), '>', (select score from public.employee_variance_scores(30) where full_name = 'Cheikh Mbaye'), 'plus d''écarts = score plus haut');
+select is((select count(*)::int from public.employee_variance_scores(30, pg_temp.station('thies'))), (select count(*)::int from public.employees where station_id = pg_temp.station('thies') and active), 'filtre par station');
+-- Tableau de bord
+select is((select r ->> 'shifts' from public.dashboard_summary(now() - interval '30 days', now() + interval '1 day') r), (select count(*)::text from public.cash_closings c where c.closed_at >= now() - interval '30 days' and c.id = (select c2.id from public.cash_closings c2 where c2.shift_id = c.shift_id order by c2.closed_at desc limit 1)), 'tableau de bord : nombre de clôtures sur 30 jours');
+select is((select jsonb_array_length(r -> 'stations') from public.dashboard_summary(now() - interval '1 day', now() + interval '1 day') r), 3, 'une ligne par station');
+select is((select jsonb_array_length(r -> 'stations') from public.dashboard_summary(now() - interval '1 day', now() + interval '1 day', pg_temp.station('mbour')) r), 1, 'filtre une station');
+select pg_temp.logout();
+
+-- ---------------------------------------------------------------- Invitations de superviseurs
+select pg_temp.new_auth_user('invite-p5@test.local') as inv_user \gset
+select pg_temp.as_service();
+select throws_ok(format($$ select public.register_supervisor_invitation(md5('org:demo')::uuid, 'invite-p5@test.local', %L, %L) $$, :'inv_user', :'sup_id'), '42501', null, 'un superviseur ne peut pas inviter');
+select lives_ok(format($$ select public.register_supervisor_invitation(md5('org:demo')::uuid, 'Invite-P5@test.local', %L, %L) $$, :'inv_user', pg_temp.owner_demo()), 'l''owner invite');
+select is((select count(*)::int from public.org_members where user_id = :'inv_user' and role = 'supervisor'), 1, 'l''invité devient superviseur');
+select pg_temp.login(pg_temp.owner_demo());
+select is((select status::text from public.supervisor_invitations where email = 'invite-p5@test.local'), 'sent', 'statut « invitation envoyée »');
+select pg_temp.logout();
+update auth.users set last_sign_in_at = now() where id = :'inv_user';
+select pg_temp.login(pg_temp.owner_demo());
+select is(public.supervisor_invitation_status((select id from public.supervisor_invitations where email = 'invite-p5@test.local'))::text, 'accepted', 'première connexion → « acceptée »');
+select lives_ok($$ select public.revoke_supervisor((select id from public.supervisor_invitations where email = 'invite-p5@test.local')) $$, 'révocation par l''owner');
+select is((select count(*)::int from public.org_members where user_id = :'inv_user'), 0, 'le superviseur révoqué n''est plus membre');
+select pg_temp.logout();
+select pg_temp.login(:'sup_id');
+select is((select status::text from public.supervisor_invitations where email = 'invite-p5@test.local'), 'revoked', 'le superviseur voit la liste (lecture seule)');
+select throws_ok($$ select public.revoke_supervisor((select id from public.supervisor_invitations where email = 'invite-p5@test.local')) $$, '42501', null, 'le superviseur ne révoque pas');
+select throws_ok($$ insert into public.supervisor_invitations (organization_id, email) values (md5('org:demo')::uuid, 'x@y.z') $$, '42501', null, 'insertion directe interdite');
+select pg_temp.logout();
+
+select * from finish();
+rollback;

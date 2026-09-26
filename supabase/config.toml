@@ -423,3 +423,21 @@ entrypoint = "./functions/pair-device/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/pair-device/*.html" ]
+
+[functions.notify-worker]
+# Appelée par pg_cron + pg_net (en-tête x-worker-secret) et par /dev/messages : pas de JWT utilisateur.
+verify_jwt = false
+import_map = "./functions/notify-worker/deno.json"
+entrypoint = "./functions/notify-worker/index.ts"
+
+[functions.notify-webhook]
+# Statuts de livraison Meta : sécurité = signature X-Hub-Signature-256, pas de JWT.
+verify_jwt = false
+import_map = "./functions/notify-webhook/deno.json"
+entrypoint = "./functions/notify-webhook/index.ts"
+
+[functions.invite-supervisor]
+# Session propriétaire obligatoire (JWT vérifié par la passerelle puis relu avec la clé service).
+verify_jwt = true
+import_map = "./functions/invite-supervisor/deno.json"
+entrypoint = "./functions/invite-supervisor/index.ts"

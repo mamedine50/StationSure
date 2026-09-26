@@ -279,7 +279,7 @@ select lives_ok(format('select pg_temp.meter(%L, %L, %L, %L, %s, %L, null, null,
 select pg_temp.logout();
 select is((select flagged_regression from public.meter_readings where nozzle_id = pg_temp.nozzle('mbour', 'P2-A') order by device_created_at desc limit 1), true, 'relevé marqué flagged_regression');
 select is((select previous_index_cl from public.meter_readings where nozzle_id = pg_temp.nozzle('mbour', 'P2-A') order by device_created_at desc limit 1), pg_temp.idx('P2-A', 90000), 'previous_index_cl posé par le serveur');
-select is((select count(*) from public.alerts where type = 'meter_regression'), 1::bigint, 'alerte meter_regression créée');
+select is((select count(*) from public.alerts where type = 'meter_regression' and created_at >= now()), 1::bigint, 'alerte meter_regression créée');
 
 -- ================= 5. Livraison (gérant), pistolets en pause, réserve =================
 select pg_temp.login(pg_temp.device_user('mbour'));
@@ -355,7 +355,7 @@ select is(pg_temp.res(public.sign_delivery((select id from dl2), 404000, (select
 select pg_temp.logout();
 
 -- ================= 6. Rapprochement cuve : ≤ 0,5 % rien, > 0,5 % alerte tank_variance =================
-select is((select count(*) from public.alerts where type = 'tank_variance'), 0::bigint, 'aucune alerte tank_variance jusqu''ici');
+select is((select count(*) from public.alerts where type = 'tank_variance' and station_id = pg_temp.station('mbour') and created_at >= now()), 0::bigint, 'aucune alerte tank_variance jusqu''ici');
 select pg_temp.login(pg_temp.device_user('mbour'));
 -- Ventes Gasoil de 2 000 L sur P1-B depuis la dernière jauge (1 205 mm = 16 460 L), puis jauge cohérente
 select pg_temp.meter((select id from shift3), 'mbour', 'Ibrahima Sarr', 'P1-B', pg_temp.idx('P1-B', 290000), 'close', null, null, now() + interval '10 minutes');
@@ -364,7 +364,7 @@ grant select on g_ok to authenticated, service_role, anon;
 select pg_temp.logout();
 select is((select expected_cl from public.tank_readings where id = (select id from g_ok)), 1850000::bigint, 'stock théorique = 20 500 L − 2 000 L vendus = 18 500 L');
 select is((select status from public.reconciliations where details ->> 'reading_id' = (select id from g_ok)::text), 'ok'::public.reconciliation_status, 'écart +0,5 L sur 2 000 L (0,03 %) → rapprochement ok');
-select is((select count(*) from public.alerts where type = 'tank_variance'), 0::bigint, '≤ 0,5 % → aucune alerte');
+select is((select count(*) from public.alerts where type = 'tank_variance' and station_id = pg_temp.station('mbour') and created_at >= now()), 0::bigint, '≤ 0,5 % → aucune alerte');
 -- Ventes de 1 000 L sur P2-B puis jauge trop basse (1 250 mm ≈ 17 076 L au lieu de 17 500 L)
 select pg_temp.login(pg_temp.device_user('mbour'));
 select pg_temp.meter((select id from shift3), 'mbour', 'Ibrahima Sarr', 'P2-B', pg_temp.idx('P2-B', 190000), 'close', null, null, now() + interval '12 minutes');
@@ -372,8 +372,34 @@ create temporary table g_ko as select pg_temp.gauge((select id from shift3), 'mb
 grant select on g_ko to authenticated, service_role, anon;
 select pg_temp.logout();
 select is((select status from public.reconciliations where details ->> 'reading_id' = (select id from g_ko)::text), 'variance'::public.reconciliation_status, 'écart > 0,5 % des litres vendus → rapprochement en écart');
-select is((select count(*) from public.alerts where type = 'tank_variance'), 1::bigint, '> 0,5 % → alerte tank_variance');
-select is((select (payload ->> 'variance_pct')::numeric < -0.5 from public.alerts where type = 'tank_variance'), true, 'écart négatif (il manque du carburant)');
+select is((select count(*) from public.alerts where type = 'tank_variance' and station_id = pg_temp.station('mbour') and created_at >= now()), 1::bigint, '> 0,5 % → alerte tank_variance');
+select is((select (payload ->> 'variance_pct')::numeric < -0.5 from public.alerts where type = 'tank_variance' and station_id = pg_temp.station('mbour') and created_at >= now()), true, 'écart négatif (il manque du carburant)');
+
+-- Phase 5 : le seuil est lu dans les paramètres (organisation, puis surcharge station).
+select pg_temp.login(pg_temp.owner_demo());
+update public.organization_settings set tank_variance_pct = 5 where organization_id = pg_temp.org_demo();
+select pg_temp.logout();
+select pg_temp.login(pg_temp.device_user('mbour'));
+-- Ventes de 1 000 L sur P2-B puis jauge à 1 175 mm (≈ −3,5 % des litres vendus)
+select pg_temp.meter((select id from shift3), 'mbour', 'Ibrahima Sarr', 'P2-B', pg_temp.idx('P2-B', 290000), 'close', null, null, now() + interval '14 minutes');
+create temporary table g_org as select pg_temp.gauge((select id from shift3), 'mbour', 'Ibrahima Sarr', 'gasoil', 1175, 'spot', now() + interval '15 minutes') as id;
+grant select on g_org to authenticated, service_role, anon;
+select pg_temp.logout();
+select cmp_ok(abs((select (details ->> 'variance_pct')::numeric from public.reconciliations where details ->> 'reading_id' = (select id from g_org)::text)), '>', 0.5, 'écart supérieur à 0,5 %…');
+select is((select status from public.reconciliations where details ->> 'reading_id' = (select id from g_org)::text), 'ok'::public.reconciliation_status, '…mais sous le seuil de 5 % de l''organisation → rapprochement ok');
+select is((select (details ->> 'threshold_pct')::numeric from public.reconciliations where details ->> 'reading_id' = (select id from g_org)::text), 5::numeric, 'le seuil utilisé (5 %) est mémorisé');
+select is((select count(*) from public.alerts where type = 'tank_variance' and station_id = pg_temp.station('mbour') and created_at >= now()), 1::bigint, 'aucune alerte supplémentaire');
+select pg_temp.login(pg_temp.owner_demo());
+insert into public.station_settings (station_id, organization_id, tank_variance_pct) values (pg_temp.station('mbour'), pg_temp.org_demo(), 1);
+select pg_temp.logout();
+select pg_temp.login(pg_temp.device_user('mbour'));
+select pg_temp.meter((select id from shift3), 'mbour', 'Ibrahima Sarr', 'P2-B', pg_temp.idx('P2-B', 390000), 'close', null, null, now() + interval '16 minutes');
+create temporary table g_st as select pg_temp.gauge((select id from shift3), 'mbour', 'Ibrahima Sarr', 'gasoil', 1101, 'spot', now() + interval '17 minutes') as id;
+grant select on g_st to authenticated, service_role, anon;
+select pg_temp.logout();
+select is((select status from public.reconciliations where details ->> 'reading_id' = (select id from g_st)::text), 'variance'::public.reconciliation_status, 'surcharge station 1 % : le même écart devient un écart');
+select is((select count(*) from public.alerts where type = 'tank_variance' and station_id = pg_temp.station('mbour') and created_at >= now()), 2::bigint, '→ alerte tank_variance avec le seuil de la station');
+select is((select (payload ->> 'threshold_pct')::numeric from public.alerts where type = 'tank_variance' and payload ->> 'reading_id' = (select id from g_st)::text), 1::numeric, 'l''alerte porte le seuil de la station (1 %)');
 
 -- ================= 7. Fermeture carburant =================
 select pg_temp.login(pg_temp.device_user('mbour'));

@@ -7,7 +7,12 @@ import { EnTetePage } from '@/components/en-tete-page';
 import { exigerContexteComplet } from '@/lib/auth/contexte';
 import { creerClientServeur } from '@/lib/supabase/server';
 
-import { BoutonsEcart, FormulaireAnnulation, FormulaireCompteCredit } from './formulaires';
+import {
+  BoutonsEcart,
+  FormulaireAnnulation,
+  FormulaireCompteCredit,
+  FormulaireRelance,
+} from './formulaires';
 
 export const metadata: Metadata = { title: t('nav.validate') };
 
@@ -30,6 +35,8 @@ export default async function PageAValider() {
     { data: depositLinks },
     { data: deposits },
     { data: alertes },
+    { data: reglagesOrg },
+    { data: reglagesStations },
   ] = await Promise.all([
     supabase
       .from('cash_closings')
@@ -51,7 +58,7 @@ export default async function PageAValider() {
       .from('credit_accounts')
       .select('id, station_id, customer_name, phone, requested_by_employee_id, requested_at')
       .eq('status', 'pending'),
-    supabase.from('employees').select('id, full_name'),
+    supabase.from('employees').select('id, full_name, phone_e164'),
     supabase.from('shifts').select('id, label, opened_at, closed_at, opened_by'),
     supabase.from('bank_deposit_shifts').select('deposit_id, shift_id'),
     supabase.from('bank_deposits').select('id, amount_fcfa, deposited_at, evidence_id'),
@@ -60,7 +67,15 @@ export default async function PageAValider() {
       .select('id, type, shift_id, payload, created_at')
       .in('type', ['deposit_missing', 'deposit_mismatch'])
       .is('acknowledged_at', null),
+    supabase.from('organization_settings').select('cash_tolerance_fcfa').maybeSingle(),
+    supabase.from('station_settings').select('station_id, cash_tolerance_fcfa'),
   ]);
+  // Tolérance espèces effective (station > organisation > 1 000), comme effective_setting() en base.
+  const tolerance = (stationId: string) =>
+    reglagesStations?.find((r) => r.station_id === stationId)?.cash_tolerance_fcfa ??
+    reglagesOrg?.cash_tolerance_fcfa ??
+    1000;
+  const telephone = (id: string | null) => employes?.find((e) => e.id === id)?.phone_e164 ?? null;
   const nom = (id: string | null) => employes?.find((e) => e.id === id)?.full_name ?? '';
   const initiales = (n: string) =>
     n
@@ -77,7 +92,9 @@ export default async function PageAValider() {
   for (const c of closings ?? [])
     if (!derniereParShift.has(c.shift_id)) derniereParShift.set(c.shift_id, c);
   const ecarts = [...derniereParShift.values()].filter(
-    (c) => c.variance_fcfa !== 0 && !decisions?.some((d) => d.closing_id === c.id),
+    (c) =>
+      Math.abs(c.variance_fcfa) > tolerance(c.station_id) &&
+      !decisions?.some((d) => d.closing_id === c.id),
   );
   const annulations = (voids ?? []).filter((v) => !approvals?.some((a) => a.void_id === v.id));
   const versements = [...derniereParShift.values()].slice(0, 12).map((c) => {
@@ -251,15 +268,28 @@ export default async function PageAValider() {
                   })}
                 </span>
               ))}
-            <div className="mt-2 flex gap-2">
-              <button
-                type="button"
-                disabled
-                title={t('validate.remindLater')}
-                className="h-11 rounded-lg bg-accent px-4 text-[14px] font-semibold text-accent-texte opacity-40"
-              >
-                {t('validate.remindWhatsApp')}
-              </button>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              {versements
+                .filter((v) => v.missing)
+                .map(({ c }) => (
+                  <FormulaireRelance
+                    key={c.shift_id}
+                    shiftId={c.shift_id}
+                    nom={initiales(nom(c.employee_id))}
+                    telephone={telephone(c.employee_id)}
+                    rw={rw}
+                  />
+                ))}
+              {versements.every((v) => !v.missing) && (
+                <button
+                  type="button"
+                  disabled
+                  title={t('validate.remindLater')}
+                  className="h-11 rounded-lg bg-accent px-4 text-[14px] font-semibold text-accent-texte opacity-40"
+                >
+                  {t('validate.remindWhatsApp')}
+                </button>
+              )}
               <a
                 href="/caisse/versements.csv"
                 className="flex h-11 items-center rounded-lg border border-bordure-forte px-4 text-[14px] font-semibold text-texte no-underline"

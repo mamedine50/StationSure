@@ -135,6 +135,8 @@ function traduireSiCle(texte: string): string {
   if (cle && /^[a-zA-Z]+(\.[a-zA-Z_]+)+$/.test(cle)) {
     if (cle === 'cashPage.imported')
       return t(cle, { matched: args[0] ?? '0', unmatched: args[1] ?? '0' });
+    if (cle === 'devMessages.processed')
+      return t(cle, { sent: args[0] ?? '0', retry: args[1] ?? '0', failed: args[2] ?? '0' });
     return t(cle);
   }
   return texte;

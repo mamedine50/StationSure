@@ -53,6 +53,13 @@ export function FormulaireEmploye({ stations }: { stations: { id: string; name: 
             </option>
           ))}
         </Selecteur>
+        <Champ
+          label={t('employees.phone')}
+          name="telephone"
+          type="tel"
+          placeholder="+221 77 000 00 01"
+          title={t('employees.phoneHint')}
+        />
       </div>
       <Message etat={etat} />
       <BoutonPrincipal className="self-start">{t('employees.add')}</BoutonPrincipal>

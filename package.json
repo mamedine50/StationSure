@@ -19,8 +19,8 @@
     "db:lint": "supabase db lint",
     "db:test": "bash supabase/tests/_build.sh && supabase test db",
     "db:types": "supabase gen types typescript --local --schema public > packages/database/src/types.generated.ts && prettier --write packages/database/src/types.generated.ts",
-    "db:functions:test": "cd supabase/functions/pair-device && deno test",
-    "db:functions:serve": "supabase functions serve --no-verify-jwt"
+    "db:functions:test": "for f in supabase/functions/*/; do (cd \"$f\" && deno test --allow-env --allow-net) || exit 1; done",
+    "db:functions:serve": "supabase functions serve --env-file supabase/functions/.env"
   },
   "devDependencies": {
     "prettier": "3.9.9",

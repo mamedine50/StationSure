@@ -1,4 +1,4 @@
-import { validerPin } from '@stationsure/core';
+import { normaliserE164, validerPin } from '@stationsure/core';
 import { z } from 'zod';
 
 /** Schémas de validation des formulaires web. Les messages sont des clés i18n (`validation.*`). */
@@ -256,4 +256,120 @@ export const schemaImportReleve = z.object({
       return [];
     }
   }),
+});
+
+// ---------------------------------------------------------------------------
+// Phase 5 : paramètres, destinataires, routage, alertes.
+// ---------------------------------------------------------------------------
+
+const caseACocher = z.preprocess((v) => v === 'on' || v === 'true' || v === true, z.boolean());
+const pourcentage = z.coerce
+  .number({ error: 'validation.threshold' })
+  .min(0, { error: 'validation.threshold' })
+  .max(100, { error: 'validation.threshold' });
+const montantPositif = z.coerce
+  .number({ error: 'validation.amount' })
+  .int({ error: 'validation.amount' })
+  .min(0, { error: 'validation.amount' });
+const heures = z.coerce
+  .number({ error: 'validation.hours' })
+  .int({ error: 'validation.hours' })
+  .min(1, { error: 'validation.hours' })
+  .max(168, { error: 'validation.hours' });
+/** Champ facultatif d'une surcharge station : vide = hérite (null). */
+const facultatif = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((v) => (v === '' || v === undefined || v === null ? null : v), schema.nullable());
+
+export const REPORT_MODES = ['after_each_closing', 'fixed_time'] as const;
+export const ALERT_ROUTES = ['immediate', 'report'] as const;
+/** Types d'alerte routables depuis l'écran 18. */
+export const TYPES_ALERTE_ROUTABLES = [
+  'handover_mismatch',
+  'cash_variance',
+  'delivery_shortfall',
+  'meter_regression',
+  'pin_lockout',
+  'tank_variance',
+  'void_requested',
+  'deposit_missing',
+  'mobile_money_pending',
+] as const;
+
+export const schemaSeuils = z.object({
+  tankVariance: pourcentage,
+  deliveryVariance: pourcentage,
+  cashTolerance: montantPositif,
+  depositHours: heures,
+  reportMode: z.enum(REPORT_MODES, { error: 'validation.route' }),
+  reportTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, { error: 'validation.time' }),
+  smsFallback: caseACocher,
+});
+
+export const schemaMomentRapport = schemaSeuils.pick({
+  reportMode: true,
+  reportTime: true,
+  smsFallback: true,
+});
+
+export const schemaSurchargeStation = z.object({
+  stationId: z.guid({ error: 'validation.station' }),
+  tankVariance: facultatif(pourcentage),
+  deliveryVariance: facultatif(pourcentage),
+  cashTolerance: facultatif(montantPositif),
+  depositHours: facultatif(heures),
+});
+
+export const schemaPlafonds = z.object({
+  manager: montantPositif,
+  shop_cashier: montantPositif,
+  pump_attendant: montantPositif,
+  mechanic: montantPositif,
+});
+
+/** Numéro saisi librement, normalisé en E.164 (règle partagée avec packages/core). */
+export const telephoneE164 = z.string({ error: 'validation.phone' }).transform((v, ctx) => {
+  const normalise = normaliserE164(v);
+  if (!normalise) {
+    ctx.addIssue({ code: 'custom', message: 'validation.phone' });
+    return z.NEVER;
+  }
+  return normalise;
+});
+
+export const schemaDestinataire = z.object({
+  nom: z
+    .string()
+    .trim()
+    .min(2, { error: 'validation.nameMin' })
+    .max(80, { error: 'validation.nameMax' }),
+  telephone: telephoneE164,
+  rapport: caseACocher,
+  alertes: caseACocher,
+});
+
+export const schemaMiseAJourDestinataire = z.object({
+  id: z.guid(),
+  rapport: caseACocher,
+  alertes: caseACocher,
+});
+
+export const schemaIdentifiant = z.object({ id: z.guid() });
+
+export const schemaRoutage = z.partialRecord(
+  z.enum(TYPES_ALERTE_ROUTABLES),
+  z.enum(ALERT_ROUTES, { error: 'validation.route' }),
+);
+
+export const schemaInvitation = z.object({ email });
+
+export const schemaAccuserAlerte = z.object({ alertId: z.guid() });
+
+export const schemaRelance = z.object({ shiftId: z.guid() });
+
+/** Employé avec numéro facultatif (relance WhatsApp du gérant). */
+export const schemaEmployeAvecTelephone = schemaEmploye.extend({
+  telephone: z.preprocess(
+    (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
+    telephoneE164.nullable(),
+  ),
 });

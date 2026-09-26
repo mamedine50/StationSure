@@ -9,3 +9,9 @@ export function envSupabase() {
   }
   return { url, key };
 }
+
+/** Vrai quand le Supabase ciblé est la pile locale (pages et actions réservées au développement). */
+export function estEnvironnementLocal(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  return /^https?:\/\/(127\.0\.0\.1|localhost|192\.168\.|10\.|host\.docker\.internal)/.test(url);
+}

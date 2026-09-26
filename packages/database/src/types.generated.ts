@@ -3,6 +3,35 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      alert_routing: {
+        Row: {
+          alert_type: Database['public']['Enums']['alert_type'];
+          organization_id: string;
+          route: Database['public']['Enums']['alert_route'];
+          updated_at: string;
+        };
+        Insert: {
+          alert_type: Database['public']['Enums']['alert_type'];
+          organization_id: string;
+          route: Database['public']['Enums']['alert_route'];
+          updated_at?: string;
+        };
+        Update: {
+          alert_type?: Database['public']['Enums']['alert_type'];
+          organization_id?: string;
+          route?: Database['public']['Enums']['alert_route'];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'alert_routing_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       alerts: {
         Row: {
           acknowledged_at: string | null;
@@ -959,6 +988,7 @@ export type Database = {
           full_name: string;
           id: string;
           organization_id: string;
+          phone_e164: string | null;
           role: Database['public']['Enums']['employee_role'];
           station_id: string;
           updated_at: string;
@@ -969,6 +999,7 @@ export type Database = {
           full_name: string;
           id?: string;
           organization_id: string;
+          phone_e164?: string | null;
           role: Database['public']['Enums']['employee_role'];
           station_id: string;
           updated_at?: string;
@@ -979,6 +1010,7 @@ export type Database = {
           full_name?: string;
           id?: string;
           organization_id?: string;
+          phone_e164?: string | null;
           role?: Database['public']['Enums']['employee_role'];
           station_id?: string;
           updated_at?: string;
@@ -1690,6 +1722,179 @@ export type Database = {
           },
         ];
       };
+      notification_outbox: {
+        Row: {
+          attempts: number;
+          body: string;
+          channel: Database['public']['Enums']['notification_channel'];
+          created_at: string;
+          delivered_at: string | null;
+          fallback_of: string | null;
+          id: string;
+          idempotency_key: string;
+          kind: Database['public']['Enums']['notification_kind'];
+          last_error: string | null;
+          next_attempt_at: string;
+          organization_id: string;
+          provider_message_id: string | null;
+          recipient_id: string | null;
+          sent_at: string | null;
+          station_id: string | null;
+          status: Database['public']['Enums']['notification_status'];
+          template: string;
+          to_phone: string;
+          variables: Json;
+        };
+        Insert: {
+          attempts?: number;
+          body: string;
+          channel?: Database['public']['Enums']['notification_channel'];
+          created_at?: string;
+          delivered_at?: string | null;
+          fallback_of?: string | null;
+          id?: string;
+          idempotency_key: string;
+          kind: Database['public']['Enums']['notification_kind'];
+          last_error?: string | null;
+          next_attempt_at?: string;
+          organization_id: string;
+          provider_message_id?: string | null;
+          recipient_id?: string | null;
+          sent_at?: string | null;
+          station_id?: string | null;
+          status?: Database['public']['Enums']['notification_status'];
+          template: string;
+          to_phone: string;
+          variables?: Json;
+        };
+        Update: {
+          attempts?: number;
+          body?: string;
+          channel?: Database['public']['Enums']['notification_channel'];
+          created_at?: string;
+          delivered_at?: string | null;
+          fallback_of?: string | null;
+          id?: string;
+          idempotency_key?: string;
+          kind?: Database['public']['Enums']['notification_kind'];
+          last_error?: string | null;
+          next_attempt_at?: string;
+          organization_id?: string;
+          provider_message_id?: string | null;
+          recipient_id?: string | null;
+          sent_at?: string | null;
+          station_id?: string | null;
+          status?: Database['public']['Enums']['notification_status'];
+          template?: string;
+          to_phone?: string;
+          variables?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_outbox_fallback_of_fkey';
+            columns: ['fallback_of'];
+            isOneToOne: false;
+            referencedRelation: 'notification_outbox';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_outbox_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_outbox_recipient_id_fkey';
+            columns: ['recipient_id'];
+            isOneToOne: false;
+            referencedRelation: 'notification_recipients';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      notification_outbox_events: {
+        Row: {
+          at: string;
+          error: string | null;
+          id: number;
+          organization_id: string;
+          outbox_id: string;
+          provider_message_id: string | null;
+          status: Database['public']['Enums']['notification_status'];
+        };
+        Insert: {
+          at?: string;
+          error?: string | null;
+          id?: never;
+          organization_id: string;
+          outbox_id: string;
+          provider_message_id?: string | null;
+          status: Database['public']['Enums']['notification_status'];
+        };
+        Update: {
+          at?: string;
+          error?: string | null;
+          id?: never;
+          organization_id?: string;
+          outbox_id?: string;
+          provider_message_id?: string | null;
+          status?: Database['public']['Enums']['notification_status'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_outbox_events_outbox_id_fkey';
+            columns: ['outbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'notification_outbox';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      notification_recipients: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          id: string;
+          name: string;
+          organization_id: string;
+          phone_e164: string;
+          receives_alerts: boolean;
+          receives_report: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          name: string;
+          organization_id: string;
+          phone_e164: string;
+          receives_alerts?: boolean;
+          receives_report?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          active?: boolean;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          organization_id?: string;
+          phone_e164?: string;
+          receives_alerts?: boolean;
+          receives_report?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_recipients_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       nozzles: {
         Row: {
           active: boolean;
@@ -1778,6 +1983,59 @@ export type Database = {
             foreignKeyName: 'org_members_organization_id_fkey';
             columns: ['organization_id'];
             isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      organization_settings: {
+        Row: {
+          cash_tolerance_fcfa: number;
+          delivery_variance_pct: number;
+          deposit_missing_hours: number;
+          organization_id: string;
+          report_mode: Database['public']['Enums']['report_mode'];
+          report_time: string;
+          report_timezone: string;
+          sms_fallback: boolean;
+          sms_fallback_minutes: number;
+          tank_variance_pct: number;
+          updated_at: string;
+          web_base_url: string;
+        };
+        Insert: {
+          cash_tolerance_fcfa?: number;
+          delivery_variance_pct?: number;
+          deposit_missing_hours?: number;
+          organization_id: string;
+          report_mode?: Database['public']['Enums']['report_mode'];
+          report_time?: string;
+          report_timezone?: string;
+          sms_fallback?: boolean;
+          sms_fallback_minutes?: number;
+          tank_variance_pct?: number;
+          updated_at?: string;
+          web_base_url?: string;
+        };
+        Update: {
+          cash_tolerance_fcfa?: number;
+          delivery_variance_pct?: number;
+          deposit_missing_hours?: number;
+          organization_id?: string;
+          report_mode?: Database['public']['Enums']['report_mode'];
+          report_time?: string;
+          report_timezone?: string;
+          sms_fallback?: boolean;
+          sms_fallback_minutes?: number;
+          tank_variance_pct?: number;
+          updated_at?: string;
+          web_base_url?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'organization_settings_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: true;
             referencedRelation: 'organizations';
             referencedColumns: ['id'];
           },
@@ -2427,6 +2685,44 @@ export type Database = {
           },
         ];
       };
+      station_settings: {
+        Row: {
+          cash_tolerance_fcfa: number | null;
+          delivery_variance_pct: number | null;
+          deposit_missing_hours: number | null;
+          organization_id: string;
+          station_id: string;
+          tank_variance_pct: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          cash_tolerance_fcfa?: number | null;
+          delivery_variance_pct?: number | null;
+          deposit_missing_hours?: number | null;
+          organization_id: string;
+          station_id: string;
+          tank_variance_pct?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          cash_tolerance_fcfa?: number | null;
+          delivery_variance_pct?: number | null;
+          deposit_missing_hours?: number | null;
+          organization_id?: string;
+          station_id?: string;
+          tank_variance_pct?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'station_settings_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+        ];
+      };
       stations: {
         Row: {
           active: boolean;
@@ -2461,6 +2757,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'stations_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      supervisor_invitations: {
+        Row: {
+          accepted_at: string | null;
+          email: string;
+          id: string;
+          invited_at: string;
+          invited_by: string | null;
+          organization_id: string;
+          revoked_at: string | null;
+          status: Database['public']['Enums']['invitation_status'];
+          user_id: string | null;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          email: string;
+          id?: string;
+          invited_at?: string;
+          invited_by?: string | null;
+          organization_id: string;
+          revoked_at?: string | null;
+          status?: Database['public']['Enums']['invitation_status'];
+          user_id?: string | null;
+        };
+        Update: {
+          accepted_at?: string | null;
+          email?: string;
+          id?: string;
+          invited_at?: string;
+          invited_by?: string | null;
+          organization_id?: string;
+          revoked_at?: string | null;
+          status?: Database['public']['Enums']['invitation_status'];
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'supervisor_invitations_organization_id_fkey';
             columns: ['organization_id'];
             isOneToOne: false;
             referencedRelation: 'organizations';
@@ -3071,9 +3411,52 @@ export type Database = {
         Args: { p_reading_id?: string; p_session_id: string; p_step: string };
         Returns: Json;
       };
+      alert_route_for: {
+        Args: {
+          p_org: string;
+          p_type: Database['public']['Enums']['alert_type'];
+        };
+        Returns: Database['public']['Enums']['alert_route'];
+      };
+      build_evening_report: { Args: { p_closing_id: string }; Returns: Json };
+      build_summary_report: {
+        Args: { p_date: string; p_org: string };
+        Returns: Json;
+      };
       calibration_version_at: {
         Args: { p_at?: string; p_tank_id: string };
         Returns: string;
+      };
+      claim_notifications: {
+        Args: { p_limit?: number };
+        Returns: {
+          attempts: number;
+          body: string;
+          channel: Database['public']['Enums']['notification_channel'];
+          created_at: string;
+          delivered_at: string | null;
+          fallback_of: string | null;
+          id: string;
+          idempotency_key: string;
+          kind: Database['public']['Enums']['notification_kind'];
+          last_error: string | null;
+          next_attempt_at: string;
+          organization_id: string;
+          provider_message_id: string | null;
+          recipient_id: string | null;
+          sent_at: string | null;
+          station_id: string | null;
+          status: Database['public']['Enums']['notification_status'];
+          template: string;
+          to_phone: string;
+          variables: Json;
+        }[];
+        SetofOptions: {
+          from: '*';
+          to: 'notification_outbox';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
       };
       close_shift_cash: {
         Args: {
@@ -3144,6 +3527,10 @@ export type Database = {
       current_employee_session: { Args: never; Returns: Json };
       current_org_ids: { Args: never; Returns: string[] };
       current_station_ids: { Args: never; Returns: string[] };
+      dashboard_summary: {
+        Args: { p_from: string; p_station_id?: string; p_to: string };
+        Returns: Json;
+      };
       decide_cash_variance: {
         Args: {
           p_closing_id: string;
@@ -3174,6 +3561,27 @@ export type Database = {
         };
         Returns: Json;
       };
+      dispatch_scheduled_reports: { Args: never; Returns: number };
+      effective_setting: {
+        Args: { p_key: string; p_station_id: string };
+        Returns: number;
+      };
+      employee_variance_scores: {
+        Args: { p_days?: number; p_station_id?: string };
+        Returns: {
+          cash_variances: number;
+          employee_id: string;
+          full_name: string;
+          handover_variances: number;
+          meter_regressions: number;
+          rejected_voids: number;
+          score: number;
+          shifts: number;
+          station_id: string;
+          station_name: string;
+          weighted: number;
+        }[];
+      };
       employees_with_pin: { Args: never; Returns: string[] };
       end_employee_session: {
         Args: {
@@ -3182,12 +3590,24 @@ export type Database = {
         };
         Returns: undefined;
       };
+      enqueue_evening_report: {
+        Args: { p_closing_id: string };
+        Returns: number;
+      };
+      enqueue_summary_report: {
+        Args: { p_date: string; p_org: string };
+        Returns: number;
+      };
+      escalate_undelivered: { Args: never; Returns: number };
       evidence_is_uploaded: {
         Args: { p_evidence_id: string };
         Returns: boolean;
       };
       flag_missing_deposits: { Args: never; Returns: number };
       flag_pending_mobile_money: { Args: never; Returns: number };
+      format_fcfa: { Args: { p: number }; Returns: string };
+      format_litres: { Args: { p_cl: number }; Returns: string };
+      format_pct: { Args: { p: number }; Returns: string };
       fuel_price_at: {
         Args: {
           p_at: string;
@@ -3232,6 +3652,7 @@ export type Database = {
           total_fcfa: number;
         }[];
       };
+      locked_tolerances: { Args: never; Returns: Json };
       nozzle_is_paused: { Args: { p_nozzle_id: string }; Returns: boolean };
       open_shift: { Args: { p_shift_id: string }; Returns: Json };
       payment_match_status: {
@@ -3249,11 +3670,32 @@ export type Database = {
         };
         Returns: Json;
       };
+      record_delivery_status: {
+        Args: {
+          p_error?: string;
+          p_provider_message_id: string;
+          p_status: string;
+        };
+        Returns: number;
+      };
       record_sale: { Args: { p: Json }; Returns: Json };
       register_paired_device: {
         Args: { p_auth_user_id: string; p_label: string; p_pairing_id: string };
         Returns: string;
       };
+      register_supervisor_invitation: {
+        Args: {
+          p_email: string;
+          p_invited_by: string;
+          p_org: string;
+          p_user_id: string;
+        };
+        Returns: string;
+      };
+      remind_manager: { Args: { p_shift_id: string }; Returns: Json };
+      render_alert_message: { Args: { p_alert_id: string }; Returns: string };
+      render_evening_report: { Args: { r: Json }; Returns: string };
+      render_summary_report: { Args: { r: Json }; Returns: string };
       report_handover_discrepancy: {
         Args: { p_handover_id: string; p_reason: string };
         Returns: Json;
@@ -3275,8 +3717,22 @@ export type Database = {
         Returns: string;
       };
       revoke_device: { Args: { p_device_id: string }; Returns: undefined };
+      revoke_supervisor: {
+        Args: { p_invitation_id: string };
+        Returns: undefined;
+      };
       set_employee_pin: {
         Args: { p_employee_id: string; p_pin: string };
+        Returns: undefined;
+      };
+      set_notification_status: {
+        Args: {
+          p_error?: string;
+          p_id: string;
+          p_provider_message_id?: string;
+          p_retry_after_seconds?: number;
+          p_status: Database['public']['Enums']['notification_status'];
+        };
         Returns: undefined;
       };
       shift_cash_summary: { Args: { p_shift_id: string }; Returns: Json };
@@ -3322,6 +3778,10 @@ export type Database = {
         Args: { p_incoming_employee_id: string; p_shift_id: string };
         Returns: Json;
       };
+      supervisor_invitation_status: {
+        Args: { p_invitation_id: string };
+        Returns: Database['public']['Enums']['invitation_status'];
+      };
       tank_litres_sold_between: {
         Args: { p_from: string; p_tank_id: string; p_to: string };
         Returns: number;
@@ -3354,6 +3814,7 @@ export type Database = {
       };
     };
     Enums: {
+      alert_route: 'immediate' | 'report';
       alert_severity: 'info' | 'warning' | 'critical';
       alert_type:
         | 'cash_variance'
@@ -3412,8 +3873,12 @@ export type Database = {
         | 'adjustment'
         | 'transfer'
         | 'count_correction';
+      invitation_status: 'sent' | 'accepted' | 'revoked';
       meter_reading_kind: 'open' | 'close' | 'handover' | 'price_change';
       mobile_money_provider: 'wave' | 'orange_money';
+      notification_channel: 'dev' | 'whatsapp' | 'sms';
+      notification_kind: 'evening_report' | 'summary_report' | 'alert' | 'reminder';
+      notification_status: 'queued' | 'sent' | 'delivered' | 'failed' | 'cancelled';
       org_member_role: 'owner' | 'supervisor';
       payment_match_status: 'pending' | 'matched' | 'unmatched';
       payment_method: 'cash' | 'card' | 'wave' | 'orange_money' | 'credit';
@@ -3422,6 +3887,7 @@ export type Database = {
       product_unit: 'unit' | 'cl';
       reconciliation_kind: 'tank' | 'cash' | 'mobile_money';
       reconciliation_status: 'ok' | 'variance' | 'pending';
+      report_mode: 'after_each_closing' | 'fixed_time';
       session_end_reason: 'logout' | 'replaced' | 'expired' | 'revoked' | 'inactivity' | 'handover';
       shift_status: 'opening' | 'open' | 'closing' | 'closed';
       tank_reading_kind: 'open' | 'close' | 'delivery_before' | 'delivery_after' | 'spot';
@@ -3547,6 +4013,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      alert_route: ['immediate', 'report'],
       alert_severity: ['info', 'warning', 'critical'],
       alert_type: [
         'cash_variance',
@@ -3614,8 +4081,12 @@ export const Constants = {
         'transfer',
         'count_correction',
       ],
+      invitation_status: ['sent', 'accepted', 'revoked'],
       meter_reading_kind: ['open', 'close', 'handover', 'price_change'],
       mobile_money_provider: ['wave', 'orange_money'],
+      notification_channel: ['dev', 'whatsapp', 'sms'],
+      notification_kind: ['evening_report', 'summary_report', 'alert', 'reminder'],
+      notification_status: ['queued', 'sent', 'delivered', 'failed', 'cancelled'],
       org_member_role: ['owner', 'supervisor'],
       payment_match_status: ['pending', 'matched', 'unmatched'],
       payment_method: ['cash', 'card', 'wave', 'orange_money', 'credit'],
@@ -3624,6 +4095,7 @@ export const Constants = {
       product_unit: ['unit', 'cl'],
       reconciliation_kind: ['tank', 'cash', 'mobile_money'],
       reconciliation_status: ['ok', 'variance', 'pending'],
+      report_mode: ['after_each_closing', 'fixed_time'],
       session_end_reason: ['logout', 'replaced', 'expired', 'revoked', 'inactivity', 'handover'],
       shift_status: ['opening', 'open', 'closing', 'closed'],
       tank_reading_kind: ['open', 'close', 'delivery_before', 'delivery_after', 'spot'],

@@ -45,7 +45,7 @@ Next les transpile via `transpilePackages`, Metro nativement.
 Base locale (Docker requis, ports 547xx : API 54721, Postgres 54722, Studio 54723) :
 `pnpm db:start` · `pnpm db:reset` (migrations + seed) · `pnpm db:lint` · `pnpm db:test` (pgTAP) ·
 `pnpm db:types` (régénère `packages/database/src/types.generated.ts`) · `pnpm db:stop` ·
-`pnpm db:functions:test` (tests Deno de l'Edge Function) · `pnpm db:functions:serve`.
+`pnpm db:functions:test` (tests Deno des Edge Functions) · `pnpm db:functions:serve` (lit `supabase/functions/.env`).
 `psql` n'est pas installé : `docker exec supabase_db_stationsure psql -U postgres -c "…"`.
 
 **INTERDIT sans demande explicite du propriétaire du repo : `supabase link`, `supabase db push`,
@@ -105,6 +105,24 @@ error}` au lieu de lever une exception : une exception annulerait l'écriture du
 - Règles core ↔ SQL : `attenduCarburantParTranches`, `montantAttenduShift`, `montantAttenduEspeces`,
   `totalBilletage` (packages/core/src/cloture.ts).
 
+## Propriétaire à distance (phase 5)
+
+- **Seuils** : jamais de constante dans une règle ; lire `public.effective_setting(station_id, clé)`
+  (clés `tank_variance_pct`, `delivery_variance_pct`, `cash_tolerance_fcfa`, `deposit_missing_hours`).
+  Tolérance 0 sur paiements électroniques, passation, index qui recule : verrouillée, sans colonne.
+- **Notifications** : tout message part de `notification_outbox` (clé d'idempotence, statut courant) +
+  `notification_outbox_events` (historique append-only). Rapport du soir = valeurs figées de
+  `cash_closings` (`build_evening_report` → `render_evening_report`, miroir de `renderRapportSoir` dans
+  `packages/core/src/notifications.ts` : modifier les deux ensemble). Alertes routées « immédiat » ou
+  « rapport » (`alert_route_for`), anti-spam 10 min.
+- **Envoi** : Edge Function `notify-worker` (pg_cron + pg_net chaque minute, secret `x-worker-secret`),
+  adaptateur choisi par `NOTIFIER` : `dev` (défaut, page `/dev/messages`, aucun envoi), `meta`
+  (WhatsApp Cloud API, modèles de `docs/whatsapp-modeles.md`), SMS via `SMS_API_URL`. Webhook Meta =
+  `notify-webhook` (signature HMAC). **Aucun envoi réel tant que `NOTIFIER=meta` n'est pas posé en ligne.**
+- Superviseurs : `invite-supervisor` (service_role, `inviteUserByEmail`), lecture seule, jamais
+  destinataires par défaut. Numéros des destinataires lisibles par l'owner seulement.
+- Score d'écart : `employee_variance_scores` (formule dans `docs/score-ecart.md`), sans IA.
+
 ## Cycle carburant (phase 3)
 
 - Toute opération mobile passe par : photo caméra (jamais la galerie) → `creerPreuve()` (compression
@@ -141,7 +159,7 @@ error}` au lieu de lever une exception : une exception annulerait l'écriture du
 | 2     | Auth propriétaire, onboarding, jumelage des tablettes, PIN et sessions employé — écran 01                                                                                     | **faite** (mode kiosque : plus tard)  |
 | 3     | Cycle carburant : configuration web (écran 13), relevés photo (02), jaugeage (11), passation à l'aveugle (03), livraison (12), rapprochement cuve                             | **faite** (offline complet : phase 6) |
 | 4     | Caisse : paiements (Wave/OM/carte/crédit), rapprochement mobile money, crédit client, annulations, billetage à l'aveugle, clôture, décisions, versements — écrans 04, 14 à 17 | **faite**                             |
-| 5     | Dashboard propriétaire et rapport WhatsApp / SMS — écrans 05 et 06                                                                                                            | à venir                               |
+| 5     | Dashboard propriétaire, alertes, paramètres (écran 18), rapport WhatsApp / SMS via outbox + worker (mode test) — écrans 05, 06, 18                                            | **faite** (envoi réel : à activer)    |
 | 6     | Offline-first (PowerSync ou WatermelonDB), prix verrouillés, livraisons et barémage en production _(proposition, ordre à valider)_                                            | à venir                               |
 | 7     | Boutique : POS, codes-barres, comptage surprise à l'aveugle — écran 07                                                                                                        | à venir                               |
 | 8     | Garage (ordres de travail) et Car Wash (tickets) — écrans 08 et 09                                                                                                            | à venir                               |
