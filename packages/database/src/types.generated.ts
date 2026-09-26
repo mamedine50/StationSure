@@ -760,10 +760,44 @@ export type Database = {
           },
         ];
       };
+      evidence_uploads: {
+        Row: {
+          evidence_id: string;
+          object_size: number | null;
+          organization_id: string;
+          station_id: string;
+          uploaded_at: string;
+        };
+        Insert: {
+          evidence_id: string;
+          object_size?: number | null;
+          organization_id: string;
+          station_id: string;
+          uploaded_at?: string;
+        };
+        Update: {
+          evidence_id?: string;
+          object_size?: number | null;
+          organization_id?: string;
+          station_id?: string;
+          uploaded_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'evidence_uploads_evidence_id_fkey';
+            columns: ['evidence_id'];
+            isOneToOne: true;
+            referencedRelation: 'evidence_files';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       fuel_deliveries: {
         Row: {
           after_cl: number;
+          after_reading_id: string | null;
           before_cl: number;
+          before_reading_id: string | null;
           created_at: string;
           device_created_at: string;
           device_id: string;
@@ -774,13 +808,22 @@ export type Database = {
           invoiced_cl: number;
           organization_id: string;
           received_cl: number | null;
+          reserve_reason: string | null;
+          reverses_id: string | null;
+          session_id: string | null;
+          signed_with_reserve: boolean;
           station_id: string;
           supplier: string | null;
           tank_id: string;
+          unloading_ended_at: string | null;
+          unloading_started_at: string | null;
+          variance_pct: number | null;
         };
         Insert: {
           after_cl: number;
+          after_reading_id?: string | null;
           before_cl: number;
+          before_reading_id?: string | null;
           created_at?: string;
           device_created_at: string;
           device_id: string;
@@ -791,13 +834,22 @@ export type Database = {
           invoiced_cl: number;
           organization_id: string;
           received_cl?: number | null;
+          reserve_reason?: string | null;
+          reverses_id?: string | null;
+          session_id?: string | null;
+          signed_with_reserve?: boolean;
           station_id: string;
           supplier?: string | null;
           tank_id: string;
+          unloading_ended_at?: string | null;
+          unloading_started_at?: string | null;
+          variance_pct?: number | null;
         };
         Update: {
           after_cl?: number;
+          after_reading_id?: string | null;
           before_cl?: number;
+          before_reading_id?: string | null;
           created_at?: string;
           device_created_at?: string;
           device_id?: string;
@@ -808,9 +860,16 @@ export type Database = {
           invoiced_cl?: number;
           organization_id?: string;
           received_cl?: number | null;
+          reserve_reason?: string | null;
+          reverses_id?: string | null;
+          session_id?: string | null;
+          signed_with_reserve?: boolean;
           station_id?: string;
           supplier?: string | null;
           tank_id?: string;
+          unloading_ended_at?: string | null;
+          unloading_started_at?: string | null;
+          variance_pct?: number | null;
         };
         Relationships: [
           {
@@ -835,6 +894,34 @@ export type Database = {
             referencedColumns: ['id', 'station_id'];
           },
           {
+            foreignKeyName: 'fuel_deliveries_readings_fk_after';
+            columns: ['after_reading_id', 'tank_id'];
+            isOneToOne: false;
+            referencedRelation: 'tank_readings';
+            referencedColumns: ['id', 'tank_id'];
+          },
+          {
+            foreignKeyName: 'fuel_deliveries_readings_fk_before';
+            columns: ['before_reading_id', 'tank_id'];
+            isOneToOne: false;
+            referencedRelation: 'tank_readings';
+            referencedColumns: ['id', 'tank_id'];
+          },
+          {
+            foreignKeyName: 'fuel_deliveries_reverses_id_fkey';
+            columns: ['reverses_id'];
+            isOneToOne: false;
+            referencedRelation: 'fuel_deliveries';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'fuel_deliveries_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'fuel_delivery_sessions';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'fuel_deliveries_station_id_organization_id_fkey';
             columns: ['station_id', 'organization_id'];
             isOneToOne: false;
@@ -843,6 +930,130 @@ export type Database = {
           },
           {
             foreignKeyName: 'fuel_deliveries_tank_id_station_id_fkey';
+            columns: ['tank_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'tanks';
+            referencedColumns: ['id', 'station_id'];
+          },
+        ];
+      };
+      fuel_delivery_sessions: {
+        Row: {
+          after_reading_id: string | null;
+          arrived_at: string;
+          before_reading_id: string | null;
+          created_at: string;
+          delivery_id: string | null;
+          device_created_at: string;
+          device_id: string;
+          driver_name: string | null;
+          employee_id: string;
+          id: string;
+          invoice_evidence_id: string | null;
+          invoice_ref: string | null;
+          invoiced_cl: number | null;
+          organization_id: string;
+          shift_id: string | null;
+          signed_at: string | null;
+          station_id: string;
+          status: Database['public']['Enums']['delivery_status'];
+          supplier: string | null;
+          tank_id: string;
+          truck_plate: string | null;
+          unloading_ended_at: string | null;
+          unloading_started_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          after_reading_id?: string | null;
+          arrived_at?: string;
+          before_reading_id?: string | null;
+          created_at?: string;
+          delivery_id?: string | null;
+          device_created_at: string;
+          device_id: string;
+          driver_name?: string | null;
+          employee_id: string;
+          id?: string;
+          invoice_evidence_id?: string | null;
+          invoice_ref?: string | null;
+          invoiced_cl?: number | null;
+          organization_id: string;
+          shift_id?: string | null;
+          signed_at?: string | null;
+          station_id: string;
+          status?: Database['public']['Enums']['delivery_status'];
+          supplier?: string | null;
+          tank_id: string;
+          truck_plate?: string | null;
+          unloading_ended_at?: string | null;
+          unloading_started_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          after_reading_id?: string | null;
+          arrived_at?: string;
+          before_reading_id?: string | null;
+          created_at?: string;
+          delivery_id?: string | null;
+          device_created_at?: string;
+          device_id?: string;
+          driver_name?: string | null;
+          employee_id?: string;
+          id?: string;
+          invoice_evidence_id?: string | null;
+          invoice_ref?: string | null;
+          invoiced_cl?: number | null;
+          organization_id?: string;
+          shift_id?: string | null;
+          signed_at?: string | null;
+          station_id?: string;
+          status?: Database['public']['Enums']['delivery_status'];
+          supplier?: string | null;
+          tank_id?: string;
+          truck_plate?: string | null;
+          unloading_ended_at?: string | null;
+          unloading_started_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'fuel_delivery_sessions_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'fuel_delivery_sessions_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'fuel_delivery_sessions_invoice_evidence_id_station_id_fkey';
+            columns: ['invoice_evidence_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'evidence_files';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'fuel_delivery_sessions_shift_id_station_id_fkey';
+            columns: ['shift_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'shifts';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'fuel_delivery_sessions_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'fuel_delivery_sessions_tank_id_station_id_fkey';
             columns: ['tank_id', 'station_id'];
             isOneToOne: false;
             referencedRelation: 'tanks';
@@ -952,11 +1163,18 @@ export type Database = {
           device_id: string;
           employee_id: string;
           evidence_id: string;
+          flagged_regression: boolean;
+          gps_lat: number | null;
+          gps_lng: number | null;
+          handover_id: string | null;
+          handover_side: Database['public']['Enums']['handover_side'] | null;
           id: string;
           index_cl: number;
+          justification: string | null;
           kind: Database['public']['Enums']['meter_reading_kind'];
           nozzle_id: string;
           organization_id: string;
+          previous_index_cl: number | null;
           shift_id: string;
           station_id: string;
         };
@@ -966,11 +1184,18 @@ export type Database = {
           device_id: string;
           employee_id: string;
           evidence_id: string;
+          flagged_regression?: boolean;
+          gps_lat?: number | null;
+          gps_lng?: number | null;
+          handover_id?: string | null;
+          handover_side?: Database['public']['Enums']['handover_side'] | null;
           id?: string;
           index_cl: number;
+          justification?: string | null;
           kind: Database['public']['Enums']['meter_reading_kind'];
           nozzle_id: string;
           organization_id: string;
+          previous_index_cl?: number | null;
           shift_id: string;
           station_id: string;
         };
@@ -980,11 +1205,18 @@ export type Database = {
           device_id?: string;
           employee_id?: string;
           evidence_id?: string;
+          flagged_regression?: boolean;
+          gps_lat?: number | null;
+          gps_lng?: number | null;
+          handover_id?: string | null;
+          handover_side?: Database['public']['Enums']['handover_side'] | null;
           id?: string;
           index_cl?: number;
+          justification?: string | null;
           kind?: Database['public']['Enums']['meter_reading_kind'];
           nozzle_id?: string;
           organization_id?: string;
+          previous_index_cl?: number | null;
           shift_id?: string;
           station_id?: string;
         };
@@ -1009,6 +1241,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'evidence_files';
             referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'meter_readings_handover_fk';
+            columns: ['handover_id'];
+            isOneToOne: false;
+            referencedRelation: 'shift_handovers';
+            referencedColumns: ['id'];
           },
           {
             foreignKeyName: 'meter_readings_nozzle_id_station_id_fkey';
@@ -1521,9 +1760,14 @@ export type Database = {
       };
       shift_handovers: {
         Row: {
+          attributed_shift_id: string | null;
           created_at: string;
+          created_by_session_id: string | null;
           device_created_at: string;
           device_id: string;
+          discrepancies: Json | null;
+          discrepancy_reason: string | null;
+          discrepancy_reported: boolean;
           from_shift_id: string;
           id: string;
           incoming_employee_id: string;
@@ -1537,9 +1781,14 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          attributed_shift_id?: string | null;
           created_at?: string;
+          created_by_session_id?: string | null;
           device_created_at: string;
           device_id: string;
+          discrepancies?: Json | null;
+          discrepancy_reason?: string | null;
+          discrepancy_reported?: boolean;
           from_shift_id: string;
           id?: string;
           incoming_employee_id: string;
@@ -1553,9 +1802,14 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          attributed_shift_id?: string | null;
           created_at?: string;
+          created_by_session_id?: string | null;
           device_created_at?: string;
           device_id?: string;
+          discrepancies?: Json | null;
+          discrepancy_reason?: string | null;
+          discrepancy_reported?: boolean;
           from_shift_id?: string;
           id?: string;
           incoming_employee_id?: string;
@@ -1569,6 +1823,20 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'shift_handovers_attributed_shift_id_fkey';
+            columns: ['attributed_shift_id'];
+            isOneToOne: false;
+            referencedRelation: 'shifts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'shift_handovers_created_by_session_id_fkey';
+            columns: ['created_by_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'employee_sessions';
+            referencedColumns: ['id'];
+          },
           {
             foreignKeyName: 'shift_handovers_device_id_station_id_fkey';
             columns: ['device_id', 'station_id'];
@@ -1620,7 +1888,9 @@ export type Database = {
           created_at: string;
           device_created_at: string;
           device_id: string;
+          fuel_closed_at: string | null;
           id: string;
+          label: string | null;
           opened_at: string;
           opened_by: string;
           organization_id: string;
@@ -1634,7 +1904,9 @@ export type Database = {
           created_at?: string;
           device_created_at: string;
           device_id: string;
+          fuel_closed_at?: string | null;
           id?: string;
+          label?: string | null;
           opened_at: string;
           opened_by: string;
           organization_id: string;
@@ -1648,7 +1920,9 @@ export type Database = {
           created_at?: string;
           device_created_at?: string;
           device_id?: string;
+          fuel_closed_at?: string | null;
           id?: string;
+          label?: string | null;
           opened_at?: string;
           opened_by?: string;
           organization_id?: string;
@@ -1728,6 +2002,60 @@ export type Database = {
           },
         ];
       };
+      tank_calibration_versions: {
+        Row: {
+          certificate_path: string | null;
+          created_at: string;
+          created_by: string | null;
+          effective_from: string;
+          id: string;
+          note: string | null;
+          organization_id: string;
+          station_id: string;
+          tank_id: string;
+          version: number;
+        };
+        Insert: {
+          certificate_path?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          effective_from?: string;
+          id?: string;
+          note?: string | null;
+          organization_id: string;
+          station_id: string;
+          tank_id: string;
+          version: number;
+        };
+        Update: {
+          certificate_path?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          effective_from?: string;
+          id?: string;
+          note?: string | null;
+          organization_id?: string;
+          station_id?: string;
+          tank_id?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'tank_calibration_versions_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'tank_calibration_versions_tank_id_station_id_fkey';
+            columns: ['tank_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'tanks';
+            referencedColumns: ['id', 'station_id'];
+          },
+        ];
+      };
       tank_calibrations: {
         Row: {
           created_at: string;
@@ -1737,6 +2065,7 @@ export type Database = {
           station_id: string;
           tank_id: string;
           updated_at: string;
+          version_id: string;
           volume_cl: number;
         };
         Insert: {
@@ -1747,6 +2076,7 @@ export type Database = {
           station_id: string;
           tank_id: string;
           updated_at?: string;
+          version_id: string;
           volume_cl: number;
         };
         Update: {
@@ -1757,6 +2087,7 @@ export type Database = {
           station_id?: string;
           tank_id?: string;
           updated_at?: string;
+          version_id?: string;
           volume_cl?: number;
         };
         Relationships: [
@@ -1774,6 +2105,13 @@ export type Database = {
             referencedRelation: 'tanks';
             referencedColumns: ['id', 'station_id'];
           },
+          {
+            foreignKeyName: 'tank_calibrations_version_fk';
+            columns: ['version_id', 'tank_id'];
+            isOneToOne: false;
+            referencedRelation: 'tank_calibration_versions';
+            referencedColumns: ['id', 'tank_id'];
+          },
         ];
       };
       tank_readings: {
@@ -1783,11 +2121,17 @@ export type Database = {
           device_id: string;
           employee_id: string;
           evidence_id: string;
+          expected_cl: number | null;
+          gps_lat: number | null;
+          gps_lng: number | null;
           height_mm: number;
           id: string;
+          kind: Database['public']['Enums']['tank_reading_kind'];
           organization_id: string;
+          shift_id: string | null;
           station_id: string;
           tank_id: string;
+          variance_cl: number | null;
           volume_cl: number;
         };
         Insert: {
@@ -1796,11 +2140,17 @@ export type Database = {
           device_id: string;
           employee_id: string;
           evidence_id: string;
+          expected_cl?: number | null;
+          gps_lat?: number | null;
+          gps_lng?: number | null;
           height_mm: number;
           id?: string;
+          kind?: Database['public']['Enums']['tank_reading_kind'];
           organization_id: string;
+          shift_id?: string | null;
           station_id: string;
           tank_id: string;
+          variance_cl?: number | null;
           volume_cl: number;
         };
         Update: {
@@ -1809,11 +2159,17 @@ export type Database = {
           device_id?: string;
           employee_id?: string;
           evidence_id?: string;
+          expected_cl?: number | null;
+          gps_lat?: number | null;
+          gps_lng?: number | null;
           height_mm?: number;
           id?: string;
+          kind?: Database['public']['Enums']['tank_reading_kind'];
           organization_id?: string;
+          shift_id?: string | null;
           station_id?: string;
           tank_id?: string;
+          variance_cl?: number | null;
           volume_cl?: number;
         };
         Relationships: [
@@ -1836,6 +2192,13 @@ export type Database = {
             columns: ['evidence_id', 'station_id'];
             isOneToOne: false;
             referencedRelation: 'evidence_files';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'tank_readings_shift_fk';
+            columns: ['shift_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'shifts';
             referencedColumns: ['id', 'station_id'];
           },
           {
@@ -2155,9 +2518,41 @@ export type Database = {
       };
     };
     Functions: {
+      advance_delivery: {
+        Args: { p_reading_id?: string; p_session_id: string; p_step: string };
+        Returns: Json;
+      };
+      calibration_version_at: {
+        Args: { p_at?: string; p_tank_id: string };
+        Returns: string;
+      };
+      close_shift_fuel: { Args: { p_shift_id: string }; Returns: Json };
+      compare_handover: {
+        Args: { p_handover_id: string };
+        Returns: {
+          index_incoming_cl: number;
+          index_outgoing_cl: number;
+          label: string;
+          nozzle_id: string;
+          variance_cl: number;
+        }[];
+      };
+      confirm_evidence_upload: {
+        Args: { p_evidence_id: string };
+        Returns: Json;
+      };
       consume_pairing_code: {
         Args: { p_code: string; p_ip: string; p_pairing_id?: string };
         Returns: Json;
+      };
+      create_calibration_version: {
+        Args: {
+          p_certificate_path?: string;
+          p_note?: string;
+          p_points: Json;
+          p_tank_id: string;
+        };
+        Returns: string;
       };
       create_organization: {
         Args: {
@@ -2182,9 +2577,40 @@ export type Database = {
         };
         Returns: undefined;
       };
+      evidence_is_uploaded: {
+        Args: { p_evidence_id: string };
+        Returns: boolean;
+      };
       is_org_owner: { Args: { p_org_id: string }; Returns: boolean };
+      last_closing_index: {
+        Args: { p_nozzle_id: string };
+        Returns: {
+          at: string;
+          index_cl: number;
+          shift_id: string;
+        }[];
+      };
+      last_meter_index: {
+        Args: { p_before?: string; p_nozzle_id: string };
+        Returns: {
+          at: string;
+          index_cl: number;
+          kind: Database['public']['Enums']['meter_reading_kind'];
+          reading_id: string;
+        }[];
+      };
+      nozzle_is_paused: { Args: { p_nozzle_id: string }; Returns: boolean };
+      open_shift: { Args: { p_shift_id: string }; Returns: Json };
       register_paired_device: {
         Args: { p_auth_user_id: string; p_label: string; p_pairing_id: string };
+        Returns: string;
+      };
+      report_handover_discrepancy: {
+        Args: { p_handover_id: string; p_reason: string };
+        Returns: Json;
+      };
+      reverse_delivery: {
+        Args: { p_delivery_id: string; p_reason: string };
         Returns: string;
       };
       revoke_device: { Args: { p_device_id: string }; Returns: undefined };
@@ -2192,12 +2618,57 @@ export type Database = {
         Args: { p_employee_id: string; p_pin: string };
         Returns: undefined;
       };
+      shift_fuel_summary: { Args: { p_shift_id: string }; Returns: Json };
+      shift_missing_items: {
+        Args: { p_kind: string; p_shift_id: string };
+        Returns: Json;
+      };
+      sign_delivery: {
+        Args: {
+          p_invoice_evidence_id: string;
+          p_invoice_ref?: string;
+          p_invoiced_cl: number;
+          p_reserve_reason?: string;
+          p_session_id: string;
+          p_with_reserve?: boolean;
+        };
+        Returns: Json;
+      };
+      sign_handover_incoming: { Args: { p_handover_id: string }; Returns: Json };
+      sign_handover_outgoing: { Args: { p_handover_id: string }; Returns: Json };
+      start_delivery: {
+        Args: {
+          p_driver_name?: string;
+          p_supplier?: string;
+          p_tank_id: string;
+          p_truck_plate?: string;
+        };
+        Returns: Json;
+      };
+      start_handover: {
+        Args: { p_incoming_employee_id: string; p_shift_id: string };
+        Returns: Json;
+      };
+      tank_litres_sold_between: {
+        Args: { p_from: string; p_tank_id: string; p_to: string };
+        Returns: number;
+      };
+      theoretical_stock_cl: {
+        Args: { p_at?: string; p_tank_id: string };
+        Returns: {
+          base_at: string;
+          base_reading_id: string;
+          delivered_cl: number;
+          expected_cl: number;
+          litres_sold_cl: number;
+        }[];
+      };
       verify_employee_pin: {
         Args: { p_employee_id: string; p_pin: string };
         Returns: Json;
       };
       volume_from_calibration: {
-        Args: { p_height_mm: number; p_tank_id: string };
+        Args: { p_at?: string; p_height_mm: number; p_tank_id: string };
         Returns: number;
       };
     };
@@ -2217,10 +2688,15 @@ export type Database = {
         | 'other'
         | 'pin_lockout'
         | 'device_paired'
-        | 'device_revoked';
+        | 'device_revoked'
+        | 'meter_regression'
+        | 'delivery_shortfall'
+        | 'shift_opened';
       audit_action: 'INSERT' | 'UPDATE' | 'DELETE';
       blind_count_status: 'requested' | 'submitted' | 'cancelled';
       credit_entry_kind: 'sale' | 'repayment' | 'adjustment';
+      delivery_status:
+        'gauging_before' | 'unloading' | 'gauging_after' | 'signing' | 'signed' | 'cancelled';
       employee_role: 'manager' | 'pump_attendant' | 'shop_cashier' | 'mechanic' | 'washer';
       evidence_kind:
         | 'meter_photo'
@@ -2231,6 +2707,7 @@ export type Database = {
         | 'count_photo'
         | 'other';
       fuel_code: 'super' | 'gasoil';
+      handover_side: 'outgoing' | 'incoming';
       handover_status: 'pending' | 'signed' | 'disputed';
       inventory_movement_kind:
         | 'purchase'
@@ -2249,8 +2726,9 @@ export type Database = {
       product_unit: 'unit' | 'cl';
       reconciliation_kind: 'tank' | 'cash' | 'mobile_money';
       reconciliation_status: 'ok' | 'variance' | 'pending';
-      session_end_reason: 'logout' | 'replaced' | 'expired' | 'revoked' | 'inactivity';
-      shift_status: 'open' | 'closing' | 'closed';
+      session_end_reason: 'logout' | 'replaced' | 'expired' | 'revoked' | 'inactivity' | 'handover';
+      shift_status: 'opening' | 'open' | 'closing' | 'closed';
+      tank_reading_kind: 'open' | 'close' | 'delivery_before' | 'delivery_after' | 'spot';
       transaction_kind: 'fuel' | 'shop' | 'garage' | 'wash' | 'adjustment';
     };
     CompositeTypes: {
@@ -2389,10 +2867,21 @@ export const Constants = {
         'pin_lockout',
         'device_paired',
         'device_revoked',
+        'meter_regression',
+        'delivery_shortfall',
+        'shift_opened',
       ],
       audit_action: ['INSERT', 'UPDATE', 'DELETE'],
       blind_count_status: ['requested', 'submitted', 'cancelled'],
       credit_entry_kind: ['sale', 'repayment', 'adjustment'],
+      delivery_status: [
+        'gauging_before',
+        'unloading',
+        'gauging_after',
+        'signing',
+        'signed',
+        'cancelled',
+      ],
       employee_role: ['manager', 'pump_attendant', 'shop_cashier', 'mechanic', 'washer'],
       evidence_kind: [
         'meter_photo',
@@ -2404,6 +2893,7 @@ export const Constants = {
         'other',
       ],
       fuel_code: ['super', 'gasoil'],
+      handover_side: ['outgoing', 'incoming'],
       handover_status: ['pending', 'signed', 'disputed'],
       inventory_movement_kind: [
         'purchase',
@@ -2423,8 +2913,9 @@ export const Constants = {
       product_unit: ['unit', 'cl'],
       reconciliation_kind: ['tank', 'cash', 'mobile_money'],
       reconciliation_status: ['ok', 'variance', 'pending'],
-      session_end_reason: ['logout', 'replaced', 'expired', 'revoked', 'inactivity'],
-      shift_status: ['open', 'closing', 'closed'],
+      session_end_reason: ['logout', 'replaced', 'expired', 'revoked', 'inactivity', 'handover'],
+      shift_status: ['opening', 'open', 'closing', 'closed'],
+      tank_reading_kind: ['open', 'close', 'delivery_before', 'delivery_after', 'spot'],
       transaction_kind: ['fuel', 'shop', 'garage', 'wash', 'adjustment'],
     },
   },

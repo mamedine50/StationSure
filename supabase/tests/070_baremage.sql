@@ -51,9 +51,9 @@ end $$;
 create or replace function pg_temp.open_shift(p_slug text, p_employee text) returns uuid language plpgsql as $$
 declare v_id uuid := gen_random_uuid();
 begin
-  insert into public.shifts (id, organization_id, station_id, device_id, opened_by, opened_at, device_created_at)
+  insert into public.shifts (id, organization_id, station_id, device_id, opened_by, opened_at, status, device_created_at)
   values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug),
-          pg_temp.employee(p_slug, p_employee), now(), now());
+          pg_temp.employee(p_slug, p_employee), now(), 'open', now());
   return v_id;
 end $$;
 create or replace function pg_temp.new_evidence(p_slug text, p_employee text) returns uuid language plpgsql as $$
@@ -77,6 +77,39 @@ begin
   return v_id;
 end $$;
 
+-- Marque comme reçues (bucket) toutes les preuves de la station (en tant que postgres).
+create or replace function pg_temp.upload_all(p_slug text) returns void language sql as $$
+  insert into public.evidence_uploads (evidence_id, organization_id, station_id, object_size)
+  select e.id, e.organization_id, e.station_id, 1000 from public.evidence_files e
+  where e.station_id = pg_temp.station(p_slug) on conflict do nothing $$;
+-- Preuve + relevé d'index, exécutés avec les droits de l'appelant (appareil + session employé).
+create or replace function pg_temp.meter(p_shift uuid, p_slug text, p_name text, p_label text, p_index bigint, p_kind text,
+  p_handover uuid default null, p_side text default null, p_at timestamptz default now()) returns uuid language plpgsql as $$
+declare v_ev uuid := gen_random_uuid(); v_id uuid := gen_random_uuid();
+begin
+  insert into public.evidence_files (id, organization_id, station_id, device_id, employee_id, kind, storage_path, sha256, captured_at_device, device_created_at)
+  values (v_ev, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), 'meter_photo',
+          pg_temp.org_demo()::text || '/' || pg_temp.station(p_slug)::text || '/' || v_ev::text || '.jpg', repeat('c', 64), p_at, p_at);
+  insert into public.meter_readings (id, organization_id, station_id, device_id, employee_id, shift_id, nozzle_id, kind, index_cl, evidence_id,
+    device_created_at, handover_id, handover_side)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), p_shift,
+          pg_temp.nozzle(p_slug, p_label), p_kind::public.meter_reading_kind, p_index, v_ev, p_at, p_handover, p_side::public.handover_side);
+  return v_id;
+end $$;
+-- Preuve + jaugeage (volume envoyé volontairement faux : le serveur l'impose).
+create or replace function pg_temp.gauge(p_shift uuid, p_slug text, p_name text, p_fuel text, p_height integer, p_kind text, p_at timestamptz default now())
+returns uuid language plpgsql as $$
+declare v_ev uuid := gen_random_uuid(); v_id uuid := gen_random_uuid();
+begin
+  insert into public.evidence_files (id, organization_id, station_id, device_id, employee_id, kind, storage_path, sha256, captured_at_device, device_created_at)
+  values (v_ev, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), 'tank_gauge',
+          pg_temp.org_demo()::text || '/' || pg_temp.station(p_slug)::text || '/' || v_ev::text || '.jpg', repeat('d', 64), p_at, p_at);
+  insert into public.tank_readings (id, organization_id, station_id, device_id, employee_id, tank_id, height_mm, volume_cl, evidence_id, device_created_at, shift_id, kind)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), pg_temp.tank(p_slug, p_fuel),
+          p_height, 1, v_ev, p_at, p_shift, p_kind::public.tank_reading_kind);
+  return v_id;
+end $$;
+
 -- Garde-fou 5 : volume_from_calibration = mêmes résultats que packages/core (carburant.test.ts).
 -- Table de la seed (cuve Super de Mbour) : 0→0, 500 mm→500 000, 1000 mm→1 400 000, 1500 mm→2 000 000 cL.
 select is(public.volume_from_calibration(pg_temp.tank('mbour', 'super'), 500), 500000::bigint, 'point exact : 50 cm → 500 000 cL');
@@ -89,12 +122,12 @@ select throws_like(format('select public.volume_from_calibration(%L, 1501)', pg_
 select throws_like(format('select public.volume_from_calibration(%L, -1)', pg_temp.tank('mbour', 'super')), 'BAREMAGE_HORS_TABLE%', 'hors table (en dessous) → erreur');
 select throws_like(format('select public.volume_from_calibration(%L, 100)', gen_random_uuid()), 'BAREMAGE_TABLE_VIDE%', 'cuve sans barémage → erreur');
 
--- Arrondi au centilitre le plus proche (1 mm entre 0 et 500 mm : 1000 cL/mm ; ici 999 cL / 3 mm)
+-- Arrondi au centilitre le plus proche (1000 cL sur 3 mm), via une version publiée par l'owner.
 insert into public.tanks (id, organization_id, station_id, fuel_product_code, label, capacity_cl)
 values (md5('tank:test:arrondi')::uuid, pg_temp.org_demo(), pg_temp.station('mbour'), 'super', 'Cuve test', 100000);
-insert into public.tank_calibrations (organization_id, station_id, tank_id, height_mm, volume_cl) values
-  (pg_temp.org_demo(), pg_temp.station('mbour'), md5('tank:test:arrondi')::uuid, 0, 0),
-  (pg_temp.org_demo(), pg_temp.station('mbour'), md5('tank:test:arrondi')::uuid, 3, 1000);
+select pg_temp.login(pg_temp.owner_demo());
+select lives_ok(format('select public.create_calibration_version(%L, %L)', md5('tank:test:arrondi')::uuid, '[{"height_mm":0,"volume_cl":0},{"height_mm":3,"volume_cl":1000}]'), 'owner : publie un barémage de test');
+select pg_temp.logout();
 select is(public.volume_from_calibration(md5('tank:test:arrondi')::uuid, 1), 333::bigint, 'arrondi : 333,33 → 333');
 select is(public.volume_from_calibration(md5('tank:test:arrondi')::uuid, 2), 667::bigint, 'arrondi : 666,67 → 667');
 
@@ -113,12 +146,13 @@ select throws_like(
   'BAREMAGE_HORS_TABLE%', 'un jaugeage hors table est refusé'
 );
 
--- Unicité (tank_id, height_mm)
-select throws_ok(
-  format('insert into public.tank_calibrations (organization_id, station_id, tank_id, height_mm, volume_cl) values (%L, %L, %L, 500, 1)',
-         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.tank('mbour', 'super')),
-  '23505', null, 'barémage : une hauteur ne peut pas apparaître deux fois'
+-- Unicité des hauteurs dans une version
+select pg_temp.login(pg_temp.owner_demo());
+select throws_like(
+  format('select public.create_calibration_version(%L, %L)', pg_temp.tank('mbour', 'super'), '[{"height_mm":0,"volume_cl":0},{"height_mm":500,"volume_cl":1},{"height_mm":500,"volume_cl":2}]'),
+  'CALIBRATION_DUPLICATE%', 'barémage : une hauteur ne peut pas apparaître deux fois'
 );
+select pg_temp.logout();
 
 select * from finish();
 rollback;

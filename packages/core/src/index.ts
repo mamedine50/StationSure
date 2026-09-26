@@ -8,3 +8,5 @@ export * from './passation';
 export * from './alertes';
 export * from './format';
 export * from './pin';
+export * from './baremage';
+export * from './livraison';

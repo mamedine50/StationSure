@@ -51,9 +51,9 @@ end $$;
 create or replace function pg_temp.open_shift(p_slug text, p_employee text) returns uuid language plpgsql as $$
 declare v_id uuid := gen_random_uuid();
 begin
-  insert into public.shifts (id, organization_id, station_id, device_id, opened_by, opened_at, device_created_at)
+  insert into public.shifts (id, organization_id, station_id, device_id, opened_by, opened_at, status, device_created_at)
   values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug),
-          pg_temp.employee(p_slug, p_employee), now(), now());
+          pg_temp.employee(p_slug, p_employee), now(), 'open', now());
   return v_id;
 end $$;
 create or replace function pg_temp.new_evidence(p_slug text, p_employee text) returns uuid language plpgsql as $$
@@ -74,6 +74,39 @@ begin
   where device_id = pg_temp.device(p_slug) and ended_at is null;
   insert into public.employee_sessions (id, organization_id, station_id, device_id, employee_id, expires_at)
   values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), now() + interval '12 hours');
+  return v_id;
+end $$;
+
+-- Marque comme reçues (bucket) toutes les preuves de la station (en tant que postgres).
+create or replace function pg_temp.upload_all(p_slug text) returns void language sql as $$
+  insert into public.evidence_uploads (evidence_id, organization_id, station_id, object_size)
+  select e.id, e.organization_id, e.station_id, 1000 from public.evidence_files e
+  where e.station_id = pg_temp.station(p_slug) on conflict do nothing $$;
+-- Preuve + relevé d'index, exécutés avec les droits de l'appelant (appareil + session employé).
+create or replace function pg_temp.meter(p_shift uuid, p_slug text, p_name text, p_label text, p_index bigint, p_kind text,
+  p_handover uuid default null, p_side text default null, p_at timestamptz default now()) returns uuid language plpgsql as $$
+declare v_ev uuid := gen_random_uuid(); v_id uuid := gen_random_uuid();
+begin
+  insert into public.evidence_files (id, organization_id, station_id, device_id, employee_id, kind, storage_path, sha256, captured_at_device, device_created_at)
+  values (v_ev, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), 'meter_photo',
+          pg_temp.org_demo()::text || '/' || pg_temp.station(p_slug)::text || '/' || v_ev::text || '.jpg', repeat('c', 64), p_at, p_at);
+  insert into public.meter_readings (id, organization_id, station_id, device_id, employee_id, shift_id, nozzle_id, kind, index_cl, evidence_id,
+    device_created_at, handover_id, handover_side)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), p_shift,
+          pg_temp.nozzle(p_slug, p_label), p_kind::public.meter_reading_kind, p_index, v_ev, p_at, p_handover, p_side::public.handover_side);
+  return v_id;
+end $$;
+-- Preuve + jaugeage (volume envoyé volontairement faux : le serveur l'impose).
+create or replace function pg_temp.gauge(p_shift uuid, p_slug text, p_name text, p_fuel text, p_height integer, p_kind text, p_at timestamptz default now())
+returns uuid language plpgsql as $$
+declare v_ev uuid := gen_random_uuid(); v_id uuid := gen_random_uuid();
+begin
+  insert into public.evidence_files (id, organization_id, station_id, device_id, employee_id, kind, storage_path, sha256, captured_at_device, device_created_at)
+  values (v_ev, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), 'tank_gauge',
+          pg_temp.org_demo()::text || '/' || pg_temp.station(p_slug)::text || '/' || v_ev::text || '.jpg', repeat('d', 64), p_at, p_at);
+  insert into public.tank_readings (id, organization_id, station_id, device_id, employee_id, tank_id, height_mm, volume_cl, evidence_id, device_created_at, shift_id, kind)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), pg_temp.tank(p_slug, p_fuel),
+          p_height, 1, v_ev, p_at, p_shift, p_kind::public.tank_reading_kind);
   return v_id;
 end $$;
 
@@ -111,8 +144,8 @@ select is((select count(*) from public.current_org_ids()), 0::bigint, 'helper : 
 -- Lecture limitée à sa station
 select is((select count(*) from public.stations), 1::bigint, 'appareil Mbour : voit une seule station');
 select is((select count(*) from public.shifts where station_id = pg_temp.station('thies')), 0::bigint, 'appareil Mbour : aucun shift de Thiès');
-select is((select count(*) from public.shifts), 1::bigint, 'appareil Mbour : voit son shift');
-select is((select count(*) from public.meter_readings), 0::bigint, 'appareil Mbour : aucun relevé de Thiès');
+select is((select count(*) from public.shifts where id = (select shift_mbour from ctx)), 1::bigint, 'appareil Mbour : voit son shift');
+select is((select count(*) from public.meter_readings where station_id = pg_temp.station('thies')), 0::bigint, 'appareil Mbour : aucun relevé de Thiès');
 select is((select count(*) from public.transactions), 0::bigint, 'appareil Mbour : aucune transaction de Thiès');
 select is((select count(*) from public.employees), 6::bigint, 'appareil Mbour : voit les 6 employés de Mbour');
 select is((select count(*) from public.nozzles), 6::bigint, 'appareil Mbour : voit ses 6 pistolets');
@@ -197,19 +230,23 @@ select throws_ok(
   '42501', null, 'appareil Mbour : ne peut pas attribuer une opération à un employé sans session sur lui'
 );
 select lives_ok(
+  format('update public.shifts set label = %L where id = %L', 'Matin', (select shift_mbour from ctx)),
+  'appareil Mbour : met à jour son shift (libellé)'
+);
+select throws_like(
   format('update public.shifts set status = %L where id = %L', 'closing', (select shift_mbour from ctx)),
-  'appareil Mbour : fait avancer son shift'
+  'SHIFT_RPC_ONLY%', 'appareil Mbour : le statut ne change que par les RPC (open_shift, close_shift_fuel, passation)'
 );
 select lives_ok(
-  format('update public.shifts set status = %L where id = %L', 'closing', (select shift_thies from ctx)),
+  format('update public.shifts set label = %L where id = %L', 'Pirate', (select shift_thies from ctx)),
   'appareil Mbour : update du shift de Thiès sans erreur…'
 );
 select pg_temp.logout();
 
 select is((select full_name from public.employees where id = pg_temp.employee('mbour', 'Awa Diop')), 'Awa Diop', '… l''employé n''a pas été modifié');
-select is((select status from public.shifts where id = (select shift_mbour from ctx)), 'closing'::public.shift_status, 'le shift de Mbour est passé à closing');
-select is((select status from public.shifts where id = (select shift_thies from ctx)), 'open'::public.shift_status, '… le shift de Thiès n''a pas bougé');
-select is((select count(*) from public.meter_readings where station_id = pg_temp.station('mbour')), 1::bigint, 'le relevé de Mbour est bien enregistré');
+select is((select label from public.shifts where id = (select shift_mbour from ctx)), 'Matin', 'le shift de Mbour a été mis à jour');
+select is((select label from public.shifts where id = (select shift_thies from ctx)), null, '… le shift de Thiès n''a pas bougé');
+select is((select count(*) from public.meter_readings where shift_id = (select shift_mbour from ctx)), 1::bigint, 'le relevé de Mbour est bien enregistré');
 
 -- Un appareil désactivé ne voit plus rien
 update public.devices set active = false where id = pg_temp.device('mbour');

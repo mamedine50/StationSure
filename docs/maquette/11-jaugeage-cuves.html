@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StationSûre — Jaugeage des cuves</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0E1311;font-family:'IBM Plex Sans',sans-serif;color:#EEF2EF}
+button,input{font-family:inherit}
+</style>
+</head>
+<body>
+<div style="width: 390px; height: 900px; box-sizing: border-box; padding: 20px 20px 24px; display: flex; flex-direction: column; gap: 14px; background: #0E1311; color: #EEF2EF; font-family: 'IBM Plex Sans', sans-serif">
+  <div style="display: flex; align-items: center; gap: 12px">
+    <button aria-label="Retour" style="width: 44px; height: 44px; border-radius: 12px; background: #161D1A; border: 1px solid #2A3530; display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EEF2EF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg>
+    </button>
+    <div style="flex-grow: 1; display: flex; flex-direction: column">
+      <span style="font-family: Sora, sans-serif; font-weight: 700; font-size: 18px">Jaugeage des cuves</span>
+      <span style="font-size: 12px; color: #A3B0AA">Fermeture · shift soir · Moussa Ndiaye</span>
+    </div>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: #F2A541; font-weight: 600">2 / 2</span>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <span style="font-weight: 600; font-size: 16px">Cuve 2 · 30 000 L</span>
+      <span style="padding: 4px 10px; border-radius: 999px; background: #1C2A3F; color: #9CC0FF; font-size: 12px; font-weight: 600">Gasoil</span>
+    </div>
+
+    <div style="position: relative; height: 190px; border-radius: 12px; background: #050807; border: 1px solid #2A3530; display: flex; align-items: center; justify-content: center; gap: 18px">
+      <div style="display: flex; flex-direction: column; justify-content: space-between; height: 150px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #6F7D77; text-align: right">
+        <span>1 000</span><span>950</span><span>900</span><span>850</span><span>800</span>
+      </div>
+      <div style="position: relative; width: 34px; height: 150px; border-radius: 4px; background: #C9B78E; display: flex; flex-direction: column; justify-content: space-between; padding: 0 0; box-sizing: border-box">
+        <div style="height: 2px; background: #3A3222"></div>
+        <div style="height: 1px; width: 50%; background: #3A3222"></div>
+        <div style="height: 2px; background: #3A3222"></div>
+        <div style="height: 1px; width: 50%; background: #3A3222"></div>
+        <div style="height: 2px; background: #3A3222"></div>
+        <div style="height: 1px; width: 50%; background: #3A3222"></div>
+        <div style="height: 2px; background: #3A3222"></div>
+        <div style="height: 1px; width: 50%; background: #3A3222"></div>
+        <div style="height: 2px; background: #3A3222"></div>
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 75px; background: rgba(90, 70, 30, 0.55); border-top: 2px solid #F2A541"></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 11px; letter-spacing: 1px; color: #6F7D77">NIVEAU LU</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: #F4E3C1">900 mm</span>
+      </div>
+      <div style="position: absolute; left: 10px; bottom: 10px; display: flex; gap: 6px">
+        <span style="display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 8px; background: rgba(14,19,17,0.85); font-size: 11px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EEF2EF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>22:05:40</span>
+        <span style="display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 8px; background: rgba(14,19,17,0.85); font-size: 11px; color: #4CC38A">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4CC38A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>GPS · Station Mbour</span>
+      </div>
+      <button style="position: absolute; right: 10px; top: 10px; display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 10px; background: rgba(14,19,17,0.85); border: 1px solid #2A3530; color: #EEF2EF; font-size: 12px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EEF2EF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>Reprendre</button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="haut" style="font-size: 13px; color: #A3B0AA">Hauteur lue sur la réglette</label>
+      <div style="display: flex; align-items: center; gap: 8px; padding: 0 14px; height: 52px; border-radius: 12px; background: #0E1311; border: 1px solid #4A5852">
+        <input id="haut" value="900" style="flex-grow: 1; min-width: 0; background: transparent; border: none; outline: none; color: #EEF2EF; font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 600">
+        <span style="color: #A3B0AA; font-size: 14px">mm</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; border: 1px solid #2A3530; border-radius: 14px; background: #161D1A">
+    <div style="display: flex; justify-content: space-between; align-items: center; height: 44px; padding: 0 16px; border-bottom: 1px solid #2A3530; font-size: 14px"><span>Volume (barémage)</span><span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600">12 200,00 L</span></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; height: 44px; padding: 0 16px; border-bottom: 1px solid #2A3530; font-size: 14px"><span>Stock théorique</span><span style="font-family: 'IBM Plex Mono', monospace">12 170,00 L</span></div>
+    <div style="display: flex; justify-content: space-between; align-items: center; height: 44px; padding: 0 16px; font-size: 14px"><span>Écart</span><span style="display: flex; align-items: center; gap: 6px; font-family: 'IBM Plex Mono', monospace; color: #4CC38A; font-weight: 600">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4CC38A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>+30 L · +0,2 %</span></div>
+  </div>
+  <p style="margin: 0; font-size: 12px; color: #A3B0AA; line-height: 1.5">Le volume est calculé par le serveur à partir du barémage de la cuve. Il ne peut pas être saisi ni modifié.</p>
+
+  <div style="display: flex; flex-direction: column; border: 1px solid #2A3530; border-radius: 14px; background: #161D1A">
+    <div style="display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px; border-bottom: 1px solid #2A3530; font-size: 14px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4CC38A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+      <span style="flex-grow: 1">Cuve 1 · Super</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #A3B0AA">22:03</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px; font-size: 14px; background: #221C10; border-radius: 0 0 14px 14px">
+      <span style="width: 16px; height: 16px; border-radius: 8px; border: 2px solid #F2A541; box-sizing: border-box"></span>
+      <span style="flex-grow: 1; font-weight: 600">Cuve 2 · Gasoil</span><span style="font-size: 12px; color: #F2A541; font-weight: 600">En cours</span>
+    </div>
+  </div>
+
+  <button style="margin-top: auto; height: 54px; border-radius: 14px; background: #F2A541; border: none; color: #1A1206; font-size: 16px; font-weight: 600">Valider le jaugeage</button>
+</div>
+</body>
+</html>

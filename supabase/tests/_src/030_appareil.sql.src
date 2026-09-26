@@ -32,8 +32,8 @@ select is((select count(*) from public.current_org_ids()), 0::bigint, 'helper : 
 -- Lecture limitée à sa station
 select is((select count(*) from public.stations), 1::bigint, 'appareil Mbour : voit une seule station');
 select is((select count(*) from public.shifts where station_id = pg_temp.station('thies')), 0::bigint, 'appareil Mbour : aucun shift de Thiès');
-select is((select count(*) from public.shifts), 1::bigint, 'appareil Mbour : voit son shift');
-select is((select count(*) from public.meter_readings), 0::bigint, 'appareil Mbour : aucun relevé de Thiès');
+select is((select count(*) from public.shifts where id = (select shift_mbour from ctx)), 1::bigint, 'appareil Mbour : voit son shift');
+select is((select count(*) from public.meter_readings where station_id = pg_temp.station('thies')), 0::bigint, 'appareil Mbour : aucun relevé de Thiès');
 select is((select count(*) from public.transactions), 0::bigint, 'appareil Mbour : aucune transaction de Thiès');
 select is((select count(*) from public.employees), 6::bigint, 'appareil Mbour : voit les 6 employés de Mbour');
 select is((select count(*) from public.nozzles), 6::bigint, 'appareil Mbour : voit ses 6 pistolets');
@@ -118,19 +118,23 @@ select throws_ok(
   '42501', null, 'appareil Mbour : ne peut pas attribuer une opération à un employé sans session sur lui'
 );
 select lives_ok(
+  format('update public.shifts set label = %L where id = %L', 'Matin', (select shift_mbour from ctx)),
+  'appareil Mbour : met à jour son shift (libellé)'
+);
+select throws_like(
   format('update public.shifts set status = %L where id = %L', 'closing', (select shift_mbour from ctx)),
-  'appareil Mbour : fait avancer son shift'
+  'SHIFT_RPC_ONLY%', 'appareil Mbour : le statut ne change que par les RPC (open_shift, close_shift_fuel, passation)'
 );
 select lives_ok(
-  format('update public.shifts set status = %L where id = %L', 'closing', (select shift_thies from ctx)),
+  format('update public.shifts set label = %L where id = %L', 'Pirate', (select shift_thies from ctx)),
   'appareil Mbour : update du shift de Thiès sans erreur…'
 );
 select pg_temp.logout();
 
 select is((select full_name from public.employees where id = pg_temp.employee('mbour', 'Awa Diop')), 'Awa Diop', '… l''employé n''a pas été modifié');
-select is((select status from public.shifts where id = (select shift_mbour from ctx)), 'closing'::public.shift_status, 'le shift de Mbour est passé à closing');
-select is((select status from public.shifts where id = (select shift_thies from ctx)), 'open'::public.shift_status, '… le shift de Thiès n''a pas bougé');
-select is((select count(*) from public.meter_readings where station_id = pg_temp.station('mbour')), 1::bigint, 'le relevé de Mbour est bien enregistré');
+select is((select label from public.shifts where id = (select shift_mbour from ctx)), 'Matin', 'le shift de Mbour a été mis à jour');
+select is((select label from public.shifts where id = (select shift_thies from ctx)), null, '… le shift de Thiès n''a pas bougé');
+select is((select count(*) from public.meter_readings where shift_id = (select shift_mbour from ctx)), 1::bigint, 'le relevé de Mbour est bien enregistré');
 
 -- Un appareil désactivé ne voit plus rien
 update public.devices set active = false where id = pg_temp.device('mbour');

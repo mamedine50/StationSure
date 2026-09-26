@@ -24,6 +24,8 @@ export interface EmployeConnecte {
 export interface Appareil {
   stationId: string;
   stationName: string;
+  organizationId: string;
+  deviceId: string;
 }
 
 /**
@@ -48,7 +50,7 @@ interface ContexteSession {
   session: EtatSession;
   rafraichir: () => Promise<void>;
   verifierPin: (employeeId: string, pin: string) => Promise<ResultatPin>;
-  deconnecterEmploye: (motif: 'logout' | 'inactivity') => Promise<void>;
+  deconnecterEmploye: (motif: 'logout' | 'inactivity' | 'handover') => Promise<void>;
   oublierAppareil: () => Promise<void>;
 }
 
@@ -94,11 +96,23 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setSession({ etat: 'revoque' });
       return;
     }
-    const [{ data: station }, { data: sessionEmploye }] = await Promise.all([
+    const [
+      { data: station },
+      { data: sessionEmploye },
+      { data: deviceId },
+      { data: organizationId },
+    ] = await Promise.all([
       supabase.from('stations').select('id, name').eq('id', stationId).maybeSingle(),
       supabase.rpc('current_employee_session'),
+      supabase.rpc('current_device_id'),
+      supabase.rpc('current_device_organization_id'),
     ]);
-    const appareil: Appareil = { stationId, stationName: station?.name ?? '' };
+    const appareil: Appareil = {
+      stationId,
+      stationName: station?.name ?? '',
+      organizationId: organizationId ?? '',
+      deviceId: deviceId ?? '',
+    };
     const employe = lireEmploye(sessionEmploye);
     setSession(employe ? { etat: 'connecte', appareil, employe } : { etat: 'pin', appareil });
   }, []);
@@ -152,7 +166,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return { ok: true };
   }, []);
 
-  const deconnecterEmploye = useCallback(async (motif: 'logout' | 'inactivity') => {
+  const deconnecterEmploye = useCallback(async (motif: 'logout' | 'inactivity' | 'handover') => {
     setSession((s) => {
       if (s.etat === 'connecte') {
         void supabase.rpc('end_employee_session', {

@@ -94,15 +94,25 @@ begin
       (v_tank_super, v_org, v_station, 'super', 'Cuve Super', 2000000),
       (v_tank_gasoil, v_org, v_station, 'gasoil', 'Cuve Gasoil', 3000000);
 
-    insert into public.tank_calibrations (organization_id, station_id, tank_id, height_mm, volume_cl) values
-      (v_org, v_station, v_tank_super, 0, 0),
-      (v_org, v_station, v_tank_super, 500, 500000),
-      (v_org, v_station, v_tank_super, 1000, 1400000),
-      (v_org, v_station, v_tank_super, 1500, 2000000),
-      (v_org, v_station, v_tank_gasoil, 0, 0),
-      (v_org, v_station, v_tank_gasoil, 500, 750000),
-      (v_org, v_station, v_tank_gasoil, 1000, 2100000),
-      (v_org, v_station, v_tank_gasoil, 1500, 3000000);
+    -- Barémage version 1 (maquette 13 pour le Gasoil ; 4 points pour le Super = tests de core).
+    insert into public.tank_calibration_versions (id, organization_id, station_id, tank_id, version, effective_from, note) values
+      (md5('calib:' || r.slug || ':super:1')::uuid, v_org, v_station, v_tank_super, 1, '2026-01-01', 'Version initiale de démo'),
+      (md5('calib:' || r.slug || ':gasoil:1')::uuid, v_org, v_station, v_tank_gasoil, 1, '2026-01-01', 'Version initiale de démo');
+    insert into public.tank_calibrations (organization_id, station_id, tank_id, version_id, height_mm, volume_cl) values
+      (v_org, v_station, v_tank_super, md5('calib:' || r.slug || ':super:1')::uuid, 0, 0),
+      (v_org, v_station, v_tank_super, md5('calib:' || r.slug || ':super:1')::uuid, 500, 500000),
+      (v_org, v_station, v_tank_super, md5('calib:' || r.slug || ':super:1')::uuid, 1000, 1400000),
+      (v_org, v_station, v_tank_super, md5('calib:' || r.slug || ':super:1')::uuid, 1500, 2000000),
+      (v_org, v_station, v_tank_gasoil, md5('calib:' || r.slug || ':gasoil:1')::uuid, 0, 0),
+      (v_org, v_station, v_tank_gasoil, md5('calib:' || r.slug || ':gasoil:1')::uuid, 300, 240000),
+      (v_org, v_station, v_tank_gasoil, md5('calib:' || r.slug || ':gasoil:1')::uuid, 600, 680000),
+      (v_org, v_station, v_tank_gasoil, md5('calib:' || r.slug || ':gasoil:1')::uuid, 750, 950000),
+      (v_org, v_station, v_tank_gasoil, md5('calib:' || r.slug || ':gasoil:1')::uuid, 900, 1220000),
+      (v_org, v_station, v_tank_gasoil, md5('calib:' || r.slug || ':gasoil:1')::uuid, 1205, 1646000),
+      (v_org, v_station, v_tank_gasoil, md5('calib:' || r.slug || ':gasoil:1')::uuid, 1500, 2050000),
+      (v_org, v_station, v_tank_gasoil, md5('calib:' || r.slug || ':gasoil:1')::uuid, 1800, 2430000),
+      (v_org, v_station, v_tank_gasoil, md5('calib:' || r.slug || ':gasoil:1')::uuid, 2100, 2760000),
+      (v_org, v_station, v_tank_gasoil, md5('calib:' || r.slug || ':gasoil:1')::uuid, 2400, 3000000);
 
     -- 3 pompes, 6 pistolets : P<n>-A = Super, P<n>-B = Gasoil
     for n in 1..3 loop
@@ -144,3 +154,83 @@ begin
 end
 $$;
 
+
+-- -----------------------------------------------------------------------------
+-- Historique carburant de Mbour (hier) : un shift clos avec relevés d'ouverture et
+-- de clôture (index de la maquette 03), jaugeages, et une livraison Gasoil
+-- signée avec réserve (maquette 12 : 750 mm → 1 205 mm, facturé 7 000 L, −0,57 %).
+-- Les preuves sont marquées reçues sans fichier réel dans le bucket (démo).
+-- -----------------------------------------------------------------------------
+do $$
+declare
+  v_org uuid := md5('org:demo')::uuid;
+  v_station uuid := md5('station:mbour')::uuid;
+  v_device uuid := md5('device:mbour')::uuid;
+  v_manager uuid := md5('employee:mbour:Ibrahima Sarr')::uuid;
+  v_shift uuid := md5('shift:mbour:hier')::uuid;
+  v_jour date := current_date - 1;
+  r record;
+  v_ev uuid;
+  v_before uuid;
+  v_after uuid;
+  v_delivery uuid := md5('delivery:mbour:hier')::uuid;
+begin
+  perform set_config('app.shift_rpc', 'on', true);
+  insert into public.shifts (id, organization_id, station_id, device_id, opened_by, closed_by, opened_at, closed_at, status, fuel_closed_at, device_created_at, label)
+  values (v_shift, v_org, v_station, v_device, v_manager, v_manager, v_jour + time '06:00', v_jour + time '22:30', 'closed', v_jour + time '22:10', v_jour + time '06:00', 'Journée (démo)');
+
+  -- Relevés d'index : (pistolet, index ouverture cL, index clôture cL)
+  for r in
+    select * from (values
+      ('P1-A', 19770210, 19840210), ('P1-B', 35481870, 35611870), ('P2-A', 14230000, 14295000),
+      ('P2-B', 48263255, 48391255), ('P3-A', 21509040, 21588040), ('P3-B', 29993785, 30122785)
+    ) as m(label, idx_open, idx_close)
+  loop
+    v_ev := md5('evidence:mbour:open:' || r.label)::uuid;
+    insert into public.evidence_files (id, organization_id, station_id, device_id, employee_id, kind, storage_path, sha256, captured_at_device, device_created_at)
+    values (v_ev, v_org, v_station, v_device, v_manager, 'meter_photo', v_org::text || '/' || v_station::text || '/' || v_ev::text || '.jpg', md5(v_ev::text) || md5(v_ev::text), v_jour + time '06:02', v_jour + time '06:02');
+    insert into public.evidence_uploads (evidence_id, organization_id, station_id, object_size) values (v_ev, v_org, v_station, 180000);
+    insert into public.meter_readings (organization_id, station_id, device_id, employee_id, shift_id, nozzle_id, kind, index_cl, evidence_id, device_created_at)
+    values (v_org, v_station, v_device, v_manager, v_shift, md5('nozzle:mbour:' || r.label)::uuid, 'open', r.idx_open, v_ev, v_jour + time '06:02');
+
+    v_ev := md5('evidence:mbour:close:' || r.label)::uuid;
+    insert into public.evidence_files (id, organization_id, station_id, device_id, employee_id, kind, storage_path, sha256, captured_at_device, device_created_at)
+    values (v_ev, v_org, v_station, v_device, v_manager, 'meter_photo', v_org::text || '/' || v_station::text || '/' || v_ev::text || '.jpg', md5(v_ev::text) || md5(v_ev::text), v_jour + time '22:02', v_jour + time '22:02');
+    insert into public.evidence_uploads (evidence_id, organization_id, station_id, object_size) values (v_ev, v_org, v_station, 180000);
+    insert into public.meter_readings (organization_id, station_id, device_id, employee_id, shift_id, nozzle_id, kind, index_cl, evidence_id, device_created_at)
+    values (v_org, v_station, v_device, v_manager, v_shift, md5('nozzle:mbour:' || r.label)::uuid, 'close', r.idx_close, v_ev, v_jour + time '22:02');
+  end loop;
+
+  -- Jaugeages : (cuve, hauteur mm, type, heure)
+  for r in
+    select * from (values
+      ('super', 1000, 'open', time '06:05'), ('gasoil', 750, 'open', time '06:06'),
+      ('gasoil', 750, 'delivery_before', time '06:15'), ('gasoil', 1205, 'delivery_after', time '06:50'),
+      ('super', 881, 'close', time '22:05'), ('gasoil', 928, 'close', time '22:06')
+    ) as g(fuel, height, kind, heure)
+  loop
+    v_ev := md5('evidence:mbour:gauge:' || r.fuel || ':' || r.kind)::uuid;
+    insert into public.evidence_files (id, organization_id, station_id, device_id, employee_id, kind, storage_path, sha256, captured_at_device, device_created_at)
+    values (v_ev, v_org, v_station, v_device, v_manager, 'tank_gauge', v_org::text || '/' || v_station::text || '/' || v_ev::text || '.jpg', md5(v_ev::text) || md5(v_ev::text), v_jour + r.heure, v_jour + r.heure);
+    insert into public.evidence_uploads (evidence_id, organization_id, station_id, object_size) values (v_ev, v_org, v_station, 180000);
+    insert into public.tank_readings (id, organization_id, station_id, device_id, employee_id, tank_id, height_mm, volume_cl, evidence_id, device_created_at, shift_id, kind)
+    values (md5('reading:mbour:' || r.fuel || ':' || r.kind)::uuid, v_org, v_station, v_device, v_manager, md5('tank:mbour:' || r.fuel)::uuid, r.height, 0, v_ev, v_jour + r.heure, v_shift, r.kind::public.tank_reading_kind);
+  end loop;
+
+  -- Livraison Gasoil signée avec réserve (bon n° 44871, 7 000 L facturés, 6 960 L reçus)
+  v_before := md5('reading:mbour:gasoil:delivery_before')::uuid;
+  v_after := md5('reading:mbour:gasoil:delivery_after')::uuid;
+  v_ev := md5('evidence:mbour:delivery_note')::uuid;
+  insert into public.evidence_files (id, organization_id, station_id, device_id, employee_id, kind, storage_path, sha256, captured_at_device, device_created_at)
+  values (v_ev, v_org, v_station, v_device, v_manager, 'delivery_note', v_org::text || '/' || v_station::text || '/' || v_ev::text || '.jpg', md5(v_ev::text) || md5(v_ev::text), v_jour + time '06:55', v_jour + time '06:55');
+  insert into public.evidence_uploads (evidence_id, organization_id, station_id, object_size) values (v_ev, v_org, v_station, 180000);
+  insert into public.fuel_deliveries (id, organization_id, station_id, device_id, employee_id, tank_id, supplier, invoice_ref, invoiced_cl, before_cl, after_cl, evidence_id,
+    device_created_at, before_reading_id, after_reading_id, variance_pct, signed_with_reserve, reserve_reason, unloading_started_at, unloading_ended_at)
+  values (v_delivery, v_org, v_station, v_device, v_manager, md5('tank:mbour:gasoil')::uuid, 'Dépôt Diamniadio (démo)', '44871', 700000, 950000, 1646000, v_ev,
+    v_jour + time '06:55', v_before, v_after, -0.57, true, 'Manquant 40 L constaté à la jauge', v_jour + time '06:16', v_jour + time '06:48');
+  insert into public.alerts (organization_id, station_id, shift_id, type, severity, payload, created_at)
+  values (v_org, v_station, v_shift, 'delivery_shortfall', 'critical',
+          jsonb_build_object('delivery_id', v_delivery, 'received_cl', 696000, 'invoiced_cl', 700000, 'variance_pct', -0.57), v_jour + time '06:55');
+  perform set_config('app.shift_rpc', 'off', true);
+end
+$$;

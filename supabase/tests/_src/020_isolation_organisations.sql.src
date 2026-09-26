@@ -51,7 +51,7 @@ select pg_temp.logout();
 select pg_temp.login((select supervisor_a from ctx));
 select is((select count(*) from public.stations), 3::bigint, 'supervisor A : lit les 3 stations');
 select is((select count(*) from public.employees), 9::bigint, 'supervisor A : lit les 9 employés');
-select is((select count(*) from public.tank_calibrations), 24::bigint, 'supervisor A : lit le barémage');
+select is((select count(*) from public.tank_calibrations), 42::bigint, 'supervisor A : lit le barémage (3 stations × 14 points)');
 select throws_ok(
   format('insert into public.stations (organization_id, name) values (%L, %L)', pg_temp.org_demo(), 'Station pirate'),
   '42501', null, 'supervisor A : ne peut pas créer de station'

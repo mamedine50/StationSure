@@ -131,5 +131,5 @@ export function Message({ etat }: { etat: EtatFormulaire }) {
 }
 
 function traduireSiCle(texte: string): string {
-  return /^[a-z]+(\.[a-zA-Z]+)+$/.test(texte) ? t(texte) : texte;
+  return /^[a-zA-Z]+(\.[a-zA-Z_]+)+$/.test(texte) ? t(texte) : texte;
 }

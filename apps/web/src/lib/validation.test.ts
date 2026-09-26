@@ -1,6 +1,10 @@
+import { lireBaremageCsv, validerBaremage } from '@stationsure/core';
 import { describe, expect, it } from 'vitest';
 
 import {
+  schemaBaremage,
+  schemaCuve,
+  schemaPrix,
   premiereErreur,
   schemaDefinirPin,
   schemaEmploye,
@@ -93,6 +97,71 @@ describe('validation des formulaires', () => {
     ).toBe(false);
     expect(
       schemaEmploye.safeParse({ nomComplet: '', role: 'manager', stationId: UUID }).success,
+    ).toBe(false);
+  });
+});
+
+describe('configuration carburant (phase 3)', () => {
+  it('cuve : capacité entière en litres > 0, produit connu', () => {
+    expect(
+      schemaCuve.safeParse({
+        stationId: UUID,
+        label: 'Cuve 1',
+        produit: 'super',
+        capaciteLitres: '30000',
+      }).success,
+    ).toBe(true);
+    const r = schemaCuve.safeParse({
+      stationId: UUID,
+      label: 'Cuve 1',
+      produit: 'super',
+      capaciteLitres: '0',
+    });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(premiereErreur(r)).toBe('validation.capacity');
+    expect(
+      schemaCuve.safeParse({
+        stationId: UUID,
+        label: 'Cuve 1',
+        produit: 'kerosene',
+        capaciteLitres: '10',
+      }).success,
+    ).toBe(false);
+  });
+  it('barémage : points JSON lus puis validés par core', () => {
+    const csv = lireBaremageCsv('hauteur_mm;volume_l\n0;0\n750;9500\n1205;16460');
+    const r = schemaBaremage.safeParse({ cuveId: UUID, points: JSON.stringify(csv.points) });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(validerBaremage(r.data.points)).toEqual([]);
+      expect(r.data.points[1]).toEqual({ hauteurMm: 750, volumeCl: 950000 });
+    }
+    expect(
+      validerBaremage(lireBaremageCsv('0;0\n10;100\n20;100').points).map((p) => p.code),
+    ).toContain('VOLUME_NON_CROISSANT');
+    const mauvais = schemaBaremage.safeParse({ cuveId: UUID, points: 'pas du json' });
+    expect(mauvais.success).toBe(false);
+  });
+  it('prix : entier > 0 et date facultative', () => {
+    expect(
+      schemaPrix.safeParse({ stationId: UUID, produit: 'gasoil', prix: '755', effectiveAt: '' })
+        .success,
+    ).toBe(true);
+    const r = schemaPrix.safeParse({
+      stationId: UUID,
+      produit: 'gasoil',
+      prix: '-1',
+      effectiveAt: '',
+    });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(premiereErreur(r)).toBe('validation.price');
+    expect(
+      schemaPrix.safeParse({
+        stationId: UUID,
+        produit: 'gasoil',
+        prix: '755',
+        effectiveAt: 'demain',
+      }).success,
     ).toBe(false);
   });
 });

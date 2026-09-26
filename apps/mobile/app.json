@@ -37,7 +37,13 @@
           "cameraPermission": "StationSûre utilise la caméra uniquement pour scanner le QR de jumelage."
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "StationSûre enregistre la position au moment de chaque photo de preuve."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

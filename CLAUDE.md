@@ -87,6 +87,24 @@ error}` au lieu de lever une exception : une exception annulerait l'écriture du
   `src/lib/session.tsx` ; inactivité `INACTIVITE_MINUTES` (10) dans `src/lib/env.ts`.
 - Hors ligne : rien d'implémenté, options dans `docs/decisions/offline-pin.md`.
 
+## Cycle carburant (phase 3)
+
+- Toute opération mobile passe par : photo caméra (jamais la galerie) → `creerPreuve()` (compression
+  1280 px / JPEG 70 %, sha256 sur le téléphone, ligne `evidence_files`, file d'envoi persistée dans
+  `apps/mobile/src/lib/preuves.ts`) → insertion de l'opération → `confirm_evidence_upload` quand le
+  fichier est arrivé. Les RPC de validation (`open_shift`, passation, livraison) exigent la preuve
+  confirmée.
+- Le volume d'un jaugeage, le stock théorique, les litres vendus et les écarts sont calculés par le
+  serveur ; le mobile n'affiche que ce que la base renvoie (`tank_readings.volume_cl/expected_cl`).
+- Barémage : ne jamais modifier `tank_calibrations` ; publier une version avec
+  `create_calibration_version`. Mêmes règles dans `packages/core/src/baremage.ts`.
+- Statut d'un shift : uniquement via `open_shift`, `close_shift_fuel`, `sign_handover_incoming` /
+  `report_handover_discrepancy` (trigger `SHIFT_RPC_ONLY`). Un shift naît en `opening`.
+- Passation : le sortant signe (`sign_handover_outgoing`) puis sa session se ferme (`handover`) ;
+  l'entrant relève à l'aveugle (RLS) puis `sign_handover_incoming`. Écart → `report_handover_discrepancy`.
+- Livraison : `start_delivery` (gérant) → `advance_delivery` (`before_gauged`, `unloading_done`,
+  `after_gauged`) → `sign_delivery` ; pistolets de la cuve en pause pendant `unloading`.
+
 ## Où est quoi
 
 - `packages/core/src` : `carburant.ts` (index, stock théorique, barémage, écart cuve), `caisse.ts`
@@ -98,17 +116,17 @@ error}` au lieu de lever une exception : une exception annulerait l'écriture du
 
 ## Phases
 
-| Phase | Contenu                                                                                                                            | État                                 |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| 0     | Fondations : monorepo, apps vides stylées, `packages/core` testé                                                                   | **faite**                            |
-| 1     | Schéma Supabase : tables métier (hors garage / Car Wash), RLS, garde-fous, tests pgTAP, seed de démo, types générés                | **faite**                            |
-| 2     | Auth propriétaire, onboarding, jumelage des tablettes, PIN et sessions employé — écran 01                                          | **faite** (mode kiosque : plus tard) |
-| 3     | Relevé d'index avec photo + GPS, passation contradictoire — écrans 02 et 03                                                        | à venir                              |
-| 4     | Clôture de caisse : attendu vs encaissé (espèces, carte, Wave, OM, crédit), justification, versements — écran 04                   | à venir                              |
-| 5     | Dashboard propriétaire et rapport WhatsApp / SMS — écrans 05 et 06                                                                 | à venir                              |
-| 6     | Offline-first (PowerSync ou WatermelonDB), prix verrouillés, livraisons et barémage en production _(proposition, ordre à valider)_ | à venir                              |
-| 7     | Boutique : POS, codes-barres, comptage surprise à l'aveugle — écran 07                                                             | à venir                              |
-| 8     | Garage (ordres de travail) et Car Wash (tickets) — écrans 08 et 09                                                                 | à venir                              |
-| 9     | Stock unifié et ratios de contrôle — écran 10                                                                                      | à venir                              |
+| Phase | Contenu                                                                                                                                           | État                                  |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| 0     | Fondations : monorepo, apps vides stylées, `packages/core` testé                                                                                  | **faite**                             |
+| 1     | Schéma Supabase : tables métier (hors garage / Car Wash), RLS, garde-fous, tests pgTAP, seed de démo, types générés                               | **faite**                             |
+| 2     | Auth propriétaire, onboarding, jumelage des tablettes, PIN et sessions employé — écran 01                                                         | **faite** (mode kiosque : plus tard)  |
+| 3     | Cycle carburant : configuration web (écran 13), relevés photo (02), jaugeage (11), passation à l'aveugle (03), livraison (12), rapprochement cuve | **faite** (offline complet : phase 6) |
+| 4     | Clôture de caisse : attendu vs encaissé (espèces, carte, Wave, OM, crédit), justification, versements — écran 04                                  | à venir                               |
+| 5     | Dashboard propriétaire et rapport WhatsApp / SMS — écrans 05 et 06                                                                                | à venir                               |
+| 6     | Offline-first (PowerSync ou WatermelonDB), prix verrouillés, livraisons et barémage en production _(proposition, ordre à valider)_                | à venir                               |
+| 7     | Boutique : POS, codes-barres, comptage surprise à l'aveugle — écran 07                                                                            | à venir                               |
+| 8     | Garage (ordres de travail) et Car Wash (tickets) — écrans 08 et 09                                                                                | à venir                               |
+| 9     | Stock unifié et ratios de contrôle — écran 10                                                                                                     | à venir                               |
 
 Ne commencer une phase que sur demande explicite.

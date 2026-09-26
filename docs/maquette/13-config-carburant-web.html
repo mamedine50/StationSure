@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StationSûre — Configuration carburant</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0E1311;font-family:'IBM Plex Sans',sans-serif;color:#EEF2EF}
+button{font-family:inherit}
+a{color:#F2A541}a:hover{color:#F7C47E}
+</style>
+</head>
+<body>
+<div style="width: 1440px; height: 900px; display: flex; background: #0E1311; color: #EEF2EF; font-family: 'IBM Plex Sans', sans-serif">
+  <nav style="width: 232px; flex-shrink: 0; box-sizing: border-box; padding: 24px 14px; display: flex; flex-direction: column; gap: 4px; background: #111816; border-right: 1px solid #2A3530">
+    <div style="display: flex; align-items: center; gap: 8px; padding: 0 10px 20px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A541" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h12"></path><path d="M4 9h10"></path><path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"></path><path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0V9.83a2 2 0 0 0-.59-1.42L18 5"></path></svg>
+      <span style="font-family: Sora, sans-serif; font-weight: 700; font-size: 15px">StationSûre</span>
+    </div>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Tableau de bord</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Stations</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; background: #221C10; color: #F2A541; font-size: 14px; font-weight: 600; text-decoration: none">Carburant et cuves</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Caisse et shifts</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Stock</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Boutique</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Garage</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Car Wash</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Employés</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Alertes</a>
+    <a href="#" style="margin-top: auto; display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #A3B0AA; font-size: 14px; text-decoration: none">Paramètres</a>
+  </nav>
+
+  <main style="flex-grow: 1; min-width: 0; box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-family: Sora, sans-serif; font-size: 26px; font-weight: 700">Carburant et cuves</h1>
+        <span style="font-size: 14px; color: #A3B0AA">Configuration · toute modification est tracée dans l'audit</span>
+      </div>
+      <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #A3B0AA">Station
+        <select style="height: 40px; padding: 0 12px; border-radius: 10px; background: #161D1A; border: 1px solid #4A5852; color: #EEF2EF; font-family: inherit; font-size: 14px"><option>Mbour</option><option>Thiès</option><option>Kaolack</option></select>
+      </label>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 300px 1fr; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; justify-content: space-between; align-items: center"><span style="font-weight: 600; font-size: 15px">Cuves</span><button style="height: 34px; padding: 0 12px; border-radius: 10px; background: transparent; border: 1px solid #4A5852; color: #EEF2EF; font-size: 13px">+ Ajouter</button></div>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; background: #161D1A; border: 1px solid #2A3530; border-radius: 14px">
+          <div style="display: flex; justify-content: space-between"><span style="font-weight: 600">Cuve 1</span><span style="padding: 2px 8px; border-radius: 999px; background: #261E0F; color: #F2A541; font-size: 12px; font-weight: 600">Super</span></div>
+          <span style="font-size: 13px; color: #A3B0AA">Capacité 30 000 L · barémage 10 points</span>
+          <span style="font-size: 12px; color: #A3B0AA">Pistolets : P1-A · P2-A · P3-A</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px; background: #221C10; border: 2px solid #F2A541; border-radius: 14px">
+          <div style="display: flex; justify-content: space-between"><span style="font-weight: 600">Cuve 2</span><span style="padding: 2px 8px; border-radius: 999px; background: #1C2A3F; color: #9CC0FF; font-size: 12px; font-weight: 600">Gasoil</span></div>
+          <span style="font-size: 13px; color: #A3B0AA">Capacité 30 000 L · barémage 10 points</span>
+          <span style="font-size: 12px; color: #A3B0AA">Pistolets : P1-B · P2-B · P3-B</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #161D1A; border: 1px solid #2A3530; border-radius: 14px">
+          <span style="font-weight: 600; font-size: 15px">Prix en vigueur</span>
+          <div style="display: flex; justify-content: space-between; font-size: 14px"><span>Super</span><span style="font-family: 'IBM Plex Mono', monospace">[PRIX] FCFA/L</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 14px"><span>Gasoil</span><span style="font-family: 'IBM Plex Mono', monospace">[PRIX] FCFA/L</span></div>
+          <span style="font-size: 12px; color: #A3B0AA">Depuis le [DATE] · publié par le propriétaire</span>
+          <button style="height: 40px; border-radius: 10px; background: #F2A541; border: none; color: #1A1206; font-size: 14px; font-weight: 600">Publier un nouveau prix</button>
+          <a href="#" style="font-size: 13px">Historique des prix</a>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+        <div style="display: flex; flex-direction: column; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; border-bottom: 1px solid #2A3530">
+            <span style="font-weight: 600; font-size: 15px">Barémage · Cuve 2 Gasoil</span>
+            <div style="display: flex; gap: 8px">
+              <button style="height: 36px; padding: 0 12px; border-radius: 10px; background: transparent; border: 1px solid #4A5852; color: #EEF2EF; font-size: 13px">Importer un CSV</button>
+              <button style="height: 36px; padding: 0 12px; border-radius: 10px; background: transparent; border: 1px solid #4A5852; color: #EEF2EF; font-size: 13px">Joindre le certificat (PDF)</button>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 260px 1fr; gap: 0">
+            <div style="display: flex; flex-direction: column; border-right: 1px solid #2A3530; font-size: 13px">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; padding: 8px 18px; font-size: 11px; letter-spacing: 1px; color: #A3B0AA; border-bottom: 1px solid #2A3530"><span>HAUTEUR</span><span style="text-align: right">VOLUME</span></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; padding: 6px 18px; font-family: 'IBM Plex Mono', monospace"><span>0 mm</span><span style="text-align: right">0 L</span></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; padding: 6px 18px; font-family: 'IBM Plex Mono', monospace"><span>300 mm</span><span style="text-align: right">2 400 L</span></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; padding: 6px 18px; font-family: 'IBM Plex Mono', monospace"><span>600 mm</span><span style="text-align: right">6 800 L</span></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; padding: 6px 18px; font-family: 'IBM Plex Mono', monospace"><span>750 mm</span><span style="text-align: right">9 500 L</span></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; padding: 6px 18px; font-family: 'IBM Plex Mono', monospace"><span>900 mm</span><span style="text-align: right">12 200 L</span></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; padding: 6px 18px; font-family: 'IBM Plex Mono', monospace"><span>1 205 mm</span><span style="text-align: right">16 460 L</span></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; padding: 6px 18px; font-family: 'IBM Plex Mono', monospace"><span>1 500 mm</span><span style="text-align: right">20 500 L</span></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; padding: 6px 18px; font-family: 'IBM Plex Mono', monospace"><span>1 800 mm</span><span style="text-align: right">24 300 L</span></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; padding: 6px 18px; font-family: 'IBM Plex Mono', monospace"><span>2 100 mm</span><span style="text-align: right">27 600 L</span></div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; padding: 6px 18px 12px; font-family: 'IBM Plex Mono', monospace"><span>2 400 mm</span><span style="text-align: right">30 000 L</span></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px">
+              <svg width="560" height="270" viewBox="0 0 560 270" role="img" aria-label="Courbe de barémage : volume en fonction de la hauteur">
+                <line x1="40" y1="240" x2="530" y2="240" stroke="#2A3530"></line>
+                <line x1="40" y1="40" x2="40" y2="240" stroke="#2A3530"></line>
+                <line x1="40" y1="140" x2="530" y2="140" stroke="#1E2723"></line>
+                <line x1="40" y1="40" x2="530" y2="40" stroke="#1E2723"></line>
+                <text x="34" y="244" fill="#A3B0AA" font-size="11" text-anchor="end" font-family="IBM Plex Mono, monospace">0</text>
+                <text x="34" y="144" fill="#A3B0AA" font-size="11" text-anchor="end" font-family="IBM Plex Mono, monospace">15k</text>
+                <text x="34" y="44" fill="#A3B0AA" font-size="11" text-anchor="end" font-family="IBM Plex Mono, monospace">30k</text>
+                <text x="40" y="260" fill="#A3B0AA" font-size="11" font-family="IBM Plex Mono, monospace">0</text>
+                <text x="280" y="260" fill="#A3B0AA" font-size="11" text-anchor="middle" font-family="IBM Plex Mono, monospace">1 200 mm</text>
+                <text x="520" y="260" fill="#A3B0AA" font-size="11" text-anchor="end" font-family="IBM Plex Mono, monospace">2 400</text>
+                <polyline points="40,240 100,224 160,194.7 190,176.7 220,158.7 281,130.3 340,103.3 400,78 460,56 520,40" fill="none" stroke="#F2A541" stroke-width="2.5" stroke-linejoin="round"></polyline>
+                <circle cx="40" cy="240" r="3.5" fill="#F2A541"></circle><circle cx="100" cy="224" r="3.5" fill="#F2A541"></circle><circle cx="160" cy="194.7" r="3.5" fill="#F2A541"></circle><circle cx="190" cy="176.7" r="3.5" fill="#F2A541"></circle><circle cx="220" cy="158.7" r="3.5" fill="#F2A541"></circle><circle cx="281" cy="130.3" r="3.5" fill="#F2A541"></circle><circle cx="340" cy="103.3" r="3.5" fill="#F2A541"></circle><circle cx="400" cy="78" r="3.5" fill="#F2A541"></circle><circle cx="460" cy="56" r="3.5" fill="#F2A541"></circle><circle cx="520" cy="40" r="3.5" fill="#F2A541"></circle>
+              </svg>
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #4CC38A">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4CC38A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+                <span>Courbe croissante, 10 points, certificat joint</span>
+              </div>
+              <span style="font-size: 12px; color: #A3B0AA">Entre deux points, le volume est calculé par interpolation linéaire.</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid #2A3530"><span style="font-weight: 600; font-size: 15px">Pompes et pistolets</span><button style="height: 34px; padding: 0 12px; border-radius: 10px; background: transparent; border: 1px solid #4A5852; color: #EEF2EF; font-size: 13px">+ Ajouter une pompe</button></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 8px 18px; font-size: 11px; letter-spacing: 1px; color: #A3B0AA; border-bottom: 1px solid #2A3530"><span>POMPE</span><span>PISTOLET A</span><span>PISTOLET B</span></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; align-items: center; height: 40px; padding: 0 18px; font-size: 13px; border-bottom: 1px solid #2A3530"><span style="font-weight: 600">Pompe 1</span><span>P1-A → Cuve 1 Super</span><span>P1-B → Cuve 2 Gasoil</span></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; align-items: center; height: 40px; padding: 0 18px; font-size: 13px; border-bottom: 1px solid #2A3530"><span style="font-weight: 600">Pompe 2</span><span>P2-A → Cuve 1 Super</span><span>P2-B → Cuve 2 Gasoil</span></div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; align-items: center; height: 40px; padding: 0 18px; font-size: 13px"><span style="font-weight: 600">Pompe 3</span><span>P3-A → Cuve 1 Super</span><span>P3-B → Cuve 2 Gasoil</span></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

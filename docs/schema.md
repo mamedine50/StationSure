@@ -27,6 +27,8 @@ Conventions :
 | 0007 | `20260926090007_stock.sql` | `products`, `inventory_movements`, `blind_counts`, `blind_count_lines` |
 | 0008 | `20260926090008_transversal.sql` | `alerts`, `reconciliations` |
 | 0009 | `20260926090009_identite_enums.sql` | valeurs d'enum `pin_lockout`, `device_paired`, `device_revoked` ; enum `session_end_reason` |
+| 0011 | `20260926090011_carburant_enums.sql` | `shift_status.opening`, `session_end_reason.handover`, alertes `meter_regression`, `delivery_shortfall`, `shift_opened` ; enums `tank_reading_kind`, `handover_side`, `delivery_status` |
+| 0012 | `20260926090012_carburant_cycle.sql` | `tank_calibration_versions` (+ `version_id` sur `tank_calibrations`), `create_calibration_version()`, `volume_from_calibration(tank, mm, at)`, `evidence_uploads` + `confirm_evidence_upload()`, colonnes de passation / régression sur `meter_readings`, `shift_id` / `kind` / `expected_cl` sur `tank_readings`, `theoretical_stock_cl()`, rapprochement cuve, `open_shift()`, `close_shift_fuel()`, `shift_fuel_summary()`, passation (`start_handover`, `sign_handover_outgoing`, `sign_handover_incoming`, `compare_handover`, `report_handover_discrepancy`), `fuel_delivery_sessions` + `start_delivery`, `advance_delivery`, `sign_delivery`, `reverse_delivery`, `nozzle_is_paused()` |
 | 0010 | `20260926090010_identite.sql` | `create_organization()`, `device_pairing_codes`, `pairing_rate_limits`, `create_pairing_code()`, `consume_pairing_code()`, `register_paired_device()`, `revoke_device()`, `employee_sessions`, `pin_attempts`, `verify_employee_pin()`, `end_employee_session()`, `current_employee_id()`, `current_employee_session()`, `employees_with_pin()`, PIN non trivial, durcissement des policies d'insertion |
 
 ## Tables et relations
@@ -102,6 +104,21 @@ Fonctions :
 (`opened_by` pour `shifts`, `outgoing_employee_id` pour `shift_handovers`). Un appareil ne peut
 attribuer une opération qu'à l'employé connecté par PIN sur lui.
 
+### Cycle carburant (phase 3)
+
+| Objet | Rôle |
+| --- | --- |
+| `tank_calibration_versions` / `tank_calibrations` | barémage versionné : on publie une nouvelle version (`create_calibration_version`, owner, validée : ≥ 2 points, hauteurs uniques, volumes strictement croissants, certificat PDF dans `{org}/{station}/calibration/`) ; `volume_from_calibration(tank, mm, at)` utilise la version en vigueur à la date `at`, donc les jaugeages passés ne changent jamais |
+| `evidence_uploads` | confirmation serveur qu'une preuve est dans le bucket (`confirm_evidence_upload` vérifie `storage.objects`). Une opération est « en attente de preuve » tant que sa photo n'est pas confirmée ; `open_shift`, la passation et la livraison l'exigent |
+| `meter_readings` | + `handover_id` / `handover_side` (passation), `justification`, `previous_index_cl` et `flagged_regression` (posés par trigger : un index qui recule est accepté mais signalé par une alerte `meter_regression`), GPS. Refusé si le pistolet est en pause (`NOZZLE_PAUSED`) |
+| `tank_readings` | + `shift_id`, `kind` (open, close, delivery_before, delivery_after, spot), `expected_cl` / `variance_cl`. `volume_cl` est **toujours** recalculé par le serveur ; chaque jaugeage (hors delivery_after) crée un `reconciliations` de type `tank` et une alerte `tank_variance` si l'écart dépasse 0,5 % des litres vendus |
+| `shifts` | naît en `opening` ; `open_shift()` vérifie relevés + photos de tous les pistolets et cuves actifs ; `close_shift_fuel()` passe en `closing` (clôture de caisse en phase 4). Les changements de statut ne passent que par les RPC (`SHIFT_RPC_ONLY`) |
+| `shift_handovers` | passation à l'aveugle : les relevés du sortant ne sont lisibles par l'appareil qu'une fois la passation terminée (policy `meter_readings_select_device`). `compare_handover` = `comparerPassation` (tolérance 0). Écart → `disputed` + alerte ; `report_handover_discrepancy` accepte la passation et attribue l'écart au shift sortant (`attributed_shift_id`) |
+| `fuel_delivery_sessions` | réception en 4 étapes (gérant) ; pendant `unloading`, `nozzle_is_paused()` bloque tout relevé sur les pistolets de la cuve |
+| `fuel_deliveries` | résultat figé : `received_cl` = après − avant (serveur), `variance_pct`, `signed_with_reserve` obligatoire si \|écart\| > 0,3 % + alerte `delivery_shortfall` ; correction par `reverse_delivery` (ligne négative, `reverses_id`) |
+
+Équivalences core ↔ SQL testées : `volumeDepuisBaremageMm` ↔ `volume_from_calibration`, `comparerPassation` ↔ `compare_handover`, `litresVendus` ↔ `shift_fuel_summary`, `ecartLivraisonPourcent` ↔ `sign_delivery`, `validerBaremage` ↔ `private.validate_calibration_points`.
+
 ### Transversal
 
 `evidence_files` (append-only, chemin forcé `{organization_id}/{station_id}/…`, sha256, GPS),
@@ -160,7 +177,7 @@ Vocabulaire des policies (créées par les fabriques de `private`) :
    `org_members`, `stations`, `devices`, `employees`, `employee_pins`, `tanks`, `tank_calibrations`,
    `pumps`, `nozzles`, `price_changes`, `products`, `credit_accounts` écrit dans `audit_log`
    (ancienne et nouvelle valeur, `auth.uid()`, rôle Postgres).
-5. **`volume_from_calibration(tank_id, height_mm)`** : mêmes règles que `packages/core`
+5. **`volume_from_calibration(tank_id, height_mm, at)`** : mêmes règles que `packages/core`
    (`volumeDepuisBaremage`) : point exact, interpolation linéaire arrondie au centilitre, erreur
    `BAREMAGE_HORS_TABLE` / `BAREMAGE_TABLE_VIDE`. `tank_readings.volume_cl` est toujours recalculé
    par ce garde-fou.

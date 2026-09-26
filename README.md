@@ -130,6 +130,17 @@ PIN de démo (non triviaux, **local uniquement**) :
    employés de la station → PIN → accueil → « Changer d'employé ».
 4. Révocation : web › Appareils › Révoquer : la tablette revient à l'écran de jumelage.
 
+### Cycle carburant (phase 3)
+
+Web : Carburant et cuves (owner) → cuves, barémage (import CSV `hauteur_mm;volume_l`, certificat
+PDF, courbe), pompes / pistolets, prix. Mobile (PIN d'un employé de la station) : « Ouvrir le shift »
+→ photo + index de chaque pistolet → jaugeage de chaque cuve (volume calculé par le serveur) → shift
+ouvert → « Passation » (le sortant relève et signe, l'entrant se connecte, relève à l'aveugle, signe)
+→ « Fermer le shift » (relevés + jaugeages de clôture) ; « Réception de livraison » réservée au
+gérant (jauge avant, dépotage avec pistolets en pause, jauge après, photo du bon, signature avec
+réserve si l'écart dépasse 0,3 %). Toutes les photos viennent de la caméra et partent en file
+d'attente ; une opération reste « en attente d'envoi » tant que sa photo n'est pas confirmée.
+
 ### Tests
 
 - `pnpm test` : Vitest (`packages/core`, validation des formulaires web).
