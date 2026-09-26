@@ -66,6 +66,16 @@ begin
     repeat('a', 64), now(), now());
   return v_id;
 end $$;
+-- Ouvre une session employé sur l'appareil d'une station (en tant que postgres), comme verify_employee_pin le ferait.
+create or replace function pg_temp.login_employee(p_slug text, p_name text) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  update public.employee_sessions set ended_at = now(), ended_reason = 'replaced'
+  where device_id = pg_temp.device(p_slug) and ended_at is null;
+  insert into public.employee_sessions (id, organization_id, station_id, device_id, employee_id, expires_at)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), now() + interval '12 hours');
+  return v_id;
+end $$;
 
 -- Garde-fous 3 et 4 : prix verrouillés, audit des changements de configuration.
 create temporary table ctx as

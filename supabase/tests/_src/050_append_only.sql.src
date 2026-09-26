@@ -65,6 +65,7 @@ select is((select index_cl from public.meter_readings where id = (select reading
 select is((select amount_fcfa from public.payments where id = (select payment from ctx)), 25000::bigint, 'le paiement est intact');
 
 -- ---- Contre-écriture (reverses_id) acceptée, une seule fois, négative
+select pg_temp.login_employee('mbour', 'Ibrahima Sarr');
 select pg_temp.login(pg_temp.device_user('mbour'));
 select throws_ok(
   format('insert into public.transactions (organization_id, station_id, device_id, employee_id, shift_id, kind, total_fcfa, reverses_id, device_created_at)

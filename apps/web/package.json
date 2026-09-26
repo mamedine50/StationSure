@@ -8,15 +8,21 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@stationsure/core": "workspace:*",
+    "@stationsure/database": "workspace:*",
     "@stationsure/i18n": "workspace:*",
     "@stationsure/ui": "workspace:*",
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.117.2",
     "next": "16.3.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-qr-code": "2.2.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@stationsure/config": "workspace:*",
@@ -27,6 +33,7 @@
     "eslint": "9.39.5",
     "postcss": "8.5.28",
     "tailwindcss": "3.4.19",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "5.0.2"
   }
 }

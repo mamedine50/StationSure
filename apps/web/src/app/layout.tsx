@@ -4,8 +4,6 @@ import { couleurs } from '@stationsure/ui';
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
-import { BarreLaterale } from '@/components/barre-laterale';
-
 import { classesPolices } from './fonts';
 import './globals.css';
 
@@ -25,10 +23,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fr" className={`dark ${classesPolices}`}>
-      <body className="flex min-h-screen">
-        <BarreLaterale />
-        {children}
-      </body>
+      <body className="flex min-h-screen">{children}</body>
     </html>
   );
 }

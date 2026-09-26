@@ -98,9 +98,43 @@ Le schéma, la matrice RLS et les garde-fous sont décrits dans [docs/schema.md]
 | Appareil Thiès     | `device-thies@demo.local`   | `Demo-Appareil-2026!`    |
 | Appareil Kaolack   | `device-kaolack@demo.local` | `Demo-Appareil-2026!`    |
 
-Organisation « Démo StationSûre » (plan groupe), stations Mbour, Thiès, Kaolack, employés de la
-maquette avec le PIN de démo `1234`, 2 cuves + barémage, 3 pompes et 6 pistolets par station. Les
-prix de la seed sont fictifs.
+Organisation « Démo StationSûre » (plan groupe), stations Mbour, Thiès, Kaolack, 2 cuves + barémage,
+3 pompes et 6 pistolets par station. Les prix de la seed sont fictifs. Les appareils de la seed ont
+un compte auth mais pas de jumelage : pour une vraie tablette, générez un code depuis le web.
+
+PIN de démo (non triviaux, **local uniquement**) :
+
+| Station | Employé       | Rôle       | PIN  |
+| ------- | ------------- | ---------- | ---- |
+| Mbour   | Awa Diop      | Pompiste   | 4062 |
+| Mbour   | Moussa Ndiaye | Pompiste   | 7391 |
+| Mbour   | Ibrahima Sarr | Gérant     | 8175 |
+| Mbour   | Khady Fall    | Boutique   | 3946 |
+| Mbour   | Lamine Gueye  | Mécanicien | 6203 |
+| Mbour   | Pape Seck     | Laveur     | 5817 |
+| Thiès   | Fatou Faye    | Gérante    | 9034 |
+| Kaolack | Cheikh Mbaye  | Gérant     | 1748 |
+| Kaolack | P. Sow        | Laveur     | 2794 |
+
+### Parcours complet en local (phase 2)
+
+1. `pnpm db:start`, puis dans deux terminaux : `pnpm db:functions:serve` (Edge Function
+   `pair-device`) et `pnpm --filter @stationsure/web dev`.
+2. Web : http://localhost:3000/inscription → créer un compte → ouvrir Mailpit
+   (http://127.0.0.1:54724) → cliquer le lien de confirmation → onboarding (organisation, formule,
+   première station) → Employés : créer un employé et définir son PIN → Stations › Gérer les
+   appareils › Jumeler une tablette : un code à 6 chiffres et un QR s'affichent (10 min).
+   Ou connectez-vous directement avec `owner@demo.local`.
+3. Mobile : `cp apps/mobile/.env.example apps/mobile/.env` en remplaçant `127.0.0.1` par l'IP du
+   Mac, puis `npx expo run:android --device`. Saisir le code (ou scanner le QR) → écran PIN avec les
+   employés de la station → PIN → accueil → « Changer d'employé ».
+4. Révocation : web › Appareils › Révoquer : la tablette revient à l'écran de jumelage.
+
+### Tests
+
+- `pnpm test` : Vitest (`packages/core`, validation des formulaires web).
+- `pnpm db:test` : pgTAP (RLS, garde-fous, jumelage, PIN, sessions).
+- `pnpm db:functions:test` : tests Deno de l'Edge Function `pair-device`.
 
 ### Envoyer le schéma en ligne (à faire manuellement, jamais par un agent)
 

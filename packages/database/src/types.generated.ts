@@ -454,6 +454,60 @@ export type Database = {
           },
         ];
       };
+      device_pairing_codes: {
+        Row: {
+          attempts: number;
+          code_hash: string;
+          created_at: string;
+          created_by: string;
+          expires_at: string;
+          id: string;
+          organization_id: string;
+          station_id: string;
+          used_at: string | null;
+          used_by_device_id: string | null;
+        };
+        Insert: {
+          attempts?: number;
+          code_hash: string;
+          created_at?: string;
+          created_by: string;
+          expires_at: string;
+          id?: string;
+          organization_id: string;
+          station_id: string;
+          used_at?: string | null;
+          used_by_device_id?: string | null;
+        };
+        Update: {
+          attempts?: number;
+          code_hash?: string;
+          created_at?: string;
+          created_by?: string;
+          expires_at?: string;
+          id?: string;
+          organization_id?: string;
+          station_id?: string;
+          used_at?: string | null;
+          used_by_device_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'device_pairing_codes_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'device_pairing_codes_used_by_device_id_fkey';
+            columns: ['used_by_device_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       devices: {
         Row: {
           active: boolean;
@@ -531,6 +585,67 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'organizations';
             referencedColumns: ['id'];
+          },
+        ];
+      };
+      employee_sessions: {
+        Row: {
+          created_at: string;
+          device_id: string;
+          employee_id: string;
+          ended_at: string | null;
+          ended_reason: Database['public']['Enums']['session_end_reason'] | null;
+          expires_at: string;
+          id: string;
+          organization_id: string;
+          started_at: string;
+          station_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          device_id: string;
+          employee_id: string;
+          ended_at?: string | null;
+          ended_reason?: Database['public']['Enums']['session_end_reason'] | null;
+          expires_at: string;
+          id?: string;
+          organization_id: string;
+          started_at?: string;
+          station_id: string;
+        };
+        Update: {
+          created_at?: string;
+          device_id?: string;
+          employee_id?: string;
+          ended_at?: string | null;
+          ended_reason?: Database['public']['Enums']['session_end_reason'] | null;
+          expires_at?: string;
+          id?: string;
+          organization_id?: string;
+          started_at?: string;
+          station_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employee_sessions_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'employee_sessions_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'employee_sessions_station_id_organization_id_fkey';
+            columns: ['station_id', 'organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'stations';
+            referencedColumns: ['id', 'organization_id'];
           },
         ];
       };
@@ -1043,6 +1158,24 @@ export type Database = {
           },
         ];
       };
+      pairing_rate_limits: {
+        Row: {
+          attempts: number;
+          ip: string;
+          window_start: string;
+        };
+        Insert: {
+          attempts?: number;
+          ip: string;
+          window_start?: string;
+        };
+        Update: {
+          attempts?: number;
+          ip?: string;
+          window_start?: string;
+        };
+        Relationships: [];
+      };
       payments: {
         Row: {
           amount_fcfa: number;
@@ -1120,6 +1253,51 @@ export type Database = {
             columns: ['transaction_id', 'station_id'];
             isOneToOne: false;
             referencedRelation: 'transactions';
+            referencedColumns: ['id', 'station_id'];
+          },
+        ];
+      };
+      pin_attempts: {
+        Row: {
+          at: string;
+          device_id: string;
+          employee_id: string;
+          id: number;
+          organization_id: string;
+          station_id: string;
+          success: boolean;
+        };
+        Insert: {
+          at?: string;
+          device_id: string;
+          employee_id: string;
+          id?: never;
+          organization_id: string;
+          station_id: string;
+          success: boolean;
+        };
+        Update: {
+          at?: string;
+          device_id?: string;
+          employee_id?: string;
+          id?: never;
+          organization_id?: string;
+          station_id?: string;
+          success?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'pin_attempts_device_id_station_id_fkey';
+            columns: ['device_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'devices';
+            referencedColumns: ['id', 'station_id'];
+          },
+          {
+            foreignKeyName: 'pin_attempts_employee_id_station_id_fkey';
+            columns: ['employee_id', 'station_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
             referencedColumns: ['id', 'station_id'];
           },
         ];
@@ -1977,15 +2155,46 @@ export type Database = {
       };
     };
     Functions: {
+      consume_pairing_code: {
+        Args: { p_code: string; p_ip: string; p_pairing_id?: string };
+        Returns: Json;
+      };
+      create_organization: {
+        Args: {
+          p_name: string;
+          p_plan_code: Database['public']['Enums']['plan_code'];
+        };
+        Returns: string;
+      };
+      create_pairing_code: { Args: { p_station_id: string }; Returns: Json };
       current_device_id: { Args: never; Returns: string };
       current_device_organization_id: { Args: never; Returns: string };
       current_device_station_id: { Args: never; Returns: string };
+      current_employee_id: { Args: never; Returns: string };
+      current_employee_session: { Args: never; Returns: Json };
       current_org_ids: { Args: never; Returns: string[] };
       current_station_ids: { Args: never; Returns: string[] };
+      employees_with_pin: { Args: never; Returns: string[] };
+      end_employee_session: {
+        Args: {
+          p_reason?: Database['public']['Enums']['session_end_reason'];
+          p_session_id: string;
+        };
+        Returns: undefined;
+      };
       is_org_owner: { Args: { p_org_id: string }; Returns: boolean };
+      register_paired_device: {
+        Args: { p_auth_user_id: string; p_label: string; p_pairing_id: string };
+        Returns: string;
+      };
+      revoke_device: { Args: { p_device_id: string }; Returns: undefined };
       set_employee_pin: {
         Args: { p_employee_id: string; p_pin: string };
         Returns: undefined;
+      };
+      verify_employee_pin: {
+        Args: { p_employee_id: string; p_pin: string };
+        Returns: Json;
       };
       volume_from_calibration: {
         Args: { p_height_mm: number; p_tank_id: string };
@@ -2005,7 +2214,10 @@ export type Database = {
         | 'price_change'
         | 'blind_count_variance'
         | 'unknown_device'
-        | 'other';
+        | 'other'
+        | 'pin_lockout'
+        | 'device_paired'
+        | 'device_revoked';
       audit_action: 'INSERT' | 'UPDATE' | 'DELETE';
       blind_count_status: 'requested' | 'submitted' | 'cancelled';
       credit_entry_kind: 'sale' | 'repayment' | 'adjustment';
@@ -2037,6 +2249,7 @@ export type Database = {
       product_unit: 'unit' | 'cl';
       reconciliation_kind: 'tank' | 'cash' | 'mobile_money';
       reconciliation_status: 'ok' | 'variance' | 'pending';
+      session_end_reason: 'logout' | 'replaced' | 'expired' | 'revoked' | 'inactivity';
       shift_status: 'open' | 'closing' | 'closed';
       transaction_kind: 'fuel' | 'shop' | 'garage' | 'wash' | 'adjustment';
     };
@@ -2173,6 +2386,9 @@ export const Constants = {
         'blind_count_variance',
         'unknown_device',
         'other',
+        'pin_lockout',
+        'device_paired',
+        'device_revoked',
       ],
       audit_action: ['INSERT', 'UPDATE', 'DELETE'],
       blind_count_status: ['requested', 'submitted', 'cancelled'],
@@ -2207,6 +2423,7 @@ export const Constants = {
       product_unit: ['unit', 'cl'],
       reconciliation_kind: ['tank', 'cash', 'mobile_money'],
       reconciliation_status: ['ok', 'variance', 'pending'],
+      session_end_reason: ['logout', 'replaced', 'expired', 'revoked', 'inactivity'],
       shift_status: ['open', 'closing', 'closed'],
       transaction_kind: ['fuel', 'shop', 'garage', 'wash', 'adjustment'],
     },

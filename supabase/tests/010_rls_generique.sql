@@ -66,6 +66,16 @@ begin
     repeat('a', 64), now(), now());
   return v_id;
 end $$;
+-- Ouvre une session employé sur l'appareil d'une station (en tant que postgres), comme verify_employee_pin le ferait.
+create or replace function pg_temp.login_employee(p_slug text, p_name text) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  update public.employee_sessions set ended_at = now(), ended_reason = 'replaced'
+  where device_id = pg_temp.device(p_slug) and ended_at is null;
+  insert into public.employee_sessions (id, organization_id, station_id, device_id, employee_id, expires_at)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), now() + interval '12 hours');
+  return v_id;
+end $$;
 
 -- Tests génériques : RLS partout, aucune policy « true », anon sans aucun accès.
 select is(
@@ -112,13 +122,20 @@ select is(
   'Chaque table avec station_id porte organization_id'
 );
 
--- Chaque table public a au moins une policy, sauf employee_pins (verrouillée volontairement).
+-- Chaque table public a au moins une policy, sauf celles verrouillées volontairement
+-- (employee_pins : hash de PIN ; pairing_rate_limits : compteur interne de l'Edge Function).
 select is(
   (select count(*) from pg_tables t
-   where t.schemaname = 'public' and t.tablename <> 'employee_pins'
+   where t.schemaname = 'public' and t.tablename not in ('employee_pins', 'pairing_rate_limits')
      and not exists (select 1 from pg_policies p where p.schemaname = 'public' and p.tablename = t.tablename)),
   0::bigint,
-  'Chaque table (hors employee_pins) a au moins une policy'
+  'Chaque table (hors employee_pins, pairing_rate_limits) a au moins une policy'
+);
+select is(
+  (select count(*) from information_schema.role_table_grants
+   where grantee = 'authenticated' and table_schema = 'public' and table_name in ('employee_pins', 'pairing_rate_limits')),
+  0::bigint,
+  'employee_pins et pairing_rate_limits : aucun privilège pour authenticated'
 );
 
 select is(

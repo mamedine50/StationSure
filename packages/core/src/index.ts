@@ -7,3 +7,4 @@ export * from './caisse';
 export * from './passation';
 export * from './alertes';
 export * from './format';
+export * from './pin';

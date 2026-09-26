@@ -66,6 +66,16 @@ begin
     repeat('a', 64), now(), now());
   return v_id;
 end $$;
+-- Ouvre une session employé sur l'appareil d'une station (en tant que postgres), comme verify_employee_pin le ferait.
+create or replace function pg_temp.login_employee(p_slug text, p_name text) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  update public.employee_sessions set ended_at = now(), ended_reason = 'replaced'
+  where device_id = pg_temp.device(p_slug) and ended_at is null;
+  insert into public.employee_sessions (id, organization_id, station_id, device_id, employee_id, expires_at)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), now() + interval '12 hours');
+  return v_id;
+end $$;
 
 -- L'appareil d'une station : lit sa station, insère ses opérations, rien d'autre.
 create temporary table ctx as
@@ -89,8 +99,10 @@ insert into public.inventory_movements (organization_id, station_id, device_id, 
 values (pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Khady Fall'),
         md5('product:test')::uuid, 'purchase', 24, now());
 
--- ---- appareil de Mbour
+-- ---- appareil de Mbour, Awa Diop connectée par PIN
+select pg_temp.login_employee('mbour', 'Awa Diop');
 select pg_temp.login(pg_temp.device_user('mbour'));
+select is(public.current_employee_id(), pg_temp.employee('mbour', 'Awa Diop'), 'helper : employé de la session active');
 
 select is(public.current_device_station_id(), pg_temp.station('mbour'), 'helper : station de l''appareil');
 select is(public.current_device_id(), pg_temp.device('mbour'), 'helper : id de l''appareil');
@@ -173,9 +185,16 @@ select throws_ok(
 select lives_ok(
   format('insert into public.inventory_movements (organization_id, station_id, device_id, employee_id, product_id, kind, quantity, device_created_at)
           values (%L, %L, %L, %L, %L, %L, %s, now())',
-         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Khady Fall'),
+         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Awa Diop'),
          md5('product:test')::uuid, 'sale', -2),
   'appareil Mbour : insère un mouvement de stock (sans pouvoir le relire)'
+);
+select throws_ok(
+  format('insert into public.meter_readings (organization_id, station_id, device_id, employee_id, shift_id, nozzle_id, kind, index_cl, evidence_id, device_created_at)
+          values (%L, %L, %L, %L, %L, %L, %L, %s, %L, now())',
+         pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), pg_temp.employee('mbour', 'Moussa Ndiaye'),
+         (select shift_mbour from ctx), pg_temp.nozzle('mbour', 'P1-B'), 'open', 100, (select evidence_mbour from ctx)),
+  '42501', null, 'appareil Mbour : ne peut pas attribuer une opération à un employé sans session sur lui'
 );
 select lives_ok(
   format('update public.shifts set status = %L where id = %L', 'closing', (select shift_mbour from ctx)),

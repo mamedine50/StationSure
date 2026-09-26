@@ -66,6 +66,16 @@ begin
     repeat('a', 64), now(), now());
   return v_id;
 end $$;
+-- Ouvre une session employé sur l'appareil d'une station (en tant que postgres), comme verify_employee_pin le ferait.
+create or replace function pg_temp.login_employee(p_slug text, p_name text) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  update public.employee_sessions set ended_at = now(), ended_reason = 'replaced'
+  where device_id = pg_temp.device(p_slug) and ended_at is null;
+  insert into public.employee_sessions (id, organization_id, station_id, device_id, employee_id, expires_at)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), now() + interval '12 hours');
+  return v_id;
+end $$;
 
 -- Garde-fou 1 : append-only pour tout le monde, contre-écriture acceptée, shift clos figé.
 create temporary table ctx as
@@ -134,6 +144,7 @@ select is((select index_cl from public.meter_readings where id = (select reading
 select is((select amount_fcfa from public.payments where id = (select payment from ctx)), 25000::bigint, 'le paiement est intact');
 
 -- ---- Contre-écriture (reverses_id) acceptée, une seule fois, négative
+select pg_temp.login_employee('mbour', 'Ibrahima Sarr');
 select pg_temp.login(pg_temp.device_user('mbour'));
 select throws_ok(
   format('insert into public.transactions (organization_id, station_id, device_id, employee_id, shift_id, kind, total_fcfa, reverses_id, device_created_at)

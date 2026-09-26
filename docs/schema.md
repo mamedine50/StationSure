@@ -26,6 +26,8 @@ Conventions :
 | 0006 | `20260926090006_caisse.sql` | `transactions`, `transaction_items`, `payments`, `voids`, `credit_accounts`, `credit_entries`, `bank_deposits` |
 | 0007 | `20260926090007_stock.sql` | `products`, `inventory_movements`, `blind_counts`, `blind_count_lines` |
 | 0008 | `20260926090008_transversal.sql` | `alerts`, `reconciliations` |
+| 0009 | `20260926090009_identite_enums.sql` | valeurs d'enum `pin_lockout`, `device_paired`, `device_revoked` ; enum `session_end_reason` |
+| 0010 | `20260926090010_identite.sql` | `create_organization()`, `device_pairing_codes`, `pairing_rate_limits`, `create_pairing_code()`, `consume_pairing_code()`, `register_paired_device()`, `revoke_device()`, `employee_sessions`, `pin_attempts`, `verify_employee_pin()`, `end_employee_session()`, `current_employee_id()`, `current_employee_session()`, `employees_with_pin()`, PIN non trivial, durcissement des policies d'insertion |
 
 ## Tables et relations
 
@@ -72,6 +74,34 @@ table pour toutes les activités, quantité signée), `blind_counts` et `blind_c
 à l'aveugle : aucune quantité théorique n'est stockée, et l'appareil n'a **aucune lecture** sur
 `inventory_movements`).
 
+### Identité (phase 2)
+
+| Table | Rôle | Accès |
+| --- | --- | --- |
+| `device_pairing_codes` | code de jumelage à 6 chiffres, **hash bcrypt**, valable 10 min, usage unique, 5 essais | lecture owner/supervisor ; écriture par RPC uniquement |
+| `pairing_rate_limits` | tentatives de jumelage par IP (10 / 15 min) | aucun accès API (service_role) |
+| `employee_sessions` | session ouverte par PIN sur un appareil (12 h max, une seule active par appareil) | lecture owner/supervisor + appareil (sa station) ; écriture par RPC |
+| `pin_attempts` | succès et échecs de PIN ; 5 échecs / 15 min = blocage 15 min + alerte `pin_lockout` | lecture owner/supervisor |
+
+Fonctions :
+
+| Fonction | Qui | Effet |
+| --- | --- | --- |
+| `create_organization(name, plan_code)` | utilisateur authentifié sans organisation | organisation + membre owner, atomique |
+| `create_pairing_code(station_id)` | owner | renvoie `{code, expires_at, qr, pairing_id}` — le code en clair n'est jamais stocké |
+| `consume_pairing_code(code, ip, pairing_id?)` | service_role (Edge Function `pair-device`) | valide et marque utilisé ; **renvoie** `{ok:false}` (pas d'exception, pour garder les compteurs) |
+| `register_paired_device(pairing_id, auth_user_id, label)` | service_role | crée la ligne `devices` + alerte `device_paired` |
+| `revoke_device(device_id)` | owner | `devices.active = false`, sessions employé fermées, `auth.users.banned_until = infinity`, jetons supprimés, alerte |
+| `verify_employee_pin(employee_id, pin)` | appareil actif | `{ok:true, session…}` ou `{ok:false, error: PIN_INVALID | PIN_LOCKED, retry_after_seconds}` ; lève `DEVICE_NOT_PAIRED` |
+| `end_employee_session(session_id, reason)` | appareil | ferme sa session (`logout` ou `inactivity`) |
+| `current_employee_id()` / `current_employee_session()` | policies / appareil | employé de la session active non expirée de l'appareil courant |
+| `set_employee_pin(employee_id, pin)` | owner | exactement 4 chiffres, non trivial (`private.is_trivial_pin`, miroir de `packages/core/src/pin.ts`) |
+| `employees_with_pin()` | owner/supervisor | ids des employés ayant un PIN (jamais le hash) |
+
+**Durcissement** : toute policy `<table>_insert_device` exige désormais `employee_id = current_employee_id()`
+(`opened_by` pour `shifts`, `outgoing_employee_id` pour `shift_handovers`). Un appareil ne peut
+attribuer une opération qu'à l'employé connecté par PIN sur lui.
+
 ### Transversal
 
 `evidence_files` (append-only, chemin forcé `{organization_id}/{station_id}/…`, sha256, GPS),
@@ -96,7 +126,7 @@ Toutes sont `SECURITY DEFINER`, `STABLE`, `search_path = ''`, exécutables par `
 | --- | --- | --- |
 | **owner** | tout ce qui porte son `organization_id` (config, opérations, audit, alertes, rapprochements) | configuration : stations, appareils, employés (+ PIN via `set_employee_pin`), cuves, barémage, pompes, pistolets, prix (`price_changes`, insert seulement), produits, comptes crédit, membres ; demande et annule les comptages surprise ; accuse réception des alertes ; renomme l'organisation ; insère une annulation approuvée (`voids`) |
 | **supervisor** | idem owner | rien |
-| **appareil** | configuration de SA station (station, appareils, employés, cuves, barémage, pompes, pistolets, prix, catalogue produits) et opérations de SA station (shifts, relevés, passations, jaugeages, livraisons, transactions, lignes, paiements, annulations, crédit, versements, preuves, comptages). **Jamais** `inventory_movements`, `audit_log`, `alerts`, `reconciliations`, `employee_pins`, ni une autre station | insère les opérations de SA station avec `device_id = current_device_id()` ; met à jour le statut de ses shifts, passations et comptages |
+| **appareil** (compte auth créé au jumelage, une station) | configuration de SA station (station, appareils, employés, cuves, barémage, pompes, pistolets, prix, catalogue produits) et opérations de SA station (shifts, relevés, passations, jaugeages, livraisons, transactions, lignes, paiements, annulations, crédit, versements, preuves, comptages). **Jamais** `inventory_movements`, `audit_log`, `alerts`, `reconciliations`, `employee_pins`, ni une autre station | insère les opérations de SA station avec `device_id = current_device_id()` et `employee_id = current_employee_id()` (session PIN active) ; met à jour le statut de ses shifts, passations et comptages |
 | **service_role** | tout (bypass RLS) | tout, mais reste soumis aux triggers (append-only, prix verrouillés, limite de stations) |
 | **anon** | rien (aucun privilège sur `public`) | rien |
 
@@ -111,7 +141,7 @@ Vocabulaire des policies (créées par les fabriques de `private`) :
 | `policy_select_org(t)` | `<t>_select_org` | lecture si `organization_id ∈ current_org_ids()` |
 | `policy_select_device(t)` | `<t>_select_device` | lecture si `station_id = current_device_station_id()` |
 | `policy_write_owner(t)` | `<t>_insert_owner`, `_update_owner`, `_delete_owner` | écriture si `is_org_owner(organization_id)` |
-| `policy_insert_device(t)` | `<t>_insert_device` | insertion si station, appareil et organisation = ceux de l'appareil |
+| `policy_insert_device(t, col)` | `<t>_insert_device` | insertion si station, appareil et organisation = ceux de l'appareil **et** `col = current_employee_id()` (`employee_id` par défaut) |
 | `policy_update_device(t)` | `<t>_update_device` | mise à jour des lignes de la station de l'appareil |
 
 ## Garde-fous en base (non contournables par l'app)
@@ -161,8 +191,10 @@ JWT Supabase (`pg_temp.login(uid)`, `logout()`, `as_service()`, `as_anon()`).
    de la station référencé. Ajouter `unique (id, station_id)` si la table sera référencée.
 4. `alter table … enable row level security;` puis les fabriques : `policy_select_org` toujours ;
    `policy_select_device` si l'appareil doit lire ; `policy_write_owner` pour la configuration ;
-   `policy_insert_device` (+ `policy_update_device` si statut) pour les opérations. Jamais de
-   `using (true)`.
+   `policy_insert_device(t, colonne_employé)` (+ `policy_update_device` si statut) pour les
+   opérations. Jamais de `using (true)`.
+   Une RPC qui enregistre un échec (compteur, tentative) doit **renvoyer** l'échec, pas lever une
+   exception, sinon l'écriture est annulée.
 5. Table de mouvement → `private.enable_append_only` + `revoke update, delete … from authenticated`.
    Table de configuration → `private.enable_audit` + `private.enable_updated_at`.
 6. `pnpm db:reset && pnpm db:lint && pnpm db:test` : le test générique `010` vérifie la RLS, l'absence

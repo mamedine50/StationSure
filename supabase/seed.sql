@@ -120,26 +120,26 @@ begin
       (v_org, v_station, 'gasoil', 755, now() - interval '30 days', v_owner);
   end loop;
 
-  -- Employés (maquette), PIN de démo 1234 hashé
+  -- Employés (maquette) avec un PIN de démo NON trivial par personne (voir README, local uniquement).
   for r in
     select * from (values
-      ('mbour', 'Awa Diop', 'pump_attendant'),
-      ('mbour', 'Moussa Ndiaye', 'pump_attendant'),
-      ('mbour', 'Ibrahima Sarr', 'manager'),
-      ('mbour', 'Khady Fall', 'shop_cashier'),
-      ('mbour', 'Lamine Gueye', 'mechanic'),
-      ('mbour', 'Pape Seck', 'washer'),
-      ('thies', 'Fatou Faye', 'manager'),
-      ('kaolack', 'Cheikh Mbaye', 'manager'),
-      ('kaolack', 'P. Sow', 'washer')
-    ) as e(slug, full_name, role)
+      ('mbour', 'Awa Diop', 'pump_attendant', '4062'),
+      ('mbour', 'Moussa Ndiaye', 'pump_attendant', '7391'),
+      ('mbour', 'Ibrahima Sarr', 'manager', '8175'),
+      ('mbour', 'Khady Fall', 'shop_cashier', '3946'),
+      ('mbour', 'Lamine Gueye', 'mechanic', '6203'),
+      ('mbour', 'Pape Seck', 'washer', '5817'),
+      ('thies', 'Fatou Faye', 'manager', '9034'),
+      ('kaolack', 'Cheikh Mbaye', 'manager', '1748'),
+      ('kaolack', 'P. Sow', 'washer', '2794')
+    ) as e(slug, full_name, role, pin)
   loop
     insert into public.employees (id, organization_id, station_id, full_name, role)
     values (md5('employee:' || r.slug || ':' || r.full_name)::uuid, v_org, md5('station:' || r.slug)::uuid,
             r.full_name, r.role::public.employee_role);
     insert into public.employee_pins (employee_id, organization_id, pin_hash)
     values (md5('employee:' || r.slug || ':' || r.full_name)::uuid, v_org,
-            extensions.crypt('1234', extensions.gen_salt('bf')));
+            extensions.crypt(r.pin, extensions.gen_salt('bf')));
   end loop;
 end
 $$;

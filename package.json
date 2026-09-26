@@ -18,11 +18,19 @@
     "db:reset": "supabase db reset",
     "db:lint": "supabase db lint",
     "db:test": "bash supabase/tests/_build.sh && supabase test db",
-    "db:types": "supabase gen types typescript --local --schema public > packages/database/src/types.generated.ts && prettier --write packages/database/src/types.generated.ts"
+    "db:types": "supabase gen types typescript --local --schema public > packages/database/src/types.generated.ts && prettier --write packages/database/src/types.generated.ts",
+    "db:functions:test": "cd supabase/functions/pair-device && deno test",
+    "db:functions:serve": "supabase functions serve --no-verify-jwt"
   },
   "devDependencies": {
     "prettier": "3.9.9",
     "turbo": "2.11.4",
     "typescript": "5.9.3"
+  },
+  "version": "1.0.0",
+  "dependencies": {
+    "expo": "~57.0.25",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
   }
 }

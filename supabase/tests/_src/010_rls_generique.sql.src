@@ -43,13 +43,20 @@ select is(
   'Chaque table avec station_id porte organization_id'
 );
 
--- Chaque table public a au moins une policy, sauf employee_pins (verrouillée volontairement).
+-- Chaque table public a au moins une policy, sauf celles verrouillées volontairement
+-- (employee_pins : hash de PIN ; pairing_rate_limits : compteur interne de l'Edge Function).
 select is(
   (select count(*) from pg_tables t
-   where t.schemaname = 'public' and t.tablename <> 'employee_pins'
+   where t.schemaname = 'public' and t.tablename not in ('employee_pins', 'pairing_rate_limits')
      and not exists (select 1 from pg_policies p where p.schemaname = 'public' and p.tablename = t.tablename)),
   0::bigint,
-  'Chaque table (hors employee_pins) a au moins une policy'
+  'Chaque table (hors employee_pins, pairing_rate_limits) a au moins une policy'
+);
+select is(
+  (select count(*) from information_schema.role_table_grants
+   where grantee = 'authenticated' and table_schema = 'public' and table_name in ('employee_pins', 'pairing_rate_limits')),
+  0::bigint,
+  'employee_pins et pairing_rate_limits : aucun privilège pour authenticated'
 );
 
 select is(

@@ -66,6 +66,16 @@ begin
     repeat('a', 64), now(), now());
   return v_id;
 end $$;
+-- Ouvre une session employé sur l'appareil d'une station (en tant que postgres), comme verify_employee_pin le ferait.
+create or replace function pg_temp.login_employee(p_slug text, p_name text) returns uuid language plpgsql as $$
+declare v_id uuid := gen_random_uuid();
+begin
+  update public.employee_sessions set ended_at = now(), ended_reason = 'replaced'
+  where device_id = pg_temp.device(p_slug) and ended_at is null;
+  insert into public.employee_sessions (id, organization_id, station_id, device_id, employee_id, expires_at)
+  values (v_id, pg_temp.org_demo(), pg_temp.station(p_slug), pg_temp.device(p_slug), pg_temp.employee(p_slug, p_name), now() + interval '12 hours');
+  return v_id;
+end $$;
 
 -- PIN hashés, plafond de crédit, bucket de preuves.
 create temporary table ctx as
@@ -77,18 +87,28 @@ insert into public.org_members (organization_id, user_id, role) select pg_temp.o
 -- ---- PIN
 select is((select count(*) from public.employee_pins), 9::bigint, 'seed : 9 PIN hashés');
 select is(
+  (select pin_hash = extensions.crypt('4062', pin_hash) from public.employee_pins where employee_id = pg_temp.employee('mbour', 'Awa Diop')),
+  true, 'seed : le PIN de démo d''Awa Diop est 4062 (bcrypt)'
+);
+select is(
   (select count(*) from public.employee_pins where pin_hash = extensions.crypt('1234', pin_hash)),
-  9::bigint, 'seed : tous les PIN de démo valent 1234 (bcrypt)'
+  0::bigint, 'seed : aucun PIN de démo trivial'
 );
 select is((select count(*) from public.employee_pins where pin_hash like '$2a$%' or pin_hash like '$2b$%'), 9::bigint, 'les PIN sont hashés en bcrypt (gen_salt bf)');
 
 select pg_temp.login(pg_temp.owner_demo());
 select throws_ok('select * from public.employee_pins', '42501', null, 'owner : ne lit pas les hash de PIN');
-select lives_ok(format('select public.set_employee_pin(%L, %L)', pg_temp.employee('mbour', 'Awa Diop'), '4321'), 'owner : définit un PIN via set_employee_pin');
+select lives_ok(format('select public.set_employee_pin(%L, %L)', pg_temp.employee('mbour', 'Awa Diop'), '4711'), 'owner : définit un PIN via set_employee_pin');
 select throws_like(format('select public.set_employee_pin(%L, %L)', pg_temp.employee('mbour', 'Awa Diop'), '12'), 'PIN_INVALID%', 'un PIN trop court est refusé');
+select throws_like(format('select public.set_employee_pin(%L, %L)', pg_temp.employee('mbour', 'Awa Diop'), '12345'), 'PIN_INVALID%', 'un PIN à 5 chiffres est refusé');
+select throws_like(format('select public.set_employee_pin(%L, %L)', pg_temp.employee('mbour', 'Awa Diop'), '1234'), 'PIN_TRIVIAL%', 'PIN 1234 refusé');
+select throws_like(format('select public.set_employee_pin(%L, %L)', pg_temp.employee('mbour', 'Awa Diop'), '0000'), 'PIN_TRIVIAL%', 'PIN 0000 refusé');
+select throws_like(format('select public.set_employee_pin(%L, %L)', pg_temp.employee('mbour', 'Awa Diop'), '1212'), 'PIN_TRIVIAL%', 'PIN 1212 refusé');
+select throws_like(format('select public.set_employee_pin(%L, %L)', pg_temp.employee('mbour', 'Awa Diop'), '9876'), 'PIN_TRIVIAL%', 'PIN 9876 refusé');
+select throws_like(format('select public.set_employee_pin(%L, %L)', pg_temp.employee('mbour', 'Awa Diop'), '2580'), 'PIN_TRIVIAL%', 'PIN 2580 refusé');
 select pg_temp.logout();
 select is(
-  (select pin_hash = extensions.crypt('4321', pin_hash) from public.employee_pins where employee_id = pg_temp.employee('mbour', 'Awa Diop')),
+  (select pin_hash = extensions.crypt('4711', pin_hash) from public.employee_pins where employee_id = pg_temp.employee('mbour', 'Awa Diop')),
   true, 'le nouveau PIN est bien hashé'
 );
 select pg_temp.login((select supervisor_a from ctx));
