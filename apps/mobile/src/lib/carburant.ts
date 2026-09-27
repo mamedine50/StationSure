@@ -1,5 +1,7 @@
 import type { Ligne } from '@stationsure/database';
 
+import { t } from '@stationsure/i18n';
+
 import { supabase } from './supabase';
 
 export type Pistolet = Pick<Ligne<'nozzles'>, 'id' | 'label' | 'pump_id' | 'tank_id' | 'active'> & {
@@ -79,4 +81,49 @@ export function litresVersCl(texte: string): number | null {
   const propre = texte.replace(/\s/g, '').replace(',', '.');
   if (!/^\d+(\.\d{1,2})?$/.test(propre)) return null;
   return Math.round(Number(propre) * 100);
+}
+
+export interface StatutConfiguration {
+  complete: boolean;
+  /** Lignes lisibles : « Cuve 2 Gasoil : pas de barémage, aucun pistolet relié ». */
+  manques: string[];
+}
+
+/** Écran 19 côté station : la même complétude que le web (RPC station_fuel_setup_status). */
+export async function chargerStatutConfiguration(): Promise<StatutConfiguration | null> {
+  const { data: devices } = await supabase.from('devices').select('station_id').limit(1);
+  const stationId = devices?.[0]?.station_id;
+  if (!stationId) return null;
+  const res = await rpc<{
+    complete: boolean;
+    tanks: { label: string; fuel_product_code: string; missing: string[] }[];
+    prices: { fuel_product_code: string; price_fcfa_per_litre: number | null }[];
+  }>('station_fuel_setup_status', { p_station_id: stationId });
+  const statut = (res.data ?? (res as unknown)) as {
+    complete?: boolean;
+    tanks?: { label: string; fuel_product_code: string; missing: string[] }[];
+    prices?: { fuel_product_code: string; price_fcfa_per_litre: number | null }[];
+  };
+  if (typeof statut.complete !== 'boolean') return null;
+  const manques: string[] = [];
+  for (const cuve of statut.tanks ?? []) {
+    if (cuve.missing.length > 0) {
+      manques.push(
+        t('shift.setupMissing', {
+          tank: `${cuve.label} ${t(`fuel.${cuve.fuel_product_code}`)}`,
+          missing: cuve.missing.map((m) => t(`fuelSetup.missing.${m}`)).join(', '),
+        }),
+      );
+    }
+  }
+  const sansPrix = (statut.prices ?? []).filter((p) => p.price_fcfa_per_litre === null);
+  if (sansPrix.length > 0) {
+    manques.push(
+      t('shift.setupPrices', {
+        products: sansPrix.map((p) => t(`fuel.${p.fuel_product_code}`)).join(', '),
+      }),
+    );
+  }
+  if ((statut.tanks ?? []).length === 0) manques.push(t('fuelSetup.stepState.tanksNone'));
+  return { complete: statut.complete, manques };
 }

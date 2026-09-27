@@ -3,6 +3,8 @@ import { t } from '@stationsure/i18n';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { chargerNiveaux } from '@/components/cuves/charger-niveaux';
+import { CuvesStation } from '@/components/cuves/cuves-station';
 import { EnTetePage } from '@/components/en-tete-page';
 import { exigerContexteComplet } from '@/lib/auth/contexte';
 import { creerClientServeur } from '@/lib/supabase/server';
@@ -79,6 +81,7 @@ export default async function PageTableauDeBord({
     { data: scores },
     { data: alertes },
     { data: employes },
+    niveaux,
   ] = await Promise.all([
     supabase.rpc('dashboard_summary', {
       p_from: debut.toISOString(),
@@ -96,6 +99,7 @@ export default async function PageTableauDeBord({
       .order('created_at', { ascending: false })
       .limit(8),
     supabase.from('employees').select('id, full_name'),
+    chargerNiveaux(supabase, stationId),
   ]);
   if (erreurResume) console.error('dashboard_summary', erreurResume.message);
   const resume = (resumeBrut ?? null) as Resume | null;
@@ -192,6 +196,16 @@ export default async function PageTableauDeBord({
           danger={(resume?.tank_alerts ?? 0) > 0}
         />
       </div>
+      {contexte.stations
+        .filter((s) => !stationId || s.id === stationId)
+        .map((s) => (
+          <CuvesStation
+            key={s.id}
+            titre={t('tanks3d.title', { station: s.name })}
+            niveaux={niveaux.filter((n) => n.stationId === s.id)}
+            compact
+          />
+        ))}
 
       <div className="grid grid-cols-[1.4fr_1fr] gap-4">
         <div className="flex flex-col gap-4">

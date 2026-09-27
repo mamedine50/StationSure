@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   commenceAZero,
+  evaluerSaisieBaremage,
   lireBaremageCsv,
   validerBaremage,
   volumeDepuisBaremageMm,
@@ -120,5 +121,37 @@ describe('volumeDepuisBaremageMm', () => {
     expect(() => volumeDepuisBaremageMm(1501, table4)).toThrowError(
       expect.objectContaining({ code: 'BAREMAGE_HORS_TABLE' }),
     );
+  });
+});
+
+describe('saisie du barémage (écran 19)', () => {
+  it('zone vide → AUCUN_POINT, un seul point → POINTS_INSUFFISANTS', () => {
+    expect(evaluerSaisieBaremage('   ')).toMatchObject({ erreurs: ['AUCUN_POINT'], valide: false });
+    expect(evaluerSaisieBaremage('0;0')).toMatchObject({
+      erreurs: ['POINTS_INSUFFISANTS'],
+      valide: false,
+    });
+  });
+
+  it('volumes non croissants → VOLUME_NON_CROISSANT', () => {
+    expect(evaluerSaisieBaremage('0;0\n300;1400\n600;1200').erreurs).toEqual([
+      'VOLUME_NON_CROISSANT',
+    ]);
+  });
+
+  it('valide dès 2 points croissants ; dernier volume > capacité = avertissement non bloquant', () => {
+    const ok = evaluerSaisieBaremage('0;0\n300;1400\n600;3900', 1300000);
+    expect(ok.valide).toBe(true);
+    expect(ok.points).toHaveLength(3);
+    expect(ok.avertissements).toEqual([]);
+    const trop = evaluerSaisieBaremage('0;0\n2000;14000', 1300000);
+    expect(trop.valide).toBe(true);
+    expect(trop.avertissements).toEqual(['DEPASSE_CAPACITE']);
+  });
+
+  it('une ligne illisible bloque la publication', () => {
+    const r = evaluerSaisieBaremage('0;0\nabc\n600;3900');
+    expect(r.lignesRejetees).toHaveLength(1);
+    expect(r.valide).toBe(false);
   });
 });

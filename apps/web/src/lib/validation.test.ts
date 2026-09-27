@@ -85,10 +85,19 @@ describe('validation des formulaires', () => {
     expect(schemaOrganisation.safeParse({ nom: 'Démo', plan: 'premium' }).success).toBe(false);
   });
 
-  it('station : nom obligatoire, ville facultative', () => {
-    expect(schemaStation.safeParse({ nom: 'Mbour', ville: '' }).success).toBe(true);
-    expect(schemaStation.safeParse({ nom: 'Mbour' }).success).toBe(true);
-    expect(schemaStation.safeParse({ nom: 'M' }).success).toBe(false);
+  it('station : nom obligatoire, commune de la liste ou « Autre » + ville libre', () => {
+    expect(
+      schemaStation.safeParse({ nom: 'Mbour', communeCode: 'thies/mbour/mbour' }).success,
+    ).toBe(true);
+    expect(
+      schemaStation.safeParse({ nom: 'Mbour', communeCode: 'autre', ville: 'Hameau' }).success,
+    ).toBe(true);
+    const sans = schemaStation.safeParse({ nom: 'Mbour', communeCode: '', ville: '' });
+    expect(sans.success).toBe(false);
+    if (!sans.success) expect(premiereErreur(sans)).toBe('validation.commune');
+    expect(schemaStation.safeParse({ nom: 'M', communeCode: 'thies/mbour/mbour' }).success).toBe(
+      false,
+    );
   });
 
   it('employé : nom, rôle et station obligatoires', () => {
@@ -267,6 +276,7 @@ describe('phase 5 : paramètres et destinataires', () => {
         tankVariance: '0.5',
         deliveryVariance: '0.3',
         cashTolerance: '1000',
+        smallVarianceCumulative: '5000',
         depositHours: '24',
         reportMode: 'fixed_time',
         reportTime: '22:30',

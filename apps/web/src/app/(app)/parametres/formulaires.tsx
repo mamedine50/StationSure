@@ -51,6 +51,7 @@ export function FormulaireSeuils({
     tankVariance: number;
     deliveryVariance: number;
     cashTolerance: number;
+    smallVarianceCumulative: number;
     depositHours: number;
     reportMode: 'after_each_closing' | 'fixed_time';
     reportTime: string;
@@ -98,6 +99,18 @@ export function FormulaireSeuils({
           className={`${champ} w-28`}
         />
       </LigneSeuil>
+      <LigneSeuil label={t('settings.smallVarianceCumulative')} unite={t('common.currency')}>
+        <span className="sr-only">{t('settings.smallVarianceHint')}</span>
+        <input
+          name="smallVarianceCumulative"
+          type="number"
+          step="1"
+          min="0"
+          defaultValue={valeurs.smallVarianceCumulative}
+          disabled={!rw}
+          className={`${champ} w-28`}
+        />
+      </LigneSeuil>
       <div
         className="flex items-center justify-between gap-3 border-b border-bordure px-[18px] py-3 text-[14px]"
         title={t('settings.lockedHint')}
@@ -141,6 +154,7 @@ export function FormulaireSurcharge({
       tank_variance_pct: number | null;
       delivery_variance_pct: number | null;
       cash_tolerance_fcfa: number | null;
+      small_variance_cumulative_fcfa: number | null;
       deposit_missing_hours: number | null;
     } | null;
   }[];
@@ -201,6 +215,19 @@ export function FormulaireSurcharge({
             step="1"
             min="0"
             defaultValue={s?.cash_tolerance_fcfa ?? ''}
+            placeholder={t('settings.inherit')}
+            disabled={!rw}
+            className={champ}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-[12px] text-texte-secondaire">
+          {t('settings.smallVarianceCumulative')} ({t('common.currency')})
+          <input
+            name="smallVarianceCumulative"
+            type="number"
+            step="1"
+            min="0"
+            defaultValue={s?.small_variance_cumulative_fcfa ?? ''}
             placeholder={t('settings.inherit')}
             disabled={!rw}
             className={champ}

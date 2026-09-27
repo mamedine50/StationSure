@@ -47,14 +47,28 @@ export const schemaOrganisation = z.object({
   plan: z.enum(PLANS, { error: 'validation.plan' }),
 });
 
-export const schemaStation = z.object({
-  nom: z
-    .string()
-    .trim()
-    .min(2, { error: 'validation.nameMin' })
-    .max(80, { error: 'validation.nameMax' }),
-  ville: z.string().trim().max(80, { error: 'validation.nameMax' }).optional().or(z.literal('')),
-});
+/** Localité : code de commune (sn_communes) ou « autre » avec une ville libre. */
+const localite = z
+  .object({
+    communeCode: z.string().trim().max(120).optional().or(z.literal('')),
+    ville: z.string().trim().max(80, { error: 'validation.nameMax' }).optional().or(z.literal('')),
+  })
+  .refine((v) => (v.communeCode && v.communeCode !== 'autre') || (v.ville && v.ville.length >= 2), {
+    error: 'validation.commune',
+    path: ['ville'],
+  });
+
+export const schemaStation = z
+  .object({
+    nom: z
+      .string()
+      .trim()
+      .min(2, { error: 'validation.nameMin' })
+      .max(80, { error: 'validation.nameMax' }),
+  })
+  .and(localite);
+
+export const schemaModifierStation = z.object({ stationId: z.guid() }).and(schemaStation);
 
 export const schemaEmploye = z.object({
   nomComplet: z
@@ -119,6 +133,35 @@ export const schemaModifierCuve = z.object({
     .min(1, { error: 'validation.label' })
     .max(40, { error: 'validation.label' }),
   capaciteLitres: entierPositif('validation.capacity'),
+  /** Seuil de commande en % de la capacité (écran 20), défaut 20. */
+  seuilCommandePct: z.preprocess(
+    (v) => (v === '' || v === undefined || v === null ? 20 : v),
+    z.coerce
+      .number({ error: 'validation.threshold' })
+      .min(0, { error: 'validation.threshold' })
+      .max(100, { error: 'validation.threshold' }),
+  ),
+});
+
+export const schemaRenommerPistolet = z.object({
+  pistoletId: z.guid(),
+  label: z
+    .string()
+    .trim()
+    .min(1, { error: 'validation.label' })
+    .max(40, { error: 'validation.label' }),
+});
+
+export const schemaPrixMultiples = z.object({
+  stationId: z.guid({ error: 'validation.station' }),
+  super: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    entierPositif('validation.price').optional(),
+  ),
+  gasoil: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    entierPositif('validation.price').optional(),
+  ),
 });
 
 /** Points de barémage transmis en JSON [{hauteurMm, volumeCl}] par le composant client. */
@@ -299,6 +342,7 @@ export const schemaSeuils = z.object({
   tankVariance: pourcentage,
   deliveryVariance: pourcentage,
   cashTolerance: montantPositif,
+  smallVarianceCumulative: montantPositif,
   depositHours: heures,
   reportMode: z.enum(REPORT_MODES, { error: 'validation.route' }),
   reportTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, { error: 'validation.time' }),
@@ -316,6 +360,7 @@ export const schemaSurchargeStation = z.object({
   tankVariance: facultatif(pourcentage),
   deliveryVariance: facultatif(pourcentage),
   cashTolerance: facultatif(montantPositif),
+  smallVarianceCumulative: facultatif(montantPositif),
   depositHours: facultatif(heures),
 });
 

@@ -175,7 +175,8 @@
     "threshold": "Seuil invalide (0 à 100).",
     "hours": "Délai invalide (1 à 168 h).",
     "time": "Heure invalide (HH:MM).",
-    "route": "Routage invalide."
+    "route": "Routage invalide.",
+    "commune": "Choisissez une localité dans la liste ou « Autre »."
   },
   "onboarding": {
     "title": "Bienvenue",
@@ -206,7 +207,10 @@
     "devices": "Appareils",
     "manageDevices": "Gérer les appareils",
     "limitReached": "Votre formule ne permet pas d'ajouter une station.",
-    "created": "Station créée."
+    "created": "Station créée.",
+    "edit": "Modifier",
+    "updated": "Station modifiée.",
+    "region": "Région / département"
   },
   "devices": {
     "title": "Appareils",
@@ -366,7 +370,10 @@
     "creditSale": "Vente à crédit",
     "closeCash": "Clôturer la caisse",
     "deposit": "Versement bancaire",
-    "closedFinal": "Shift clôturé"
+    "closedFinal": "Shift clôturé",
+    "setupIncomplete": "Configuration carburant incomplète : le propriétaire doit la terminer sur le web (Carburant et cuves).",
+    "setupMissing": "{{tank}} : {{missing}}",
+    "setupPrices": "prix manquant pour {{products}}"
   },
   "reading": {
     "openTitle": "Relevé d'ouverture",
@@ -806,7 +813,9 @@
     "connect": "Connecter",
     "connectHint": "Procédure : docs/whatsapp-modeles.md (compte Meta, modèles, clés).",
     "liveMode": "WhatsApp connecté : les messages sont envoyés réellement.",
-    "phoneExists": "Ce numéro est déjà enregistré."
+    "phoneExists": "Ce numéro est déjà enregistré.",
+    "smallVarianceCumulative": "Cumul d'écarts toléré sur 30 jours par employé",
+    "smallVarianceHint": "Petits écarts (sous la tolérance) additionnés par employé sur 30 jours glissants ; au-delà, alerte immédiate."
   },
   "alertTypes": {
     "cash_variance": "Écart de caisse",
@@ -832,7 +841,9 @@
     "mobile_money_unmatched": "Wave / OM sans vente",
     "mobile_money_pending": "Wave / OM non rapproché",
     "credit_account_requested": "Compte crédit demandé",
-    "price_change_reading_missing": "Relevé de changement de prix manquant"
+    "price_change_reading_missing": "Relevé de changement de prix manquant",
+    "cash_small_variance_cumulative": "Petits écarts de caisse cumulés",
+    "tank_low": "Cuve sous le seuil de commande"
   },
   "dashboard": {
     "subtitle": "{{date}} · {{scope}}",
@@ -934,5 +945,114 @@
       "reminder": "Relance"
     },
     "notLocal": "Page disponible en local uniquement."
+  },
+  "cities": {
+    "label": "Ville",
+    "placeholder": "Tapez pour chercher (ex. Kao → Kaolack)",
+    "noResult": "Aucune localité trouvée.",
+    "other": "Autre (saisie libre)",
+    "otherLabel": "Nom de la localité",
+    "chosen": "{{commune}} · {{department}} · {{region}}",
+    "clear": "Changer",
+    "source": "Régions, départements et communes du Sénégal (Acte III, 553 communes)."
+  },
+  "fuelSetup": {
+    "title": "Configurer le carburant",
+    "subtitle": "{{station}} · 4 étapes, dans l'ordre. Une seule chose à la fois.",
+    "progress": "{{done}} étapes sur 4 terminées",
+    "steps": {
+      "tanks": "Cuves",
+      "calibration": "Barémage",
+      "nozzles": "Pompes et pistolets",
+      "prices": "Prix"
+    },
+    "stepState": {
+      "tanksCount": "{{count}} cuve(s)",
+      "tanksNone": "aucune cuve",
+      "calibration": "{{done}} cuve sur {{total}}",
+      "calibrationAll": "{{total}} cuve(s)",
+      "todo": "à faire",
+      "nozzles": "{{nozzles}} pistolet(s) · {{pumps}} pompe(s)",
+      "pricesDone": "publiés",
+      "pricesMissing": "{{count}} produit(s) sans prix"
+    },
+    "banner": "{{tank}} : {{missing}}. La station ne peut pas ouvrir de shift tant que ce n'est pas réglé.",
+    "bannerPrices": "Prix manquant pour : {{products}}. La station ne peut pas ouvrir de shift tant que ce n'est pas réglé.",
+    "missing": {
+      "calibration": "pas de barémage",
+      "nozzles": "aucun pistolet relié"
+    },
+    "tankLine": "{{litres}} L · {{calibration}} · {{nozzles}}",
+    "calibrationPoints": "barémage {{points}} points",
+    "noCalibration": "pas de barémage",
+    "nozzlesCount": "{{count}} pistolet(s)",
+    "inProgress": "en cours",
+    "tanksTitle": "CUVES",
+    "addTank": "Ajouter une cuve",
+    "editTank": "Modifier la cuve",
+    "reorderThreshold": "Seuil de commande (% de la capacité)",
+    "calibrationTitle": "Barémage · {{tank}}",
+    "calibrationIntro": "La table qui transforme la hauteur lue sur la réglette (mm) en litres. Elle figure sur le certificat de jaugeage de la cuve.",
+    "pointsLabel": "Vos points (un par ligne : hauteur en mm ; volume en litres)",
+    "example": "Exemple :",
+    "then": "puis",
+    "importCsv": "Importer un CSV",
+    "attachCertificate": "Joindre le certificat (PDF)",
+    "curvePlaceholder": "La courbe s'affichera ici dès que vous aurez saisi 2 points.",
+    "input": {
+      "AUCUN_POINT": "Aucun point saisi. Il en faut au moins 2, du plus bas au plus haut.",
+      "POINTS_INSUFFISANTS": "Il faut au moins 2 points.",
+      "VOLUME_NON_CROISSANT": "Les volumes doivent augmenter avec la hauteur.",
+      "HAUTEUR_DUPLIQUEE": "Une hauteur apparaît deux fois.",
+      "HAUTEUR_INVALIDE": "Une hauteur est invalide (entier ≥ 0 en mm).",
+      "VOLUME_INVALIDE": "Un volume est invalide (≥ 0).",
+      "DEPASSE_CAPACITE": "Le dernier volume dépasse la capacité de la cuve.",
+      "LIGNES_REJETEES": "{{count}} ligne(s) illisible(s) : {{lines}}",
+      "ok": "{{points}} points, volumes croissants."
+    },
+    "backToStep": "← Étape {{n}} · {{name}}",
+    "later": "Plus tard",
+    "publishAndNext": "Publier et passer à l'étape 3",
+    "saveAndNext": "Enregistrer et passer à l'étape {{n}}",
+    "finish": "Terminer",
+    "pumpsTitle": "Pompes",
+    "addPump": "Ajouter une pompe",
+    "pumpLabel": "Nom de la pompe",
+    "nozzleLabel": "Nom du pistolet",
+    "suggested": "proposé",
+    "addNozzle": "Ajouter un pistolet",
+    "linkedTank": "Cuve reliée",
+    "rename": "Renommer",
+    "renamed": "Pistolet renommé.",
+    "noPump": "Aucune pompe. Ajoutez la première.",
+    "pricesTitle": "Prix",
+    "priceOf": "Prix {{product}} (FCFA / L)",
+    "currentPrice": "Actuel : {{price}} FCFA / L depuis le {{date}}",
+    "noPrice": "aucun prix publié",
+    "publishPrices": "Publier les prix",
+    "allDone": "Tout est configuré",
+    "allDoneText": "{{tanks}} cuve(s), {{nozzles}} pistolet(s), prix publiés. La station peut ouvrir des shifts.",
+    "modify": "Modifier la configuration",
+    "backToOverview": "Voir les cuves"
+  },
+  "tanks3d": {
+    "title": "Cuves · {{station}}",
+    "subtitle": "Niveau mesuré au dernier jaugeage ({{time}}) · théorique d'après les relevés d'index",
+    "subtitleNoGauge": "Aucun jaugeage pour l'instant",
+    "view3d": "Vue 3D",
+    "viewSimple": "Vue simple",
+    "measured": "Mesuré",
+    "theoretical": "Théorique",
+    "dotted": "ligne pointillée",
+    "variance": "Écart",
+    "autonomy": "Autonomie",
+    "perDay": "à {{litres}} L/jour",
+    "ofCapacity": "{{pct}} % de {{capacity}}",
+    "ok": "Niveau correct",
+    "reorder": "À commander",
+    "noGauge": "Aucun jaugeage",
+    "threshold": "seuil de commande {{pct}} %",
+    "hint": "La cuve tourne à la souris ou au doigt. Le niveau se met à jour à chaque jaugeage et à chaque relevé d'index (pas en continu sans capteur). « Vue simple » pour les appareils lents.",
+    "noTank": "Aucune cuve active."
   }
 }

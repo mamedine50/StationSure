@@ -120,3 +120,62 @@ export function volumeDepuisBaremageMm(
   }
   return min.volumeCl;
 }
+
+export type AvertissementBaremage = 'DEPASSE_CAPACITE';
+
+export interface EvaluationSaisieBaremage {
+  points: PointBaremageMm[];
+  /** Erreurs bloquantes, dans l'ordre d'affichage (une seule à la fois suffit à l'écran). */
+  erreurs: ('AUCUN_POINT' | ErreurBaremage)[];
+  /** Avertissements non bloquants. */
+  avertissements: AvertissementBaremage[];
+  lignesRejetees: ResultatImportCsv['lignesRejetees'];
+  /** Vrai quand la table peut être publiée. */
+  valide: boolean;
+}
+
+/**
+ * Évalue la saisie brute de l'écran 19 (une ligne par point « hauteur;volume ») :
+ * zone vide → `AUCUN_POINT` ; moins de 2 points → `POINTS_INSUFFISANTS` ; volumes non croissants →
+ * `VOLUME_NON_CROISSANT` ; dernier volume > capacité → avertissement `DEPASSE_CAPACITE` (non bloquant).
+ */
+export function evaluerSaisieBaremage(
+  texte: string,
+  capaciteCl?: number | null,
+): EvaluationSaisieBaremage {
+  if (!texte.trim()) {
+    return {
+      points: [],
+      erreurs: ['AUCUN_POINT'],
+      avertissements: [],
+      lignesRejetees: [],
+      valide: false,
+    };
+  }
+  const lu = lireBaremageCsv(texte);
+  const erreurs = new Set<'AUCUN_POINT' | ErreurBaremage>();
+  for (const p of validerBaremage(lu.points)) erreurs.add(p.code);
+  if (lu.points.length === 0) {
+    erreurs.clear();
+    erreurs.add('AUCUN_POINT');
+  }
+  const avertissements: AvertissementBaremage[] = [];
+  const dernier = [...lu.points].sort((a, b) => a.hauteurMm - b.hauteurMm).at(-1);
+  if (capaciteCl && dernier && dernier.volumeCl > capaciteCl)
+    avertissements.push('DEPASSE_CAPACITE');
+  const ordre: ('AUCUN_POINT' | ErreurBaremage)[] = [
+    'AUCUN_POINT',
+    'POINTS_INSUFFISANTS',
+    'HAUTEUR_INVALIDE',
+    'VOLUME_INVALIDE',
+    'HAUTEUR_DUPLIQUEE',
+    'VOLUME_NON_CROISSANT',
+  ];
+  return {
+    points: lu.points,
+    erreurs: ordre.filter((c) => erreurs.has(c)),
+    avertissements,
+    lignesRejetees: lu.lignesRejetees,
+    valide: erreurs.size === 0 && lu.lignesRejetees.length === 0,
+  };
+}

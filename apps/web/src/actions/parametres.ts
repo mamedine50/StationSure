@@ -47,6 +47,7 @@ export async function enregistrerSeuils(
       tank_variance_pct: lu.data.tankVariance,
       delivery_variance_pct: lu.data.deliveryVariance,
       cash_tolerance_fcfa: lu.data.cashTolerance,
+      small_variance_cumulative_fcfa: lu.data.smallVarianceCumulative,
       deposit_missing_hours: lu.data.depositHours,
       report_mode: lu.data.reportMode,
       report_time: lu.data.reportTime,
@@ -72,6 +73,7 @@ export async function enregistrerSurchargeStation(
     d.tankVariance === null &&
     d.deliveryVariance === null &&
     d.cashTolerance === null &&
+    d.smallVarianceCumulative === null &&
     d.depositHours === null;
   const { error } = tousVides
     ? await supabase.from('station_settings').delete().eq('station_id', d.stationId)
@@ -82,6 +84,7 @@ export async function enregistrerSurchargeStation(
           tank_variance_pct: d.tankVariance,
           delivery_variance_pct: d.deliveryVariance,
           cash_tolerance_fcfa: d.cashTolerance,
+          small_variance_cumulative_fcfa: d.smallVarianceCumulative,
           deposit_missing_hours: d.depositHours,
         },
         { onConflict: 'station_id' },

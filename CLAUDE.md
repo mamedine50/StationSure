@@ -45,7 +45,8 @@ Next les transpile via `transpilePackages`, Metro nativement.
 Base locale (Docker requis, ports 547xx : API 54721, Postgres 54722, Studio 54723) :
 `pnpm db:start` · `pnpm db:reset` (migrations + seed) · `pnpm db:lint` · `pnpm db:test` (pgTAP) ·
 `pnpm db:types` (régénère `packages/database/src/types.generated.ts`) · `pnpm db:stop` ·
-`pnpm db:functions:test` (tests Deno des Edge Functions) · `pnpm db:functions:serve` (lit `supabase/functions/.env`).
+`pnpm db:functions:test` (tests Deno des Edge Functions) · `pnpm db:functions:serve` (lit `supabase/functions/.env`) ·
+`pnpm db:reset-station-config -- --email <courriel> [--confirm]` (nettoyage LOCAL d'une organisation de test).
 `psql` n'est pas installé : `docker exec supabase_db_stationsure psql -U postgres -c "…"`.
 
 **INTERDIT sans demande explicite du propriétaire du repo : `supabase link`, `supabase db push`,
@@ -122,6 +123,22 @@ error}` au lieu de lever une exception : une exception annulerait l'écriture du
 - Superviseurs : `invite-supervisor` (service_role, `inviteUserByEmail`), lecture seule, jamais
   destinataires par défaut. Numéros des destinataires lisibles par l'owner seulement.
 - Score d'écart : `employee_variance_scores` (formule dans `docs/score-ecart.md`), sans IA.
+
+## Lot de correctifs n°1 (villes, petits écarts, cuves 3D, carburant en étapes)
+
+- Villes : référence `sn_communes` (553, lecture pour tout utilisateur connecté), champ `ChampVille`
+  (recherche via `rechercherLocalites` de core) partout où une station est créée ou modifiée ; « Autre »
+  = `commune_code` null + `city` libre.
+- Petits écarts : jamais ignorés. Tout écart est attribué ; cumul 30 jours par employé
+  (`small_variance_cumulative_fcfa`, lu par `effective_setting`) → alerte immédiate, poids 0,25 dans le score.
+- Cuves : `tank_levels` (serveur) alimente `components/cuves` (3D `@react-three/fiber` chargée en
+  `dynamic(ssr:false)`, vue simple SVG, choix mémorisé `stationsure:vue-cuves`, `choisirVueCuves` de core).
+  Seuil de commande par cuve → alerte `tank_low` une fois par passage.
+- Configuration carburant : page `/carburant` en 4 étapes pilotée par `station_fuel_setup_status` ;
+  `open_shift` et le mobile refusent tant que c'est incomplet. Saisie du barémage : jamais de placeholder
+  ressemblant à des données ; `evaluerSaisieBaremage` (core) donne l'erreur à afficher.
+- Nettoyage local d'un compte de test : `pnpm db:reset-station-config -- --email <courriel> [--confirm]`
+  (jamais l'organisation de démo, jamais une base en ligne).
 
 ## Cycle carburant (phase 3)
 

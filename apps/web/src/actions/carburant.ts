@@ -2,6 +2,7 @@
 
 import { validerBaremage } from '@stationsure/core';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 import type { EtatFormulaire } from '@/components/ui/formulaire';
 import { obtenirContexte } from '@/lib/auth/contexte';
@@ -15,7 +16,15 @@ import {
   schemaPistolet,
   schemaPompe,
   schemaPrix,
+  schemaPrixMultiples,
+  schemaRenommerPistolet,
 } from '@/lib/validation';
+
+/** Champ caché `suite` : page vers laquelle continuer après un succès (parcours en étapes). */
+function suivre(formData: FormData) {
+  const suite = formData.get('suite');
+  if (typeof suite === 'string' && suite.startsWith('/carburant')) redirect(suite);
+}
 
 async function contexteProprietaire() {
   const contexte = await obtenirContexte();
@@ -54,10 +63,15 @@ export async function modifierCuve(
   const supabase = await creerClientServeur();
   const { error } = await supabase
     .from('tanks')
-    .update({ label: lu.data.label, capacity_cl: lu.data.capaciteLitres * 100 })
+    .update({
+      label: lu.data.label,
+      capacity_cl: lu.data.capaciteLitres * 100,
+      reorder_threshold_pct: lu.data.seuilCommandePct,
+    })
     .eq('id', lu.data.cuveId);
   if (error) return { erreur: error.message };
   revalidatePath('/carburant');
+  revalidatePath('/');
   return { succes: 'fuelConfig.tankUpdated' };
 }
 
@@ -89,6 +103,8 @@ export async function publierBaremage(
     return { erreur: cle[code] ?? error.message };
   }
   revalidatePath('/carburant');
+  revalidatePath('/');
+  suivre(formData);
   return { succes: 'fuelConfig.calibrationPublished' };
 }
 
@@ -170,5 +186,50 @@ export async function publierPrix(
   });
   if (error) return { erreur: error.message };
   revalidatePath('/carburant');
+  return { succes: 'fuelConfig.pricePublished' };
+}
+
+export async function renommerPistolet(
+  _etat: EtatFormulaire,
+  formData: FormData,
+): Promise<EtatFormulaire> {
+  const lu = schemaRenommerPistolet.safeParse(lireFormulaire(formData));
+  if (!lu.success) return { erreur: premiereErreur(lu) };
+  if (!(await contexteProprietaire())) return { erreur: 'common.error' };
+  const supabase = await creerClientServeur();
+  const { error } = await supabase
+    .from('nozzles')
+    .update({ label: lu.data.label })
+    .eq('id', lu.data.pistoletId);
+  if (error) return { erreur: error.message };
+  revalidatePath('/carburant');
+  return { succes: 'fuelSetup.renamed' };
+}
+
+/** Étape 4 : publie en une fois le prix de chaque produit renseigné (effet immédiat). */
+export async function publierPrixMultiples(
+  _etat: EtatFormulaire,
+  formData: FormData,
+): Promise<EtatFormulaire> {
+  const lu = schemaPrixMultiples.safeParse(lireFormulaire(formData));
+  if (!lu.success) return { erreur: premiereErreur(lu) };
+  const contexte = await contexteProprietaire();
+  if (!contexte) return { erreur: 'common.error' };
+  const lignes = (['super', 'gasoil'] as const)
+    .filter((code) => lu.data[code] !== undefined)
+    .map((code) => ({
+      organization_id: contexte.membre!.organizationId,
+      station_id: lu.data.stationId,
+      fuel_product_code: code,
+      price_fcfa_per_litre: lu.data[code]!,
+      effective_at: new Date().toISOString(),
+      created_by: contexte.utilisateur.id,
+    }));
+  if (lignes.length === 0) return { erreur: 'validation.price' };
+  const supabase = await creerClientServeur();
+  const { error } = await supabase.from('price_changes').insert(lignes);
+  if (error) return { erreur: error.message };
+  revalidatePath('/carburant');
+  suivre(formData);
   return { succes: 'fuelConfig.pricePublished' };
 }

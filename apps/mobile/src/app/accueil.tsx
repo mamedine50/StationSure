@@ -6,7 +6,12 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LogoPompe } from '@/components/logo-pompe';
-import { chargerShiftCourant, type Shift } from '@/lib/carburant';
+import {
+  chargerShiftCourant,
+  chargerStatutConfiguration,
+  type Shift,
+  type StatutConfiguration,
+} from '@/lib/carburant';
 import { INACTIVITE_MINUTES } from '@/lib/env';
 import { abonnerFile, nombreEnAttente, traiterFile } from '@/lib/preuves';
 import { useSession } from '@/lib/session';
@@ -39,8 +44,10 @@ export default function EcranAccueil() {
   const [nomOuvreur, setNomOuvreur] = useState('');
   const [enAttente, setEnAttente] = useState(nombreEnAttente());
   const [erreur, setErreur] = useState<string | null>(null);
+  const [configuration, setConfiguration] = useState<StatutConfiguration | null>(null);
 
   const charger = useCallback(async () => {
+    setConfiguration(await chargerStatutConfiguration());
     const s = await chargerShiftCourant();
     setShift(s);
     if (s) {
@@ -81,6 +88,12 @@ export default function EcranAccueil() {
 
   const ouvrirShift = async () => {
     setErreur(null);
+    const statut = await chargerStatutConfiguration();
+    if (statut && !statut.complete) {
+      setConfiguration(statut);
+      setErreur(t('shift.setupIncomplete'));
+      return;
+    }
     const { data, error } = await supabase
       .from('shifts')
       .insert({
@@ -171,7 +184,19 @@ export default function EcranAccueil() {
             }
           />
         )}
-        {shift === null && (
+        {shift === null && configuration && !configuration.complete && (
+          <View className="gap-1 rounded-md border border-accent bg-accent-fond px-3 py-3">
+            <Text className="font-sans text-[14px] font-semibold text-accent">
+              {t('shift.setupIncomplete')}
+            </Text>
+            {configuration.manques.map((m) => (
+              <Text key={m} className="font-sans text-[13px] text-texte">
+                · {m}
+              </Text>
+            ))}
+          </View>
+        )}
+        {shift === null && (!configuration || configuration.complete) && (
           <Bouton principal libelle={t('shift.openShift')} onPress={() => void ouvrirShift()} />
         )}
         {shift?.status === 'opening' && (

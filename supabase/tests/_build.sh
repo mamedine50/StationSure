@@ -16,7 +16,10 @@ for src in _src/*.sql.src; do
     echo
     cat _src/_preambule.sql.src
     echo
-    cat "$src"
+    # `-- @include chemin` (relatif à supabase/tests) insère un fichier, ex. la fonction du script de nettoyage.
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      if [[ "$line" == "-- @include "* ]]; then cat "${line#-- @include }"; else printf '%s\n' "$line"; fi
+    done < "$src"
     echo
     echo "select * from finish();"
     echo "rollback;"

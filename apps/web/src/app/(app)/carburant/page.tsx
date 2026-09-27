@@ -1,48 +1,76 @@
-import { clToLitres, formatFCFA, formatLitres } from '@stationsure/core';
+import { formatLitres } from '@stationsure/core';
 import { t } from '@stationsure/i18n';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
+import { chargerNiveaux } from '@/components/cuves/charger-niveaux';
+import { CuvesStation } from '@/components/cuves/cuves-station';
 import { EnTetePage } from '@/components/en-tete-page';
 import { exigerContexteComplet } from '@/lib/auth/contexte';
 import { creerClientServeur } from '@/lib/supabase/server';
 
-import { CourbeBaremage } from './courbe-baremage';
 import {
+  type CuveEtape,
+  EtapeCuves,
+  EtapePompes,
+  EtapePrix,
   FormulaireBaremage,
-  FormulaireCuve,
-  FormulaireModifierCuve,
-  FormulairePistolet,
-  FormulairePompe,
-  FormulairePrix,
-  BoutonActivationEquipement,
+  type PompeEtape,
   SelecteurStation,
 } from './formulaires';
 
 export const metadata: Metadata = { title: t('nav.fuel') };
 
-const dateFr = new Intl.DateTimeFormat('fr-SN', { dateStyle: 'medium' });
+const dateFr = new Intl.DateTimeFormat('fr-SN', { dateStyle: 'medium', timeZone: 'Africa/Dakar' });
+const litresEntiers = (cl: number) => formatLitres(cl).replace(/,\d\d$/, '');
+
+/** Résultat de la RPC station_fuel_setup_status (écran 19). */
+interface StatutConfiguration {
+  complete: boolean;
+  steps: {
+    tanks: { complete: boolean; count: number };
+    calibration: { complete: boolean; done: number; total: number };
+    nozzles: { complete: boolean; pumps: number; nozzles: number; done: number; total: number };
+    prices: { complete: boolean; missing: number };
+  };
+  tanks: {
+    tank_id: string;
+    label: string;
+    fuel_product_code: 'super' | 'gasoil';
+    capacity_cl: number;
+    calibration_points: number | null;
+    nozzles: number | null;
+    missing: ('calibration' | 'nozzles')[];
+  }[];
+  prices: { fuel_product_code: 'super' | 'gasoil'; price_fcfa_per_litre: number | null }[];
+}
+
+const ETAPES = ['tanks', 'calibration', 'nozzles', 'prices'] as const;
 
 export default async function PageCarburant({
   searchParams,
 }: {
-  searchParams: Promise<{ station?: string; cuve?: string }>;
+  searchParams: Promise<{ station?: string; etape?: string; cuve?: string }>;
 }) {
-  const { station: stationParam, cuve: cuveParam } = await searchParams;
+  const params = await searchParams;
   const contexte = await exigerContexteComplet();
-  const station = contexte.stations.find((s) => s.id === stationParam) ?? contexte.stations[0]!;
+  const station = contexte.stations.find((s) => s.id === params.station) ?? contexte.stations[0]!;
   const supabase = await creerClientServeur();
+  const rw = contexte.estProprietaire;
 
   const [
+    { data: statutBrut, error: erreurStatut },
     { data: cuves },
     { data: pompes },
     { data: pistolets },
     { data: versions },
     { data: prixActuels },
-    { data: historiquePrix },
+    niveaux,
   ] = await Promise.all([
+    supabase.rpc('station_fuel_setup_status', { p_station_id: station.id }),
     supabase
       .from('tanks')
-      .select('id, label, fuel_product_code, capacity_cl, active')
+      .select('id, label, fuel_product_code, capacity_cl, active, reorder_threshold_pct')
       .eq('station_id', station.id)
       .order('label'),
     supabase.from('pumps').select('id, label, active').eq('station_id', station.id).order('label'),
@@ -53,352 +81,311 @@ export default async function PageCarburant({
       .order('label'),
     supabase
       .from('tank_calibration_versions')
-      .select('id, tank_id, version, effective_from, certificate_path, note')
+      .select('id, tank_id, version, effective_from, certificate_path')
       .eq('station_id', station.id)
       .order('effective_from', { ascending: false }),
     supabase
       .from('current_fuel_prices')
       .select('fuel_product_code, price_fcfa_per_litre, effective_at')
       .eq('station_id', station.id),
-    supabase
-      .from('price_changes')
-      .select('id, fuel_product_code, price_fcfa_per_litre, effective_at, created_at')
-      .eq('station_id', station.id)
-      .order('effective_at', { ascending: false })
-      .limit(20),
+    chargerNiveaux(supabase, station.id),
   ]);
+  if (erreurStatut) console.error('station_fuel_setup_status', erreurStatut.message);
+  const statut = (statutBrut ?? null) as StatutConfiguration | null;
+  const complete = statut?.complete ?? false;
+  const etapeParam = ['1', '2', '3', '4'].includes(params.etape ?? '')
+    ? Number(params.etape)
+    : null;
+  const lien = (etape: number, cuve?: string) =>
+    `/carburant?station=${station.id}&etape=${etape}${cuve ? `&cuve=${cuve}` : ''}`;
+  const vueEnsemble = `/carburant?station=${station.id}`;
 
-  const maintenant = new Date().getTime();
-  const listeCuves = cuves ?? [];
-  const cuve = listeCuves.find((c) => c.id === cuveParam) ?? listeCuves[0] ?? null;
-  const versionsCuve = (versions ?? []).filter((v) => v.tank_id === cuve?.id);
-  const versionCourante =
-    versionsCuve.find((v) => new Date(v.effective_from).getTime() <= maintenant) ??
-    versionsCuve[0] ??
+  // ---------------------------------------------------------------- Tout configuré : cuves (écran 20)
+  if (statut && complete && etapeParam === null) {
+    return (
+      <main className="flex min-w-0 grow flex-col gap-[22px] px-8 py-7">
+        <EnTetePage
+          titre={t('nav.fuel')}
+          sousTitre={t('fuelSetup.allDoneText', {
+            tanks: statut.steps.tanks.count,
+            nozzles: statut.steps.nozzles.nozzles,
+          })}
+          action={
+            <div className="flex items-center gap-3">
+              <SelecteurStation stations={contexte.stations} stationId={station.id} />
+              {rw && (
+                <Link
+                  href={lien(1)}
+                  className="flex h-11 items-center rounded-lg border border-bordure-forte px-4 text-[14px] font-semibold text-texte no-underline"
+                >
+                  {t('fuelSetup.modify')}
+                </Link>
+              )}
+            </div>
+          }
+        />
+        <div className="flex items-center gap-2 rounded-xl border border-succes-bordure bg-succes-fond px-4 py-3 text-[14px] text-succes">
+          ✓ {t('fuelSetup.allDone')}
+        </div>
+        <CuvesStation niveaux={niveaux} titre={t('tanks3d.title', { station: station.name })} />
+        <p className="m-0 rounded-xl border border-bordure bg-surface px-4 py-3 text-[13px] text-texte-secondaire">
+          {t('tanks3d.hint')}
+        </p>
+      </main>
+    );
+  }
+
+  // ---------------------------------------------------------------- Parcours en 4 étapes (écran 19)
+  const pas = statut?.steps;
+  const premiereIncomplete = pas ? ETAPES.findIndex((e) => !pas[e].complete) + 1 || 4 : 1;
+  const etape = etapeParam ?? premiereIncomplete;
+  const terminees = pas ? ETAPES.filter((e) => pas[e].complete).length : 0;
+  const listeCuves = (cuves ?? []).map<CuveEtape>((c) => ({
+    id: c.id,
+    label: c.label,
+    produit: c.fuel_product_code,
+    capaciteCl: Number(c.capacity_cl),
+    seuilPct: Number(c.reorder_threshold_pct),
+    active: c.active,
+    points: statut?.tanks.find((x) => x.tank_id === c.id)?.calibration_points ?? 0,
+    pistolets: (pistolets ?? []).filter((p) => p.tank_id === c.id && p.active).length,
+  }));
+  const cuvesActives = listeCuves.filter((c) => c.active);
+  const cuveCourante =
+    cuvesActives.find((c) => c.id === params.cuve) ??
+    cuvesActives.find((c) => c.points < 2) ??
+    cuvesActives[0] ??
     null;
-  const { data: points } = versionCourante
-    ? await supabase
-        .from('tank_calibrations')
-        .select('height_mm, volume_cl')
-        .eq('version_id', versionCourante.id)
-        .order('height_mm')
-    : { data: [] as { height_mm: number; volume_cl: number }[] };
-  const { data: comptes } = await supabase
-    .from('tank_calibrations')
-    .select('version_id')
-    .in(
-      'version_id',
-      (versions ?? []).map((v) => v.id),
-    );
-  const pointsParVersion = new Map<string, number>();
-  for (const c of comptes ?? [])
-    pointsParVersion.set(c.version_id, (pointsParVersion.get(c.version_id) ?? 0) + 1);
-  const versionEnVigueur = (tankId: string) =>
-    (versions ?? []).find(
-      (v) => v.tank_id === tankId && new Date(v.effective_from).getTime() <= maintenant,
-    );
-  const pistoletsDe = (tankId: string) =>
-    (pistolets ?? []).filter((p) => p.tank_id === tankId && p.active).map((p) => p.label);
-  const nomProduit = (code: string) => t(`fuel.${code}`);
-  const cuveLabel = (id: string) => listeCuves.find((c) => c.id === id)?.label ?? '?';
+  const versionCourante = cuveCourante
+    ? ((versions ?? []).find((v) => v.tank_id === cuveCourante.id) ?? null)
+    : null;
+  const listePompes = (pompes ?? []).map<PompeEtape>((p) => ({
+    id: p.id,
+    label: p.label,
+    active: p.active,
+    pistolets: (pistolets ?? [])
+      .filter((n) => n.pump_id === p.id)
+      .map((n) => ({ id: n.id, label: n.label, tankId: n.tank_id, active: n.active })),
+  }));
+  const produits = [...new Set(cuvesActives.map((c) => c.produit))];
+  const manques = (statut?.tanks ?? []).filter((x) => x.missing.length > 0);
+  const produitsSansPrix = (statut?.prices ?? []).filter((p) => p.price_fcfa_per_litre === null);
+  const etatEtape = (e: (typeof ETAPES)[number]): string => {
+    if (!pas) return t('fuelSetup.stepState.todo');
+    switch (e) {
+      case 'tanks':
+        return pas.tanks.count > 0
+          ? t('fuelSetup.stepState.tanksCount', { count: pas.tanks.count })
+          : t('fuelSetup.stepState.tanksNone');
+      case 'calibration':
+        return pas.calibration.total === 0
+          ? t('fuelSetup.stepState.todo')
+          : pas.calibration.complete
+            ? t('fuelSetup.stepState.calibrationAll', { total: pas.calibration.total })
+            : t('fuelSetup.stepState.calibration', {
+                done: pas.calibration.done,
+                total: pas.calibration.total,
+              });
+      case 'nozzles':
+        return pas.nozzles.nozzles > 0
+          ? t('fuelSetup.stepState.nozzles', {
+              nozzles: pas.nozzles.nozzles,
+              pumps: pas.nozzles.pumps,
+            })
+          : t('fuelSetup.stepState.todo');
+      case 'prices':
+        return pas.prices.complete && pas.tanks.count > 0
+          ? t('fuelSetup.stepState.pricesDone')
+          : pas.prices.missing > 0
+            ? t('fuelSetup.stepState.pricesMissing', { count: pas.prices.missing })
+            : t('fuelSetup.stepState.todo');
+    }
+  };
 
   return (
     <main className="flex min-w-0 grow flex-col gap-[22px] px-8 py-7">
       <EnTetePage
-        titre={t('nav.fuel')}
-        sousTitre={t('fuelConfig.subtitle')}
-        action={<SelecteurStation stations={contexte.stations} stationId={station.id} />}
+        titre={t('fuelSetup.title')}
+        sousTitre={t('fuelSetup.subtitle', { station: station.name })}
+        action={
+          <div className="flex items-center gap-3">
+            <span className="text-[13px] text-texte-secondaire">
+              {t('fuelSetup.progress', { done: terminees })}
+            </span>
+            <SelecteurStation stations={contexte.stations} stationId={station.id} />
+            {complete && (
+              <Link href={vueEnsemble} className="text-[13px] text-accent">
+                {t('fuelSetup.backToOverview')}
+              </Link>
+            )}
+          </div>
+        }
       />
-      {!contexte.estProprietaire && (
+      {!rw && (
         <p className="m-0 rounded-md border border-bordure bg-surface-2 px-3 py-2 text-[13px] text-texte-secondaire">
           {t('fuelConfig.readOnly')}
         </p>
       )}
 
-      <div className="grid grid-cols-[1fr_1.9fr] gap-4">
-        {/* Colonne gauche : cuves + prix */}
-        <div className="flex flex-col gap-4">
-          <section className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <h2 className="m-0 text-[15px] font-semibold">{t('fuelConfig.tanks')}</h2>
-              {contexte.estProprietaire && <FormulaireCuve stationId={station.id} />}
-            </div>
-            {listeCuves.map((c) => {
-              const v = versionEnVigueur(c.id);
-              const actif = c.id === cuve?.id;
-              return (
-                <div
-                  key={c.id}
-                  className={`flex flex-col gap-1 rounded-xl border p-4 ${actif ? 'border-accent bg-accent-fond' : 'border-bordure bg-surface'}`}
+      <ol className="m-0 grid list-none grid-cols-4 gap-3 p-0">
+        {ETAPES.map((e, i) => {
+          const n = i + 1;
+          const fait = pas?.[e].complete ?? false;
+          const actif = etape === n;
+          return (
+            <li key={e}>
+              <Link
+                href={lien(n)}
+                aria-current={actif ? 'step' : undefined}
+                className={`flex items-center gap-3 rounded-xl border px-4 py-3 no-underline ${actif ? 'border-accent bg-accent-fond' : fait ? 'border-succes-bordure bg-succes-fond' : 'border-bordure bg-surface'}`}
+              >
+                <span
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-pilule text-[14px] font-bold ${fait ? 'bg-succes text-fond' : actif ? 'bg-accent text-accent-texte' : 'bg-surface-2 text-texte-secondaire'}`}
                 >
-                  <div className="flex items-center justify-between">
-                    <a
-                      href={`/carburant?station=${station.id}&cuve=${c.id}`}
-                      className="text-[15px] font-semibold text-texte no-underline"
-                    >
-                      {c.label}
-                      {!c.active && (
-                        <span className="ml-2 text-[12px] text-danger">
-                          ({t('common.inactive')})
-                        </span>
-                      )}
-                    </a>
-                    <span className="rounded-pilule bg-surface-2 px-2 py-0.5 text-[12px] font-semibold text-info">
-                      {nomProduit(c.fuel_product_code)}
-                    </span>
-                  </div>
-                  <span className="text-[13px] text-texte-secondaire">
-                    {v
-                      ? t('fuelConfig.capacity', {
-                          litres: formatLitres(c.capacity_cl).replace(',00', ''),
-                          points: pointsParVersion.get(v.id) ?? 0,
-                        })
-                      : `${t('fuelConfig.capacityL')} ${formatLitres(c.capacity_cl).replace(',00', '')} · ${t('fuelConfig.noCalibration')}`}
-                  </span>
-                  <span className="text-[13px] text-texte-secondaire">
-                    {pistoletsDe(c.id).length > 0
-                      ? t('fuelConfig.nozzlesOf', { list: pistoletsDe(c.id).join(' · ') })
-                      : t('fuelConfig.noNozzles')}
-                  </span>
-                  {contexte.estProprietaire && (
-                    <FormulaireModifierCuve
-                      cuve={{ id: c.id, label: c.label, capaciteLitres: clToLitres(c.capacity_cl) }}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </section>
-
-          <section className="flex flex-col gap-3 rounded-xl border border-bordure bg-surface p-4">
-            <h2 className="m-0 text-[15px] font-semibold">{t('fuelConfig.prices')}</h2>
-            {(['super', 'gasoil'] as const).map((code) => {
-              const p = (prixActuels ?? []).find((x) => x.fuel_product_code === code);
-              return (
-                <div key={code} className="flex items-baseline justify-between text-[14px]">
-                  <span>{nomProduit(code)}</span>
-                  <span className="font-mono">
-                    {p
-                      ? `${formatFCFA(p.price_fcfa_per_litre ?? 0)} ${t('fuelConfig.pricePerLitre')}`
-                      : t('fuelConfig.noPrice')}
-                  </span>
-                </div>
-              );
-            })}
-            {(prixActuels ?? []).length > 0 && (
-              <span className="text-[12px] text-texte-secondaire">
-                {t('fuelConfig.priceSince', {
-                  date: dateFr.format(
-                    new Date(
-                      Math.max(
-                        ...(prixActuels ?? []).map((p) => new Date(p.effective_at ?? 0).getTime()),
-                      ),
-                    ),
-                  ),
-                })}
-              </span>
-            )}
-            {contexte.estProprietaire && <FormulairePrix stationId={station.id} />}
-            <details>
-              <summary className="cursor-pointer text-[13px] text-accent">
-                {t('fuelConfig.priceHistory')}
-              </summary>
-              <ul className="m-0 mt-2 flex list-none flex-col gap-1 p-0 text-[13px]">
-                {(historiquePrix ?? []).map((p) => (
-                  <li key={p.id} className="flex justify-between text-texte-secondaire">
-                    <span>
-                      {dateFr.format(new Date(p.effective_at))} · {nomProduit(p.fuel_product_code)}
-                    </span>
-                    <span className="font-mono text-texte">
-                      {formatFCFA(p.price_fcfa_per_litre)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          </section>
-        </div>
-
-        {/* Colonne droite : barémage + pompes */}
-        <div className="flex flex-col gap-4">
-          <section className="flex flex-col gap-4 rounded-xl border border-bordure bg-surface p-4">
-            <div className="flex items-center justify-between">
-              <h2 className="m-0 text-[15px] font-semibold">
-                {cuve
-                  ? t('fuelConfig.calibrationOf', {
-                      tank: `${cuve.label} ${nomProduit(cuve.fuel_product_code)}`,
-                    })
-                  : t('fuelConfig.calibration')}
-              </h2>
-              {versionCourante && (
-                <span className="text-[12px] text-texte-secondaire">
-                  {t('fuelConfig.version', { n: versionCourante.version })} ·{' '}
-                  {t('fuelConfig.effectiveFrom', {
-                    date: dateFr.format(new Date(versionCourante.effective_from)),
-                  })}{' '}
-                  ·{' '}
-                  {versionCourante.certificate_path
-                    ? t('fuelConfig.certificateAttached')
-                    : t('fuelConfig.noCertificate')}
+                  {fait ? '✓' : n}
                 </span>
-              )}
-            </div>
-            {!cuve && (
-              <p className="m-0 text-[13px] text-texte-secondaire">{t('fuelConfig.selectTank')}</p>
-            )}
-            {cuve && (
-              <div className="grid grid-cols-[220px_1fr] gap-4">
-                <table className="w-full border-collapse text-[13px]">
-                  <thead>
-                    <tr className="text-left text-[11px] tracking-wider text-texte-secondaire">
-                      <th className="pb-2 font-normal">{t('fuelConfig.height').toUpperCase()}</th>
-                      <th className="pb-2 text-right font-normal">
-                        {t('fuelConfig.volume').toUpperCase()}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(points ?? []).map((p) => (
-                      <tr key={p.height_mm}>
-                        <td className="py-1 font-mono">{p.height_mm} mm</td>
-                        <td className="py-1 text-right font-mono">
-                          {formatLitres(p.volume_cl).replace(',00', '')} L
-                        </td>
-                      </tr>
-                    ))}
-                    {(points ?? []).length === 0 && (
-                      <tr>
-                        <td colSpan={2} className="py-2 text-texte-secondaire">
-                          {t('fuelConfig.noCalibration')}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-                <div className="flex flex-col gap-2">
-                  <CourbeBaremage
-                    points={(points ?? []).map((p) => ({
-                      hauteurMm: p.height_mm,
-                      volumeCl: p.volume_cl,
-                    }))}
-                  />
-                  {(points ?? []).length >= 2 && (
-                    <span className="text-[13px] text-succes">
-                      ✓ {t('fuelConfig.curveOk', { points: (points ?? []).length })}
-                    </span>
-                  )}
-                  <span className="text-[12px] text-texte-secondaire">
-                    {t('fuelConfig.curveHint')}
+                <span className="flex flex-col">
+                  <span className="text-[14px] font-semibold text-texte">
+                    {n} · {t(`fuelSetup.steps.${e}`)}
                   </span>
-                </div>
-              </div>
-            )}
-            {cuve && contexte.estProprietaire && (
-              <FormulaireBaremage
-                cuveId={cuve.id}
-                organisationId={contexte.membre.organizationId}
-                stationId={station.id}
-              />
-            )}
-            {versionsCuve.length > 1 && (
-              <details>
-                <summary className="cursor-pointer text-[13px] text-accent">
-                  {t('fuelConfig.previousVersions')}
-                </summary>
-                <ul className="m-0 mt-2 flex list-none flex-col gap-1 p-0 text-[13px] text-texte-secondaire">
-                  {versionsCuve.map((v) => (
-                    <li key={v.id}>
-                      {t('fuelConfig.version', { n: v.version })} ·{' '}
-                      {dateFr.format(new Date(v.effective_from))} ·{' '}
-                      {pointsParVersion.get(v.id) ?? 0} pts
-                      {v.note ? ` · ${v.note}` : ''}
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            )}
-          </section>
+                  <span className="text-[12px] text-texte-secondaire">{etatEtape(e)}</span>
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
 
-          <section className="flex flex-col rounded-xl border border-bordure bg-surface">
-            <div className="flex items-center justify-between border-b border-bordure px-4 py-3">
-              <h2 className="m-0 text-[15px] font-semibold">{t('fuelConfig.pumps')}</h2>
-              {contexte.estProprietaire && <FormulairePompe stationId={station.id} />}
-            </div>
-            <table className="w-full border-collapse text-[14px]">
-              <thead>
-                <tr className="text-left text-[11px] tracking-wider text-texte-secondaire">
-                  <th className="px-4 py-2 font-normal">POMPE</th>
-                  <th className="px-4 py-2 font-normal">
-                    {t('fuelConfig.addNozzle').toUpperCase()}
-                  </th>
-                  <th className="px-4 py-2 font-normal" />
-                </tr>
-              </thead>
-              <tbody>
-                {(pompes ?? []).map((pompe) => (
-                  <tr key={pompe.id} className="border-t border-bordure align-top">
-                    <td className="px-4 py-3 font-semibold">
-                      {pompe.label}
-                      {!pompe.active && (
-                        <span className="ml-2 text-[12px] text-danger">
-                          ({t('common.inactive')})
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-2">
-                        {(pistolets ?? [])
-                          .filter((p) => p.pump_id === pompe.id)
-                          .map((p) => (
-                            <span
-                              key={p.id}
-                              className={`flex items-center gap-2 rounded-pilule border border-bordure px-3 py-1 text-[13px] ${p.active ? '' : 'text-texte-secondaire line-through'}`}
-                            >
-                              {p.label} → {cuveLabel(p.tank_id)}
-                              {contexte.estProprietaire && (
-                                <BoutonActivationEquipement
-                                  table="nozzles"
-                                  id={p.id}
-                                  actif={p.active}
-                                />
-                              )}
-                            </span>
-                          ))}
-                        {contexte.estProprietaire && pompe.active && (
-                          <FormulairePistolet
-                            stationId={station.id}
-                            pompeId={pompe.id}
-                            cuves={listeCuves
-                              .filter((c) => c.active)
-                              .map((c) => ({
-                                id: c.id,
-                                label: `${c.label} ${nomProduit(c.fuel_product_code)}`,
-                              }))}
-                          />
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {contexte.estProprietaire && (
-                        <BoutonActivationEquipement
-                          table="pumps"
-                          id={pompe.id}
-                          actif={pompe.active}
-                        />
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {contexte.estProprietaire && (
-              <p className="m-0 px-4 py-2 text-[12px] text-texte-secondaire">
-                {t('fuelConfig.deactivateHint')}
+      {(manques.length > 0 || produitsSansPrix.length > 0) && (
+        <div className="flex flex-col gap-1 rounded-xl border border-accent bg-accent-fond px-4 py-3 text-[14px]">
+          {manques.map((m) => (
+            <span key={m.tank_id}>
+              ⚠{' '}
+              {t('fuelSetup.banner', {
+                tank: `${m.label} · ${t(`fuel.${m.fuel_product_code}`)}`,
+                missing: m.missing.map((x) => t(`fuelSetup.missing.${x}`)).join(', '),
+              })}
+            </span>
+          ))}
+          {produitsSansPrix.length > 0 && (
+            <span>
+              ⚠{' '}
+              {t('fuelSetup.bannerPrices', {
+                products: produitsSansPrix.map((p) => t(`fuel.${p.fuel_product_code}`)).join(', '),
+              })}
+            </span>
+          )}
+        </div>
+      )}
+
+      {etape === 1 && (
+        // Remonté à chaque changement serveur : les panneaux se referment après un succès.
+        <EtapeCuves
+          key={JSON.stringify(listeCuves)}
+          stationId={station.id}
+          cuves={listeCuves}
+          rw={rw}
+          suivant={lien(2)}
+        />
+      )}
+
+      {etape === 2 && (
+        <div className="grid grid-cols-[1fr_2.4fr] gap-4">
+          <section className="flex flex-col gap-3">
+            <h2 className="m-0 text-[12px] tracking-wider text-texte-secondaire">
+              {t('fuelSetup.tanksTitle')}
+            </h2>
+            {cuvesActives.map((c) => {
+              const actif = c.id === cuveCourante?.id;
+              return (
+                <Link
+                  key={c.id}
+                  href={lien(2, c.id)}
+                  className={`flex flex-col gap-1 rounded-xl border p-4 no-underline ${actif ? 'border-accent bg-accent-fond' : 'border-bordure bg-surface'}`}
+                >
+                  <span className="flex items-center justify-between text-[15px] font-semibold text-texte">
+                    {c.label} · {t(`fuel.${c.produit}`)}
+                    {c.points >= 2 ? (
+                      <span className="text-succes">✓</span>
+                    ) : actif ? (
+                      <span className="text-[13px] text-accent">{t('fuelSetup.inProgress')}</span>
+                    ) : null}
+                  </span>
+                  <span className="text-[13px] text-texte-secondaire">
+                    {t('fuelSetup.tankLine', {
+                      litres: litresEntiers(c.capaciteCl),
+                      calibration:
+                        c.points >= 2
+                          ? t('fuelSetup.calibrationPoints', { points: c.points })
+                          : t('fuelSetup.noCalibration'),
+                      nozzles: t('fuelSetup.nozzlesCount', { count: c.pistolets }),
+                    })}
+                  </span>
+                </Link>
+              );
+            })}
+            {cuvesActives.length === 0 && (
+              <p className="m-0 text-[13px] text-texte-secondaire">
+                {t('fuelSetup.stepState.tanksNone')}
               </p>
             )}
           </section>
+          {cuveCourante && (
+            <FormulaireBaremage
+              key={cuveCourante.id}
+              cuve={cuveCourante}
+              organisationId={contexte.membre.organizationId}
+              stationId={station.id}
+              version={
+                versionCourante
+                  ? {
+                      numero: versionCourante.version,
+                      points: cuveCourante.points,
+                      date: dateFr.format(new Date(versionCourante.effective_from)),
+                      certificat: Boolean(versionCourante.certificate_path),
+                    }
+                  : null
+              }
+              precedent={lien(1)}
+              plusTard={lien(3)}
+              suite={lien(3)}
+              rw={rw}
+            />
+          )}
         </div>
-      </div>
+      )}
+
+      {etape === 3 && (
+        <EtapePompes
+          key={JSON.stringify(listePompes)}
+          stationId={station.id}
+          pompes={listePompes}
+          cuves={cuvesActives.map((c) => ({
+            id: c.id,
+            label: `${c.label} ${t(`fuel.${c.produit}`)}`,
+          }))}
+          rw={rw}
+          suivant={lien(4)}
+          precedent={lien(2)}
+        />
+      )}
+
+      {etape === 4 && (
+        <EtapePrix
+          stationId={station.id}
+          produits={produits}
+          prix={(prixActuels ?? [])
+            .filter((p) => p.fuel_product_code && p.price_fcfa_per_litre)
+            .map((p) => ({
+              produit: p.fuel_product_code as 'super' | 'gasoil',
+              valeur: Number(p.price_fcfa_per_litre),
+              depuis: dateFr.format(new Date(p.effective_at ?? 0)),
+            }))}
+          rw={rw}
+          precedent={lien(3)}
+          suite={vueEnsemble}
+        />
+      )}
     </main>
   );
 }

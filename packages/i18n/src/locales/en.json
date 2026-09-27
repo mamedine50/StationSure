@@ -175,7 +175,8 @@
     "threshold": "Invalid threshold (0 to 100).",
     "hours": "Invalid delay (1 to 168 h).",
     "time": "Invalid time (HH:MM).",
-    "route": "Invalid routing."
+    "route": "Invalid routing.",
+    "commune": "Pick a locality from the list or “Other”."
   },
   "onboarding": {
     "title": "Welcome",
@@ -206,7 +207,10 @@
     "devices": "Devices",
     "manageDevices": "Manage devices",
     "limitReached": "Your plan does not allow another station.",
-    "created": "Station created."
+    "created": "Station created.",
+    "edit": "Edit",
+    "updated": "Station updated.",
+    "region": "Region / department"
   },
   "devices": {
     "title": "Devices",
@@ -366,7 +370,10 @@
     "creditSale": "Credit sale",
     "closeCash": "Close the cash",
     "deposit": "Bank deposit",
-    "closedFinal": "Shift closed"
+    "closedFinal": "Shift closed",
+    "setupIncomplete": "Fuel setup incomplete: the owner must finish it on the web (Fuel and tanks).",
+    "setupMissing": "{{tank}}: {{missing}}",
+    "setupPrices": "missing price for {{products}}"
   },
   "reading": {
     "openTitle": "Opening reading",
@@ -806,7 +813,9 @@
     "connect": "Connect",
     "connectHint": "Procedure: docs/whatsapp-modeles.md (Meta account, templates, keys).",
     "liveMode": "WhatsApp connected: messages are really sent.",
-    "phoneExists": "This number is already registered."
+    "phoneExists": "This number is already registered.",
+    "smallVarianceCumulative": "Tolerated cumulative variance over 30 days per employee",
+    "smallVarianceHint": "Small variances (under the tolerance) added up per employee over a rolling 30 days; beyond, immediate alert."
   },
   "alertTypes": {
     "cash_variance": "Cash variance",
@@ -832,7 +841,9 @@
     "mobile_money_unmatched": "Wave / OM without sale",
     "mobile_money_pending": "Wave / OM not reconciled",
     "credit_account_requested": "Credit account requested",
-    "price_change_reading_missing": "Price change reading missing"
+    "price_change_reading_missing": "Price change reading missing",
+    "cash_small_variance_cumulative": "Cumulative small cash variances",
+    "tank_low": "Tank under reorder threshold"
   },
   "dashboard": {
     "subtitle": "{{date}} · {{scope}}",
@@ -934,5 +945,114 @@
       "reminder": "Reminder"
     },
     "notLocal": "Page available locally only."
+  },
+  "cities": {
+    "label": "City",
+    "placeholder": "Type to search (e.g. Kao → Kaolack)",
+    "noResult": "No locality found.",
+    "other": "Other (free text)",
+    "otherLabel": "Locality name",
+    "chosen": "{{commune}} · {{department}} · {{region}}",
+    "clear": "Change",
+    "source": "Regions, departments and communes of Senegal (Act III, 553 communes)."
+  },
+  "fuelSetup": {
+    "title": "Set up fuel",
+    "subtitle": "{{station}} · 4 steps, in order. One thing at a time.",
+    "progress": "{{done}} of 4 steps done",
+    "steps": {
+      "tanks": "Tanks",
+      "calibration": "Calibration",
+      "nozzles": "Pumps and nozzles",
+      "prices": "Prices"
+    },
+    "stepState": {
+      "tanksCount": "{{count}} tank(s)",
+      "tanksNone": "no tank",
+      "calibration": "{{done}} tank of {{total}}",
+      "calibrationAll": "{{total}} tank(s)",
+      "todo": "to do",
+      "nozzles": "{{nozzles}} nozzle(s) · {{pumps}} pump(s)",
+      "pricesDone": "published",
+      "pricesMissing": "{{count}} product(s) without price"
+    },
+    "banner": "{{tank}}: {{missing}}. The station cannot open a shift until this is fixed.",
+    "bannerPrices": "Missing price for: {{products}}. The station cannot open a shift until this is fixed.",
+    "missing": {
+      "calibration": "no calibration",
+      "nozzles": "no nozzle linked"
+    },
+    "tankLine": "{{litres}} L · {{calibration}} · {{nozzles}}",
+    "calibrationPoints": "calibration {{points}} points",
+    "noCalibration": "no calibration",
+    "nozzlesCount": "{{count}} nozzle(s)",
+    "inProgress": "in progress",
+    "tanksTitle": "TANKS",
+    "addTank": "Add a tank",
+    "editTank": "Edit tank",
+    "reorderThreshold": "Reorder threshold (% of capacity)",
+    "calibrationTitle": "Calibration · {{tank}}",
+    "calibrationIntro": "The table converting the dipstick height (mm) into litres. It is on the tank's calibration certificate.",
+    "pointsLabel": "Your points (one per line: height in mm ; volume in litres)",
+    "example": "Example:",
+    "then": "then",
+    "importCsv": "Import a CSV",
+    "attachCertificate": "Attach the certificate (PDF)",
+    "curvePlaceholder": "The curve will appear here once you enter 2 points.",
+    "input": {
+      "AUCUN_POINT": "No point entered. At least 2 are needed, from lowest to highest.",
+      "POINTS_INSUFFISANTS": "At least 2 points are needed.",
+      "VOLUME_NON_CROISSANT": "Volumes must increase with height.",
+      "HAUTEUR_DUPLIQUEE": "A height appears twice.",
+      "HAUTEUR_INVALIDE": "A height is invalid (integer ≥ 0 in mm).",
+      "VOLUME_INVALIDE": "A volume is invalid (≥ 0).",
+      "DEPASSE_CAPACITE": "The last volume exceeds the tank capacity.",
+      "LIGNES_REJETEES": "{{count}} unreadable line(s): {{lines}}",
+      "ok": "{{points}} points, increasing volumes."
+    },
+    "backToStep": "← Step {{n}} · {{name}}",
+    "later": "Later",
+    "publishAndNext": "Publish and go to step 3",
+    "saveAndNext": "Save and go to step {{n}}",
+    "finish": "Finish",
+    "pumpsTitle": "Pumps",
+    "addPump": "Add a pump",
+    "pumpLabel": "Pump name",
+    "nozzleLabel": "Nozzle name",
+    "suggested": "suggested",
+    "addNozzle": "Add a nozzle",
+    "linkedTank": "Linked tank",
+    "rename": "Rename",
+    "renamed": "Nozzle renamed.",
+    "noPump": "No pump. Add the first one.",
+    "pricesTitle": "Prices",
+    "priceOf": "{{product}} price (FCFA / L)",
+    "currentPrice": "Current: {{price}} FCFA / L since {{date}}",
+    "noPrice": "no price published",
+    "publishPrices": "Publish prices",
+    "allDone": "Everything is set up",
+    "allDoneText": "{{tanks}} tank(s), {{nozzles}} nozzle(s), prices published. The station can open shifts.",
+    "modify": "Edit the setup",
+    "backToOverview": "See the tanks"
+  },
+  "tanks3d": {
+    "title": "Tanks · {{station}}",
+    "subtitle": "Level measured at the last gauge ({{time}}) · theoretical from meter readings",
+    "subtitleNoGauge": "No gauge yet",
+    "view3d": "3D view",
+    "viewSimple": "Simple view",
+    "measured": "Measured",
+    "theoretical": "Theoretical",
+    "dotted": "dotted line",
+    "variance": "Variance",
+    "autonomy": "Autonomy",
+    "perDay": "at {{litres}} L/day",
+    "ofCapacity": "{{pct}} % of {{capacity}}",
+    "ok": "Level OK",
+    "reorder": "Reorder",
+    "noGauge": "No gauge",
+    "threshold": "reorder threshold {{pct}} %",
+    "hint": "The tank rotates with the mouse or a finger. The level updates at each gauge and each meter reading (not continuously without a sensor). “Simple view” for slow devices.",
+    "noTank": "No active tank."
   }
 }

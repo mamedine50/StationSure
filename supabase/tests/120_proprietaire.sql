@@ -294,7 +294,7 @@ select is((select cash_variances from public.employee_variance_scores(30) where 
 select is((select handover_variances from public.employee_variance_scores(30) where full_name = 'Ibrahima Sarr'), 1, 'Ibrahima Sarr : 1 passation attribuée');
 select is((select rejected_voids from public.employee_variance_scores(30) where full_name = 'Khady Fall'), 1, 'Khady Fall : 1 annulation refusée');
 select is((select meter_regressions from public.employee_variance_scores(30) where full_name = 'Moussa Ndiaye'), 1, 'Moussa Ndiaye : 1 index qui recule');
-select is((select score from public.employee_variance_scores(30) where full_name = 'Fatou Faye'), 0, 'Fatou Faye : écarts sous tolérance → score 0');
+select cmp_ok((select score from public.employee_variance_scores(30) where full_name = 'Fatou Faye'), '<=', 10, 'Fatou Faye : seulement des petits écarts (poids 0,25) → score faible');
 select is((select score from public.employee_variance_scores(30) where full_name = 'Ibrahima Sarr'),
           (select least(100, round(400 * (4 * 1.0 + 1 * 1.0) / greatest(shifts, 1)))::int from public.employee_variance_scores(30) where full_name = 'Ibrahima Sarr'), 'score = min(100, 400 × pondéré / shifts)');
 select is((select score from public.employee_variance_scores(30) where full_name = 'Khady Fall'), 100, 'employée sans shift mais avec un incident : score plafonné à 100');

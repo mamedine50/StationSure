@@ -13,3 +13,5 @@ export * from './livraison';
 export * from './cloture';
 export * from './mobile-money';
 export * from './notifications';
+export * from './villes';
+export * from './cuves';

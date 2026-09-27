@@ -13,15 +13,16 @@ de fraude : c'est un ordre de priorité pour les contrôles du propriétaire.
 | Écart de passation attribué     | `shift_handovers.attributed_shift_id` renseigné (le sortant reste responsable de l'écart d'index) | 1     |
 | Annulation refusée              | `voids` de l'employé avec `void_approvals.decision = 'rejected'`                                    | 0,5   |
 | Index qui recule                | `meter_readings.flagged_regression` de l'employé                                                  | 0,5   |
+| Petit écart de caisse           | dernière `cash_closings` du shift avec 0 < \|écart\| ≤ tolérance espèces, imputée à l'employé qui a clôturé (lot de correctifs n°1) | 0,25  |
 
-Les écarts **sous** la tolérance (par exemple −500 FCFA avec une tolérance de 1 000) ne comptent pas.
+Les écarts **sous** la tolérance (par exemple −500 FCFA avec une tolérance de 1 000) comptent pour 0,25 : ils ne déclenchent pas de justification, mais un employé qui « rogne » 900 FCFA à chaque shift finit par se voir. En plus du score, leur **cumul sur 30 jours** au-delà de `small_variance_cumulative_fcfa` (défaut 5 000) lève l'alerte `cash_small_variance_cumulative`.
 Les tolérances verrouillées (paiements électroniques, passation, index qui recule) sont à 0 : tout
 écart de ces natures compte.
 
 ## Formule
 
 ```
-pondéré = 1 × écarts_caisse + 1 × passations_attribuées + 0,5 × annulations_refusées + 0,5 × index_reculés
+pondéré = 1 × écarts_caisse + 1 × passations_attribuées + 0,5 × annulations_refusées + 0,5 × index_reculés + 0,25 × petits_écarts
 shifts  = nombre de shifts distincts ouverts ou clôturés par l'employé sur la fenêtre (minimum 1)
 score   = min(100, arrondi(400 × pondéré / shifts))
 ```
@@ -31,7 +32,7 @@ score lisible sur 0–100 avec les volumes d'une station (20 à 30 shifts par mo
 
 | Exemple                                        | pondéré | shifts | score |
 | ---------------------------------------------- | ------- | ------ | ----- |
-| Fatou Faye : aucun incident                    | 0       | 26     | 0     |
+| Fatou Faye : 3 petits écarts (−500)            | 0,75    | 30     | 10    |
 | Awa Diop : 1 écart de caisse                   | 1       | 24     | 17    |
 | Cheikh Mbaye : 2 écarts de caisse              | 2       | 21     | 38    |
 | Ibrahima Sarr : 4 écarts + 1 passation         | 5       | 22     | 91    |
@@ -43,13 +44,13 @@ Un employé sans aucun shift ni incident a un score de 0.
 
 - Trier par score décroissant ; comparer des employés d'un même rôle (un gérant clôture plus
   souvent qu'un pompiste, donc a plus d'occasions d'écart, mais aussi plus de shifts au dénominateur).
-- Le détail (`cash_variances`, `handover_variances`, `rejected_voids`, `meter_regressions`, `shifts`)
+- Le détail (`cash_variances`, `small_variances`, `handover_variances`, `rejected_voids`, `meter_regressions`, `shifts`)
   est renvoyé avec le score pour expliquer chaque valeur : « 4 écarts / 22 shifts ».
 - Un score n'est jamais modifié à la main : il se recalcule à chaque affichage à partir des tables
   append-only.
 
 ## Tests
 
-`supabase/tests/_src/120_proprietaire.sql.src` vérifie les cas de la seed (Ibrahima Sarr 4 écarts +
+`supabase/tests/_src/120_proprietaire.sql.src` et `130_correctifs.sql.src` vérifient les cas de la seed (Ibrahima Sarr 4 écarts +
 1 passation, Khady Fall 1 annulation refusée, Moussa Ndiaye 1 index qui recule, Fatou Faye sous
 tolérance → 0), le plafond à 100, l'ordre et le filtre par station.

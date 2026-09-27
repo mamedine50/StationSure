@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StationSûre — Cuves en 3D</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0E1311;font-family:'IBM Plex Sans',sans-serif;color:#EEF2EF}
+button{font-family:inherit}
+a{color:#F2A541}a:hover{color:#F7C47E}
+</style>
+</head>
+<body>
+<div style="width: 1440px; height: 900px; display: flex; background: #0E1311; color: #EEF2EF; font-family: 'IBM Plex Sans', sans-serif">
+  <nav style="width: 232px; flex-shrink: 0; box-sizing: border-box; padding: 24px 14px; display: flex; flex-direction: column; gap: 4px; background: #111816; border-right: 1px solid #2A3530">
+    <div style="display: flex; align-items: center; gap: 8px; padding: 0 10px 20px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A541" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h12"></path><path d="M4 9h10"></path><path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"></path><path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0V9.83a2 2 0 0 0-.59-1.42L18 5"></path></svg>
+      <span style="font-family: Sora, sans-serif; font-weight: 700; font-size: 15px">StationSûre</span>
+    </div>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; background: #221C10; color: #F2A541; font-size: 14px; font-weight: 600; text-decoration: none">Tableau de bord</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">À valider</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Stations</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Carburant et cuves</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Caisse et shifts</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Alertes</a>
+    <a href="#" style="margin-top: auto; display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #A3B0AA; font-size: 14px; text-decoration: none">Paramètres</a>
+  </nav>
+
+  <main style="flex-grow: 1; min-width: 0; box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h1 style="margin: 0; font-family: Sora, sans-serif; font-size: 26px; font-weight: 700">Cuves · Station Mbour</h1>
+        <span style="font-size: 14px; color: #A3B0AA">Niveau mesuré au dernier jaugeage (22:05) · théorique d'après les relevés d'index</span>
+      </div>
+      <div style="display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: #161D1A; border: 1px solid #2A3530">
+        <button style="height: 36px; padding: 0 14px; border-radius: 9px; background: #F2A541; border: none; color: #1A1206; font-size: 13px; font-weight: 600">Vue 3D</button>
+        <button style="height: 36px; padding: 0 14px; border-radius: 9px; background: transparent; border: none; color: #C9D3CE; font-size: 13px">Vue simple</button>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+      <section style="display: flex; flex-direction: column; gap: 14px; padding: 20px; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <span style="font-weight: 600; font-size: 17px">Cuve 1 · Super</span>
+          <span style="padding: 4px 10px; border-radius: 999px; background: #13281E; color: #4CC38A; font-size: 12px; font-weight: 600">Niveau correct</span>
+        </div>
+        <div style="height: 220px; border-radius: 12px; background: radial-gradient(ellipse at 50% 30%, #1B2420, #0B100E); display: flex; align-items: center; justify-content: center">
+          <svg width="460" height="200" viewBox="0 0 460 200" role="img" aria-label="Cuve Super remplie à 65 %">
+            <defs>
+              <clipPath id="bodyA"><path d="M80,30 H380 A40,70 0 0 1 380,170 H80 A40,70 0 0 1 80,30 Z"></path></clipPath>
+              <clipPath id="capA"><ellipse cx="380" cy="100" rx="40" ry="70"></ellipse></clipPath>
+              <linearGradient id="shadeA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"></stop><stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0"></stop><stop offset="1" stop-color="#000000" stop-opacity="0.35"></stop></linearGradient>
+              <linearGradient id="liqA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F7C47E"></stop><stop offset="1" stop-color="#B8741E"></stop></linearGradient>
+            </defs>
+            <ellipse cx="230" cy="186" rx="190" ry="8" fill="#000" opacity="0.35"></ellipse>
+            <path d="M80,30 H380 A40,70 0 0 1 380,170 H80 A40,70 0 0 1 80,30 Z" fill="#2A3530"></path>
+            <g clip-path="url(#bodyA)"><rect x="0" y="79" width="460" height="100" fill="url(#liqA)"></rect><rect x="0" y="79" width="460" height="3" fill="#FFE2B0" opacity="0.8"></rect></g>
+            <line x1="44" y1="82" x2="420" y2="82" stroke="#EEF2EF" stroke-width="1.5" stroke-dasharray="5 5" opacity="0.7"></line>
+            <path d="M80,30 H380 A40,70 0 0 1 380,170 H80 A40,70 0 0 1 80,30 Z" fill="url(#shadeA)" stroke="#4A5852" stroke-width="1.5"></path>
+            <ellipse cx="380" cy="100" rx="40" ry="70" fill="#1E2723" stroke="#4A5852" stroke-width="1.5"></ellipse>
+            <g clip-path="url(#capA)"><rect x="330" y="79" width="100" height="100" fill="#B8741E" opacity="0.85"></rect></g>
+            <ellipse cx="380" cy="100" rx="40" ry="70" fill="url(#shadeA)"></ellipse>
+            <rect x="220" y="18" width="20" height="14" rx="3" fill="#4A5852"></rect>
+          </svg>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #A3B0AA">Mesuré</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600">7 840 L</span><span style="font-size: 12px; color: #A3B0AA">65 % de 12 000</span></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #A3B0AA">Théorique</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px">7 800 L</span><span style="font-size: 12px; color: #A3B0AA">ligne pointillée</span></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #A3B0AA">Écart</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px; color: #4CC38A">+40 L</span><span style="font-size: 12px; color: #A3B0AA">+0,2 %</span></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #A3B0AA">Autonomie</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px">3,2 jours</span><span style="font-size: 12px; color: #A3B0AA">à 2 450 L/jour</span></div>
+        </div>
+      </section>
+
+      <section style="display: flex; flex-direction: column; gap: 14px; padding: 20px; background: #161D1A; border: 1px solid #6B4D1C; border-radius: 16px">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <span style="font-weight: 600; font-size: 17px">Cuve 2 · Gasoil</span>
+          <span style="padding: 4px 10px; border-radius: 999px; background: #261E0F; color: #F2A541; font-size: 12px; font-weight: 600">À commander</span>
+        </div>
+        <div style="height: 220px; border-radius: 12px; background: radial-gradient(ellipse at 50% 30%, #1B2420, #0B100E); display: flex; align-items: center; justify-content: center">
+          <svg width="460" height="200" viewBox="0 0 460 200" role="img" aria-label="Cuve Gasoil remplie à 17 %">
+            <defs>
+              <clipPath id="bodyB"><path d="M80,30 H380 A40,70 0 0 1 380,170 H80 A40,70 0 0 1 80,30 Z"></path></clipPath>
+              <clipPath id="capB"><ellipse cx="380" cy="100" rx="40" ry="70"></ellipse></clipPath>
+              <linearGradient id="shadeB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"></stop><stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0"></stop><stop offset="1" stop-color="#000000" stop-opacity="0.35"></stop></linearGradient>
+              <linearGradient id="liqB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9CC0FF"></stop><stop offset="1" stop-color="#3D63A8"></stop></linearGradient>
+            </defs>
+            <ellipse cx="230" cy="186" rx="190" ry="8" fill="#000" opacity="0.35"></ellipse>
+            <path d="M80,30 H380 A40,70 0 0 1 380,170 H80 A40,70 0 0 1 80,30 Z" fill="#2A3530"></path>
+            <g clip-path="url(#bodyB)"><rect x="0" y="146" width="460" height="40" fill="url(#liqB)"></rect><rect x="0" y="146" width="460" height="3" fill="#CFE0FF" opacity="0.8"></rect></g>
+            <line x1="44" y1="144" x2="420" y2="144" stroke="#EEF2EF" stroke-width="1.5" stroke-dasharray="5 5" opacity="0.7"></line>
+            <line x1="44" y1="140" x2="420" y2="140" stroke="#F2A541" stroke-width="1.5" opacity="0.9"></line>
+            <text x="46" y="134" fill="#F2A541" font-size="11" font-family="IBM Plex Sans, sans-serif">seuil de commande 20 %</text>
+            <path d="M80,30 H380 A40,70 0 0 1 380,170 H80 A40,70 0 0 1 80,30 Z" fill="url(#shadeB)" stroke="#4A5852" stroke-width="1.5"></path>
+            <ellipse cx="380" cy="100" rx="40" ry="70" fill="#1E2723" stroke="#4A5852" stroke-width="1.5"></ellipse>
+            <g clip-path="url(#capB)"><rect x="330" y="146" width="100" height="40" fill="#3D63A8" opacity="0.85"></rect></g>
+            <ellipse cx="380" cy="100" rx="40" ry="70" fill="url(#shadeB)"></ellipse>
+            <rect x="220" y="18" width="20" height="14" rx="3" fill="#4A5852"></rect>
+          </svg>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #A3B0AA">Mesuré</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600">2 150 L</span><span style="font-size: 12px; color: #A3B0AA">17 % de 13 000</span></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #A3B0AA">Théorique</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px">2 180 L</span><span style="font-size: 12px; color: #A3B0AA">ligne pointillée</span></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #A3B0AA">Écart</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px; color: #4CC38A">−30 L</span><span style="font-size: 12px; color: #A3B0AA">−0,2 %</span></div>
+          <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #A3B0AA">Autonomie</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px; color: #F2A541">0,6 jour</span><span style="font-size: 12px; color: #A3B0AA">à 3 870 L/jour</span></div>
+        </div>
+      </section>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 14px; background: #161D1A; border: 1px solid #2A3530; font-size: 13px; color: #A3B0AA">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A3B0AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+      <span>Dans l'application, la cuve tourne à la souris ou au doigt. Le niveau se met à jour à chaque jaugeage et à chaque relevé d'index (pas en continu sans capteur). « Vue simple » pour les appareils lents.</span>
+    </div>
+  </main>
+</div>
+</body>
+</html>

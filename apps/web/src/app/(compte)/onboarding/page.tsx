@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 import { obtenirContexte } from '@/lib/auth/contexte';
+import { chargerLocalites } from '@/lib/localites';
 
 import { FormulaireOrganisation, FormulairePremiereStation } from './formulaires';
 
@@ -29,6 +30,7 @@ export default async function PageOnboarding() {
     return <p className="m-0 text-[14px] text-texte-secondaire">{t('onboarding.waitOwner')}</p>;
   }
 
+  const localites = await chargerLocalites();
   return (
     <div className="flex flex-col gap-5">
       <Entete
@@ -36,7 +38,7 @@ export default async function PageOnboarding() {
         titre={t('onboarding.step2Title')}
         sousTitre={t('onboarding.step2Subtitle')}
       />
-      <FormulairePremiereStation />
+      <FormulairePremiereStation localites={localites} />
     </div>
   );
 }

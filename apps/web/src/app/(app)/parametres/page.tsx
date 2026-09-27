@@ -90,6 +90,7 @@ export default async function PageParametres() {
                   tankVariance: Number(settings.tank_variance_pct),
                   deliveryVariance: Number(settings.delivery_variance_pct),
                   cashTolerance: settings.cash_tolerance_fcfa,
+                  smallVarianceCumulative: settings.small_variance_cumulative_fcfa,
                   depositHours: settings.deposit_missing_hours,
                   reportMode: settings.report_mode,
                   reportTime: settings.report_time.slice(0, 5),

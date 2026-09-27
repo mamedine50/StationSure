@@ -1997,6 +1997,7 @@ export type Database = {
           report_mode: Database['public']['Enums']['report_mode'];
           report_time: string;
           report_timezone: string;
+          small_variance_cumulative_fcfa: number;
           sms_fallback: boolean;
           sms_fallback_minutes: number;
           tank_variance_pct: number;
@@ -2011,6 +2012,7 @@ export type Database = {
           report_mode?: Database['public']['Enums']['report_mode'];
           report_time?: string;
           report_timezone?: string;
+          small_variance_cumulative_fcfa?: number;
           sms_fallback?: boolean;
           sms_fallback_minutes?: number;
           tank_variance_pct?: number;
@@ -2025,6 +2027,7 @@ export type Database = {
           report_mode?: Database['public']['Enums']['report_mode'];
           report_time?: string;
           report_timezone?: string;
+          small_variance_cumulative_fcfa?: number;
           sms_fallback?: boolean;
           sms_fallback_minutes?: number;
           tank_variance_pct?: number;
@@ -2685,12 +2688,80 @@ export type Database = {
           },
         ];
       };
+      sn_communes: {
+        Row: {
+          code: string;
+          department_code: string;
+          name: string;
+        };
+        Insert: {
+          code: string;
+          department_code: string;
+          name: string;
+        };
+        Update: {
+          code?: string;
+          department_code?: string;
+          name?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sn_communes_department_code_fkey';
+            columns: ['department_code'];
+            isOneToOne: false;
+            referencedRelation: 'sn_departments';
+            referencedColumns: ['code'];
+          },
+        ];
+      };
+      sn_departments: {
+        Row: {
+          code: string;
+          name: string;
+          region_code: string;
+        };
+        Insert: {
+          code: string;
+          name: string;
+          region_code: string;
+        };
+        Update: {
+          code?: string;
+          name?: string;
+          region_code?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'sn_departments_region_code_fkey';
+            columns: ['region_code'];
+            isOneToOne: false;
+            referencedRelation: 'sn_regions';
+            referencedColumns: ['code'];
+          },
+        ];
+      };
+      sn_regions: {
+        Row: {
+          code: string;
+          name: string;
+        };
+        Insert: {
+          code: string;
+          name: string;
+        };
+        Update: {
+          code?: string;
+          name?: string;
+        };
+        Relationships: [];
+      };
       station_settings: {
         Row: {
           cash_tolerance_fcfa: number | null;
           delivery_variance_pct: number | null;
           deposit_missing_hours: number | null;
           organization_id: string;
+          small_variance_cumulative_fcfa: number | null;
           station_id: string;
           tank_variance_pct: number | null;
           updated_at: string;
@@ -2700,6 +2771,7 @@ export type Database = {
           delivery_variance_pct?: number | null;
           deposit_missing_hours?: number | null;
           organization_id: string;
+          small_variance_cumulative_fcfa?: number | null;
           station_id: string;
           tank_variance_pct?: number | null;
           updated_at?: string;
@@ -2709,6 +2781,7 @@ export type Database = {
           delivery_variance_pct?: number | null;
           deposit_missing_hours?: number | null;
           organization_id?: string;
+          small_variance_cumulative_fcfa?: number | null;
           station_id?: string;
           tank_variance_pct?: number | null;
           updated_at?: string;
@@ -2727,6 +2800,7 @@ export type Database = {
         Row: {
           active: boolean;
           city: string | null;
+          commune_code: string | null;
           created_at: string;
           id: string;
           name: string;
@@ -2737,6 +2811,7 @@ export type Database = {
         Insert: {
           active?: boolean;
           city?: string | null;
+          commune_code?: string | null;
           created_at?: string;
           id?: string;
           name: string;
@@ -2747,6 +2822,7 @@ export type Database = {
         Update: {
           active?: boolean;
           city?: string | null;
+          commune_code?: string | null;
           created_at?: string;
           id?: string;
           name?: string;
@@ -2755,6 +2831,13 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'stations_commune_code_fkey';
+            columns: ['commune_code'];
+            isOneToOne: false;
+            referencedRelation: 'sn_communes';
+            referencedColumns: ['code'];
+          },
           {
             foreignKeyName: 'stations_organization_id_fkey';
             columns: ['organization_id'];
@@ -3032,6 +3115,7 @@ export type Database = {
           id: string;
           label: string;
           organization_id: string;
+          reorder_threshold_pct: number;
           station_id: string;
           updated_at: string;
         };
@@ -3043,6 +3127,7 @@ export type Database = {
           id?: string;
           label: string;
           organization_id: string;
+          reorder_threshold_pct?: number;
           station_id: string;
           updated_at?: string;
         };
@@ -3054,6 +3139,7 @@ export type Database = {
           id?: string;
           label?: string;
           organization_id?: string;
+          reorder_threshold_pct?: number;
           station_id?: string;
           updated_at?: string;
         };
@@ -3566,6 +3652,10 @@ export type Database = {
         Args: { p_key: string; p_station_id: string };
         Returns: number;
       };
+      employee_small_variance_cumulative: {
+        Args: { p_days?: number; p_employee_id: string };
+        Returns: number;
+      };
       employee_variance_scores: {
         Args: { p_days?: number; p_station_id?: string };
         Returns: {
@@ -3577,6 +3667,7 @@ export type Database = {
           rejected_voids: number;
           score: number;
           shifts: number;
+          small_variances: number;
           station_id: string;
           station_name: string;
           weighted: number;
@@ -3653,6 +3744,7 @@ export type Database = {
         }[];
       };
       locked_tolerances: { Args: never; Returns: Json };
+      normaliser_localite: { Args: { p: string }; Returns: string };
       nozzle_is_paused: { Args: { p_nozzle_id: string }; Returns: boolean };
       open_shift: { Args: { p_shift_id: string }; Returns: Json };
       payment_match_status: {
@@ -3778,9 +3870,36 @@ export type Database = {
         Args: { p_incoming_employee_id: string; p_shift_id: string };
         Returns: Json;
       };
+      station_fuel_setup_status: {
+        Args: { p_station_id: string };
+        Returns: Json;
+      };
+      station_localite: { Args: { p_station_id: string }; Returns: Json };
       supervisor_invitation_status: {
         Args: { p_invitation_id: string };
         Returns: Database['public']['Enums']['invitation_status'];
+      };
+      tank_levels: {
+        Args: { p_station_id?: string };
+        Returns: {
+          active: boolean;
+          autonomy_days: number;
+          below_threshold: boolean;
+          capacity_cl: number;
+          daily_sales_cl: number;
+          fuel_product_code: Database['public']['Enums']['fuel_code'];
+          has_gauge: boolean;
+          label: string;
+          measured_at: string;
+          measured_cl: number;
+          reorder_cl: number;
+          reorder_threshold_pct: number;
+          station_id: string;
+          tank_id: string;
+          theoretical_cl: number;
+          variance_cl: number;
+          variance_pct: number;
+        }[];
       };
       tank_litres_sold_between: {
         Args: { p_from: string; p_tank_id: string; p_to: string };
@@ -3840,7 +3959,9 @@ export type Database = {
         | 'mobile_money_unmatched'
         | 'mobile_money_pending'
         | 'credit_account_requested'
-        | 'price_change_reading_missing';
+        | 'price_change_reading_missing'
+        | 'cash_small_variance_cumulative'
+        | 'tank_low';
       approval_decision: 'approved' | 'rejected';
       audit_action: 'INSERT' | 'UPDATE' | 'DELETE';
       blind_count_status: 'requested' | 'submitted' | 'cancelled';
@@ -4040,6 +4161,8 @@ export const Constants = {
         'mobile_money_pending',
         'credit_account_requested',
         'price_change_reading_missing',
+        'cash_small_variance_cumulative',
+        'tank_low',
       ],
       approval_decision: ['approved', 'rejected'],
       audit_action: ['INSERT', 'UPDATE', 'DELETE'],

@@ -572,3 +572,16 @@ begin
           least(now(), (current_date + time '14:03') at time zone v_tz));
 end
 $$;
+
+-- -----------------------------------------------------------------------------
+-- Lot de correctifs n°1 : rattachement des stations de démo à leur commune.
+-- -----------------------------------------------------------------------------
+update public.stations s
+set commune_code = c.code
+from public.sn_communes c
+where s.commune_code is null
+  and public.normaliser_localite(s.city) = public.normaliser_localite(c.name)
+  and (select count(*) from public.sn_communes c2 where public.normaliser_localite(c2.name) = public.normaliser_localite(s.city)) = 1;
+-- Thiès et Mbour sont des communes d'arrondissement / chefs-lieux : rattachement explicite.
+update public.stations set commune_code = 'thies/thies/thies-nord' where id = md5('station:thies')::uuid and commune_code is null;
+update public.stations set commune_code = (select code from public.sn_communes where code like 'thies/mbour/mbour%' order by code limit 1) where id = md5('station:mbour')::uuid and commune_code is null;

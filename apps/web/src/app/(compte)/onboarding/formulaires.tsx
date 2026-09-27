@@ -1,9 +1,11 @@
 'use client';
 
+import type { Localite } from '@stationsure/core';
 import { t } from '@stationsure/i18n';
 import { useActionState } from 'react';
 
 import { creerOrganisation, creerStation } from '@/actions/organisation';
+import { ChampVille } from '@/components/ui/champ-ville';
 import { BoutonPrincipal, Champ, ETAT_INITIAL, Message } from '@/components/ui/formulaire';
 import { PLANS } from '@/lib/validation';
 
@@ -49,7 +51,7 @@ export function FormulaireOrganisation() {
   );
 }
 
-export function FormulairePremiereStation() {
+export function FormulairePremiereStation({ localites }: { localites: Localite[] }) {
   const [etat, action] = useActionState(creerStation, ETAT_INITIAL);
   return (
     <form action={action} className="flex flex-col gap-4">
@@ -63,7 +65,7 @@ export function FormulairePremiereStation() {
         required
         autoFocus
       />
-      <Champ label={t('onboarding.city')} name="ville" type="text" maxLength={80} />
+      <ChampVille localites={localites} label={t('onboarding.city')} />
       <Message etat={etat} />
       <BoutonPrincipal>{t('onboarding.submitStation')}</BoutonPrincipal>
     </form>

@@ -179,6 +179,25 @@ d'attente ; une opération reste « en attente d'envoi » tant que sa photo n'es
 
 Envoi WhatsApp réel : `docs/whatsapp-modeles.md` (compte Meta, modèles, clés, `NOTIFIER=meta`).
 
+### Lot de correctifs n°1 (villes, petits écarts, cuves 3D, carburant en étapes)
+
+- Onboarding et fiche station : liste déroulante avec recherche des communes du Sénégal (« Kao » →
+  Kaolack), option « Autre » en saisie libre.
+- Paramètres : « Cumul d'écarts toléré sur 30 jours par employé » (défaut 5 000 FCFA). Les petits
+  écarts sous la tolérance sont enregistrés, attribués, cumulés (alerte immédiate au dépassement) et
+  comptés dans le score.
+- Tableau de bord et Carburant : cuves en 3D (rotation à la souris / au doigt) ou « Vue simple »
+  (automatique sans WebGL ou avec animations réduites, choix mémorisé). Seuil de commande par cuve →
+  alerte « cuve sous le seuil ».
+- Carburant et cuves : 4 étapes (Cuves → Barémage → Pompes et pistolets → Prix), bandeau de ce qui
+  manque ; le mobile refuse d'ouvrir un shift tant que la configuration est incomplète.
+- Nettoyer un compte de test (local uniquement) :
+  `pnpm db:reset-station-config -- --email <courriel>` (dry-run, chiffres par table) puis
+  `pnpm db:reset-station-config -- --email <courriel> --confirm`. Conserve l'organisation, ses membres,
+  ses stations, ses paramètres et ses destinataires ; supprime tout le reste (cuves, employés,
+  appareils, opérations, preuves, alertes, messages). Refuse toute base autre que 127.0.0.1:54722 et
+  l'organisation de démo.
+
 ### Tests
 
 - `pnpm test` : Vitest (`packages/core`, validation des formulaires web).
