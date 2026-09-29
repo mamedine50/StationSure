@@ -113,6 +113,9 @@ export default async function PageCarburant({
           action={
             <div className="flex items-center gap-3">
               <SelecteurStation stations={contexte.stations} stationId={station.id} />
+              <Link href={`/carburant/historique?station=${station.id}`} className="text-[13px]">
+                {t('fuelHistory.link')}
+              </Link>
               {rw && (
                 <Link
                   href={lien(1)}
@@ -213,6 +216,9 @@ export default async function PageCarburant({
               {t('fuelSetup.progress', { done: terminees })}
             </span>
             <SelecteurStation stations={contexte.stations} stationId={station.id} />
+            <Link href={`/carburant/historique?station=${station.id}`} className="text-[13px]">
+              {t('fuelHistory.link')}
+            </Link>
             {complete && (
               <Link href={vueEnsemble} className="text-[13px] text-accent">
                 {t('fuelSetup.backToOverview')}

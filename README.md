@@ -198,6 +198,20 @@ Envoi WhatsApp réel : `docs/whatsapp-modeles.md` (compte Meta, modèles, clés,
   appareils, opérations, preuves, alertes, messages). Refuse toute base autre que 127.0.0.1:54722 et
   l'organisation de démo.
 
+### Lot de correctifs n°2 (vraie app, modules par employé, base protégée)
+
+- **Plus jamais de `db reset` sans demande** : `pnpm db:migrate` applique les migrations en attente ;
+  `pnpm db:backup-org -- --email <courriel>` exporte une organisation en JSON (`supabase/backups/`,
+  ignoré par git), `pnpm db:restore-org -- --file <json> --confirm` la réimporte.
+- Employés : chaque employé a un **type** (Gérant, Chef de piste, Pompiste, Caissier boutique,
+  Mécanicien, Laveur, Gardien de nuit, Adjoint de station, ou un type personnalisé) et des
+  **modules** (ajout / retrait par employé) sur sa fiche `/employes/<id>` ; historique des droits ;
+  page `/employes/types`. Le serveur refuse toute action hors modules (`MODULE_NOT_GRANTED`).
+- App mobile : onglets Accueil / Carburant / Caisse / Boutique / Lavage / Vidange / Moi selon les
+  modules de l'employé connecté, gros bouton « prochaine action », tâches du shift, mes dernières
+  opérations. Aucun total attendu n'est jamais affiché.
+- Carburant et cuves : lien « Historique » (versions de barémage, prix, auteurs).
+
 ### Tests
 
 - `pnpm test` : Vitest (`packages/core`, validation des formulaires web).

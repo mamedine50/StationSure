@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StationSûre — Accueil laveur</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0E1311;font-family:'IBM Plex Sans',sans-serif;color:#EEF2EF}
+button{font-family:inherit}
+</style>
+</head>
+<body>
+<div style="width: 390px; height: 900px; display: flex; flex-direction: column; background: #0E1311; color: #EEF2EF; font-family: 'IBM Plex Sans', sans-serif">
+  <div style="flex-grow: 1; box-sizing: border-box; padding: 20px 20px 12px; display: flex; flex-direction: column; gap: 16px; overflow: hidden">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A541" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h12"></path><path d="M4 9h10"></path><path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"></path><path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0V9.83a2 2 0 0 0-.59-1.42L18 5"></path></svg>
+        <span style="font-family: Sora, sans-serif; font-weight: 700; font-size: 15px">StationSûre</span>
+      </div>
+      <span style="font-size: 12px; color: #A3B0AA">Station Leona</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <h1 style="margin: 0; font-family: Sora, sans-serif; font-size: 24px; font-weight: 700">Bonjour, Pape</h1>
+      <span style="font-size: 13px; color: #A3B0AA">Laveur · 6 lavages aujourd'hui</span>
+    </div>
+    <button style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; height: 220px; border-radius: 20px; background: #221C10; border: 2px solid #F2A541; color: #F2A541">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#F2A541" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"></path><path d="M17 3h2a2 2 0 0 1 2 2v2"></path><path d="M21 17v2a2 2 0 0 1-2 2h-2"></path><path d="M7 21H5a2 2 0 0 1-2-2v-2"></path><rect x="7" y="7" width="4" height="4"></rect><rect x="13" y="7" width="4" height="4"></rect><rect x="7" y="13" width="4" height="4"></rect><path d="M13 13h4v4"></path></svg>
+      <span style="font-size: 20px; font-weight: 700">Scanner un ticket</span>
+      <span style="font-size: 13px; color: #E9D6B4">Pas de ticket, pas de lavage</span>
+    </button>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <span style="font-size: 13px; font-weight: 600; color: #A3B0AA">Mes derniers lavages</span>
+      <div style="display: flex; flex-direction: column; border: 1px solid #2A3530; border-radius: 14px; background: #161D1A">
+        <div style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; border-bottom: 1px solid #2A3530; font-size: 13px"><span style="font-family: 'IBM Plex Mono', monospace; color: #A3B0AA">10:12</span><span style="flex-grow: 1">DK-7730-AF · Complet</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4CC38A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div>
+        <div style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; font-size: 13px"><span style="font-family: 'IBM Plex Mono', monospace; color: #A3B0AA">09:40</span><span style="flex-grow: 1">TH-3302-B · Extérieur</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4CC38A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div>
+      </div>
+    </div>
+    <span style="font-size: 12px; color: #6F7D77; text-align: center">Le laveur ne voit que ses modules : 3 onglets.</span>
+  </div>
+  <nav aria-label="Navigation principale" style="height: 78px; flex-shrink: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid #2A3530; background: #111816">
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #F2A541; text-decoration: none; font-size: 11px; font-weight: 600"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A541" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2h-4v-6h-6v6H5a2 2 0 0 1-2-2z"></path></svg>Accueil</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #A3B0AA; text-decoration: none; font-size: 11px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A3B0AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s7 7.5 7 12a7 7 0 0 1-14 0c0-4.5 7-12 7-12z"></path></svg>Lavage</a>
+    <a href="#" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #A3B0AA; text-decoration: none; font-size: 11px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A3B0AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-6 8-6s8 2 8 6"></path></svg>Moi</a>
+  </nav>
+</div>
+</body>
+</html>

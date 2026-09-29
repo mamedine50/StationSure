@@ -47,9 +47,16 @@ function Garde() {
   useEffect(() => {
     const cible = routePour(session.etat);
     if (!cible) return;
-    const actuelle = `/${segments[0] ?? ''}`;
+    const premier = segments[0] ?? '';
+    const actuelle = `/${premier}`;
     // Le scanner est un sous-écran du jumelage.
     if (cible === '/jumelage' && actuelle === '/scanner') return;
+    // Connecté : les onglets « (tabs) » et les écrans métier (relevés, caisse…) sont autorisés ;
+    // seuls les écrans d'entrée (jumelage, PIN) renvoient vers l'accueil.
+    if (cible === '/accueil') {
+      if (['', 'jumelage', 'scanner', 'pin'].includes(premier)) router.replace('/accueil' as never);
+      return;
+    }
     if (actuelle !== cible) router.replace(cible as never);
   }, [session.etat, segments, router]);
 

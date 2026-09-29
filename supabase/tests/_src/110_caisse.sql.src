@@ -66,7 +66,7 @@ select is((select status from public.credit_accounts where id = (select id from 
 select is(pg_temp.res(public.record_sale(jsonb_build_object('kind', 'fuel', 'shift_id', (select id from s), 'amount_fcfa', 1000, 'method', 'credit', 'credit_account_id', (select id from req), 'evidence_id', (select id from bon)))), 'CREDIT_ACCOUNT_INACTIVE', 'aucune vente sur un compte en attente');
 select throws_ok(format('select public.decide_credit_account(%L, true, 100000)', (select id from req)), '42501', null, 'appareil : ne peut pas activer un compte');
 -- remboursement en espèces
-create temporary table rep as select public.record_credit_repayment((select id from acc), 50000, 'cash') as r;
+create temporary table rep as select public.record_credit_repayment((select id from acc), 50000, 'cash', null, (select id from s)) as r;
 grant select on rep to authenticated, service_role, anon;
 select is(pg_temp.res((select r from rep)), 'OK', 'remboursement 50 000 espèces enregistré');
 select is((select (r ->> 'balance_fcfa')::bigint from rep), 300000::bigint, 'solde 300 000 après remboursement (écriture négative liée au paiement)');

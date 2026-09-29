@@ -1,5 +1,6 @@
 import { t } from '@stationsure/i18n';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 import { EnTetePage } from '@/components/en-tete-page';
 import { exigerContexteComplet } from '@/lib/auth/contexte';
@@ -12,10 +13,18 @@ export const metadata: Metadata = { title: t('nav.employees') };
 export default async function PageEmployes() {
   const contexte = await exigerContexteComplet();
   const supabase = await creerClientServeur();
-  const [{ data: employes }, { data: avecPin }] = await Promise.all([
-    supabase.from('employees').select('id, station_id, full_name, role, active').order('full_name'),
+  const [{ data: employes }, { data: avecPin }, { data: types }] = await Promise.all([
+    supabase
+      .from('employees')
+      .select('id, station_id, full_name, role, active, type_id')
+      .order('full_name'),
     supabase.rpc('employees_with_pin'),
+    supabase.from('employee_types').select('id, code, name, is_system'),
   ]);
+  const nomType = (typeId: string) => {
+    const x = (types ?? []).find((y) => y.id === typeId);
+    return x ? (x.is_system ? t(`employeeTypes.${x.code}`) : x.name) : '';
+  };
   const idsAvecPin = new Set((avecPin ?? []) as string[]);
   const liste = employes ?? [];
 
@@ -25,6 +34,9 @@ export default async function PageEmployes() {
         titre={t('nav.employees')}
         sousTitre={t('employees.subtitle', { count: liste.length })}
       />
+      <Link href="/employes/types" className="text-[13px]">
+        {t('employeeTypes.manage')}
+      </Link>
       {contexte.estProprietaire && <FormulaireEmploye stations={contexte.stations} />}
       {contexte.stations.map((station) => {
         const membres = liste.filter((e) => e.station_id === station.id);
@@ -51,8 +63,11 @@ export default async function PageEmployes() {
                 >
                   {employe.full_name}
                 </span>
-                <span className="text-texte-secondaire">
-                  {t(`pin.roles.${roleCle(employe.role)}`)}
+                <span className="flex flex-col text-texte-secondaire">
+                  <span>{nomType(employe.type_id) || t(`pin.roles.${roleCle(employe.role)}`)}</span>
+                  <Link href={`/employes/${employe.id}`} className="text-[12px]">
+                    {t('employeePage.open')}
+                  </Link>
                 </span>
                 <span
                   className={`text-[12px] font-semibold ${idsAvecPin.has(employe.id) ? 'text-succes' : 'text-danger'}`}

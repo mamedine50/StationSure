@@ -1,0 +1,126 @@
+-- Lot de correctifs n°2 : types d'employés, modules, contrôle serveur (MODULE_NOT_GRANTED),
+-- surcharges, jamais attribuables, type personnalisé, migration des rôles, audit, shift_tasks.
+create or replace function pg_temp.err(p_sql text) returns text language plpgsql as $$
+begin
+  execute p_sql;
+  return 'OK';
+exception when others then
+  return split_part(sqlerrm, ':', 1);
+end $$;
+select pg_temp.new_auth_user('supervisor-m@test.local') as sup_id \gset
+insert into public.org_members (organization_id, user_id, role) values (pg_temp.org_demo(), :'sup_id', 'supervisor');
+create temp table ctx_m as select
+  pg_temp.employee('mbour', 'Ibrahima Sarr') as gerant,
+  pg_temp.employee('mbour', 'Awa Diop') as pompiste,
+  pg_temp.employee('mbour', 'Khady Fall') as caissier;
+grant select on ctx_m to authenticated, service_role, anon;
+
+-- ---------------------------------------------------------------- Migration des rôles → types
+select is((select t.code from public.employees e join public.employee_types t on t.id = e.type_id where e.id = (select gerant from ctx_m)), 'gerant', 'manager → Gérant');
+select is((select t.code from public.employees e join public.employee_types t on t.id = e.type_id where e.id = (select pompiste from ctx_m)), 'pompiste', 'pump_attendant → Pompiste');
+select is((select t.code from public.employees e join public.employee_types t on t.id = e.type_id where e.id = (select caissier from ctx_m)), 'caissier_boutique', 'shop_cashier → Caissier boutique');
+select is((select count(*)::int from public.employees where type_id is null), 0, 'aucun employé sans type');
+select is((select count(*)::int from public.employee_types where is_system), 8, '8 types système');
+select ok('bank_deposit' = any (public.employee_modules((select gerant from ctx_m))), 'Gérant : versement bancaire');
+select ok(not ('delivery' = any (public.employee_modules((select pompiste from ctx_m)))), 'Pompiste : pas de livraison');
+select is(public.employee_has_module((select caissier from ctx_m), 'sell'), true, 'Caissier boutique : encaisser');
+select is(public.employee_has_module((select caissier from ctx_m), 'shift'), false, 'Caissier boutique : pas de shift');
+
+-- ---------------------------------------------------------------- Refus / acceptation de CHAQUE RPC
+select pg_temp.open_shift('mbour', 'Ibrahima Sarr') as shift_m \gset
+-- Khady Fall (caissier boutique : sans shift / passation)
+select pg_temp.login_employee('mbour', 'Khady Fall');
+select pg_temp.login(pg_temp.device_user('mbour'));
+select is(pg_temp.err(format('select public.open_shift(%L)', :'shift_m')), 'MODULE_NOT_GRANTED', 'open_shift refusé sans module shift');
+select is(pg_temp.err(format('select public.close_shift_fuel(%L)', :'shift_m')), 'MODULE_NOT_GRANTED', 'close_shift_fuel refusé');
+select is(pg_temp.err(format('select public.start_handover(%L, %L)', :'shift_m', (select pompiste from ctx_m))), 'MODULE_NOT_GRANTED', 'start_handover refusé');
+select is(pg_temp.err(format('select public.sign_handover_outgoing(%L)', gen_random_uuid())), 'MODULE_NOT_GRANTED', 'sign_handover_outgoing refusé');
+select is(pg_temp.err(format('select public.sign_handover_incoming(%L)', gen_random_uuid())), 'MODULE_NOT_GRANTED', 'sign_handover_incoming refusé');
+select is(pg_temp.err(format('select public.report_handover_discrepancy(%L, %L)', gen_random_uuid(), 'motif')), 'MODULE_NOT_GRANTED', 'report_handover_discrepancy refusé');
+select is(pg_temp.err(format('insert into public.shifts (organization_id, station_id, device_id, opened_by, opened_at, device_created_at) values (%L, %L, %L, %L, now(), now())', pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), (select caissier from ctx_m))), 'MODULE_NOT_GRANTED', 'création de shift refusée (trigger)');
+select is(pg_temp.err(format('select pg_temp.meter(%L, %L, %L, %L, 1000, %L)', :'shift_m', 'mbour', 'Khady Fall', 'P1-A', 'open')), 'MODULE_NOT_GRANTED', 'relevé d''index refusé (trigger)');
+select pg_temp.logout();
+-- Awa Diop (pompiste : sans jaugeage / livraison / crédit / clôture / versement)
+select pg_temp.login_employee('mbour', 'Awa Diop');
+select pg_temp.login(pg_temp.device_user('mbour'));
+select is(pg_temp.err(format('select public.start_delivery(%L)', pg_temp.tank('mbour', 'gasoil'))), 'MODULE_NOT_GRANTED', 'start_delivery refusé');
+select is(pg_temp.err(format('select public.advance_delivery(%L, %L)', gen_random_uuid(), 'unloading_done')), 'MODULE_NOT_GRANTED', 'advance_delivery refusé');
+select is(pg_temp.err(format('select public.sign_delivery(%L, 1, %L)', gen_random_uuid(), gen_random_uuid())), 'MODULE_NOT_GRANTED', 'sign_delivery refusé');
+select is(pg_temp.err(format('select public.reverse_delivery(%L, %L)', gen_random_uuid(), 'motif')), 'MODULE_NOT_GRANTED', 'reverse_delivery refusé');
+select is(pg_temp.err('select public.request_credit_account(''Client test'')'), 'MODULE_NOT_GRANTED', 'request_credit_account refusé');
+select is(pg_temp.err(format('select public.record_sale(%L)', jsonb_build_object('shift_id', :'shift_m', 'kind', 'fuel', 'method', 'credit', 'amount_fcfa', 1000, 'credit_account_id', md5('credit:mbour:Transports Ndiaye')::uuid))), 'MODULE_NOT_GRANTED', 'vente à crédit refusée sans credit_sale');
+select is(pg_temp.err(format('select public.close_shift_cash(%L)', :'shift_m')), 'MODULE_NOT_GRANTED', 'close_shift_cash refusé');
+select is(pg_temp.err(format('select public.declare_bank_deposit(1000, %L, %L)', gen_random_uuid(), array[:'shift_m'::uuid])), 'MODULE_NOT_GRANTED', 'declare_bank_deposit refusé');
+select is(pg_temp.err(format('select pg_temp.gauge(%L, %L, %L, %L, 1000, %L)', :'shift_m', 'mbour', 'Awa Diop', 'gasoil', 'spot')), 'MODULE_NOT_GRANTED', 'jaugeage refusé (trigger)');
+select is(pg_temp.err(format('insert into public.cash_counts (organization_id, station_id, device_id, employee_id, shift_id, denominations, device_created_at) values (%L, %L, %L, %L, %L, %L, now())', pg_temp.org_demo(), pg_temp.station('mbour'), pg_temp.device('mbour'), (select pompiste from ctx_m), :'shift_m', '{"10000": 1}')), 'MODULE_NOT_GRANTED', 'billetage refusé (trigger)');
+select pg_temp.logout();
+-- Type personnalisé sans aucun module : tout est refusé, y compris encaisser / annulation / remboursement.
+select pg_temp.login(pg_temp.owner_demo());
+insert into public.employee_types (id, organization_id, code, name, modules) values (md5('employee_type:test:vigile')::uuid, pg_temp.org_demo(), 'vigile', 'Vigile', '{}');
+insert into public.employees (id, organization_id, station_id, full_name, type_id) values (md5('employee:mbour:Vigile Test')::uuid, pg_temp.org_demo(), pg_temp.station('mbour'), 'Vigile Test', md5('employee_type:test:vigile')::uuid);
+select is((select role::text from public.employees where id = md5('employee:mbour:Vigile Test')::uuid), 'pump_attendant', 'rôle historique synchronisé depuis le type personnalisé');
+select pg_temp.logout();
+select pg_temp.login_employee('mbour', 'Vigile Test');
+select pg_temp.login(pg_temp.device_user('mbour'));
+select is(pg_temp.err(format('select public.record_sale(%L)', jsonb_build_object('shift_id', :'shift_m', 'kind', 'fuel', 'method', 'cash', 'amount_fcfa', 1000))), 'MODULE_NOT_GRANTED', 'record_sale refusé sans sell');
+select is(pg_temp.err(format('select public.record_credit_repayment(%L, 1000, %L)', md5('credit:mbour:Transports Ndiaye')::uuid, 'cash')), 'MODULE_NOT_GRANTED', 'record_credit_repayment refusé');
+select is(pg_temp.err(format('select public.request_void(%L, 1000, %L)', gen_random_uuid(), 'motif de test')), 'MODULE_NOT_GRANTED', 'request_void refusé');
+select pg_temp.logout();
+-- Ibrahima Sarr (gérant) : aucune RPC ne renvoie MODULE_NOT_GRANTED (les autres erreurs métier sont possibles).
+select pg_temp.login_employee('mbour', 'Ibrahima Sarr');
+select pg_temp.login(pg_temp.device_user('mbour'));
+select isnt(pg_temp.err(format('select public.open_shift(%L)', :'shift_m')), 'MODULE_NOT_GRANTED', 'gérant : open_shift accepté (module)');
+select isnt(pg_temp.err(format('select public.close_shift_fuel(%L)', :'shift_m')), 'MODULE_NOT_GRANTED', 'gérant : close_shift_fuel accepté');
+select isnt(pg_temp.err(format('select public.start_handover(%L, %L)', :'shift_m', (select pompiste from ctx_m))), 'MODULE_NOT_GRANTED', 'gérant : start_handover accepté');
+select isnt(pg_temp.err(format('select public.start_delivery(%L)', pg_temp.tank('mbour', 'gasoil'))), 'MODULE_NOT_GRANTED', 'gérant : start_delivery accepté');
+select isnt(pg_temp.err('select public.request_credit_account(''Client test'')'), 'MODULE_NOT_GRANTED', 'gérant : request_credit_account accepté');
+select isnt(pg_temp.err(format('select public.record_sale(%L)', jsonb_build_object('shift_id', :'shift_m', 'kind', 'fuel', 'method', 'cash', 'amount_fcfa', 1000))), 'MODULE_NOT_GRANTED', 'gérant : record_sale accepté');
+select isnt(pg_temp.err(format('select public.request_void(%L, 1000, %L)', gen_random_uuid(), 'motif de test')), 'MODULE_NOT_GRANTED', 'gérant : request_void accepté');
+select isnt(pg_temp.err(format('select public.close_shift_cash(%L)', :'shift_m')), 'MODULE_NOT_GRANTED', 'gérant : close_shift_cash accepté');
+select isnt(pg_temp.err(format('select public.declare_bank_deposit(1000, %L, %L)', gen_random_uuid(), array[:'shift_m'::uuid])), 'MODULE_NOT_GRANTED', 'gérant : declare_bank_deposit accepté');
+select isnt(pg_temp.err(format('select public.record_credit_repayment(%L, 1000, %L)', md5('credit:mbour:Transports Ndiaye')::uuid, 'cash')), 'MODULE_NOT_GRANTED', 'gérant : record_credit_repayment accepté');
+-- Session et PIN renvoient les modules effectifs.
+select ok((public.current_employee_session() -> 'modules') ? 'bank_deposit', 'current_employee_session renvoie les modules');
+select ok((public.verify_employee_pin((select gerant from ctx_m), '8175') -> 'modules') ? 'delivery', 'verify_employee_pin renvoie les modules effectifs');
+select is(public.verify_employee_pin((select gerant from ctx_m), '8175') ->> 'type_code', 'gerant', 'verify_employee_pin renvoie le type');
+-- shift_tasks : jamais de montant.
+select ok((public.shift_tasks()) ? 'tasks', 'shift_tasks renvoie les tâches');
+select ok(public.shift_tasks()::text !~* '(expected|total_fcfa|amount_fcfa|counted|variance|price)', 'shift_tasks ne renvoie aucun montant attendu ni total');
+select pg_temp.logout();
+
+-- ---------------------------------------------------------------- Surcharges : prioritaires sur le type
+select pg_temp.login(pg_temp.owner_demo());
+insert into public.employee_module_overrides (employee_id, organization_id, module, granted) values ((select pompiste from ctx_m), pg_temp.org_demo(), 'delivery', true);
+insert into public.employee_module_overrides (employee_id, organization_id, module, granted) values ((select gerant from ctx_m), pg_temp.org_demo(), 'sell', false);
+select ok('delivery' = any (public.employee_modules((select pompiste from ctx_m))), 'ajout : le pompiste a la livraison');
+select ok(not ('sell' = any (public.employee_modules((select gerant from ctx_m)))), 'retrait : le gérant n''a plus « encaisser »');
+select pg_temp.logout();
+select pg_temp.login_employee('mbour', 'Awa Diop');
+select pg_temp.login(pg_temp.device_user('mbour'));
+select isnt(pg_temp.err(format('select public.start_delivery(%L)', pg_temp.tank('mbour', 'gasoil'))), 'MODULE_NOT_GRANTED', 'après ajout : start_delivery accepté pour le pompiste');
+select pg_temp.logout();
+select pg_temp.login_employee('mbour', 'Ibrahima Sarr');
+select pg_temp.login(pg_temp.device_user('mbour'));
+select is(pg_temp.err(format('select public.record_sale(%L)', jsonb_build_object('shift_id', :'shift_m', 'kind', 'fuel', 'method', 'cash', 'amount_fcfa', 1000))), 'MODULE_NOT_GRANTED', 'après retrait : record_sale refusé pour le gérant');
+select pg_temp.logout();
+
+-- ---------------------------------------------------------------- Jamais attribuable
+select throws_ok($$ insert into public.employee_module_overrides (employee_id, organization_id, module, granted) values (md5('employee:mbour:Awa Diop')::uuid, md5('org:demo')::uuid, 'prices', true) $$, '22P02', null, '« prix » n''est pas un module attribuable');
+select throws_ok($$ select public.employee_has_module(md5('employee:mbour:Ibrahima Sarr')::uuid, 'approvals') $$, '22P02', null, '« approbations » n''existe pas');
+select throws_ok($$ update public.employee_types set modules = '{configuration}' where code = 'gerant' $$, '22P02', null, '« configuration » n''existe pas');
+select pg_temp.login(pg_temp.owner_demo());
+update public.employee_types set modules = '{shift}' where code = 'gerant';
+select is((select array_length(modules, 1) from public.employee_types where code = 'gerant'), 9, 'les types système ne sont pas modifiables (RLS)');
+select pg_temp.logout();
+select pg_temp.login(:'sup_id');
+select throws_ok($$ insert into public.employee_types (organization_id, code, name, modules) values (md5('org:demo')::uuid, 'test_sup', 'Test', '{sell}') $$, '42501', null, 'le superviseur ne crée pas de type');
+select pg_temp.logout();
+
+-- ---------------------------------------------------------------- Audit / historique des droits
+select pg_temp.login(pg_temp.owner_demo());
+update public.employees set type_id = md5('employee_type:adjoint_station')::uuid where id = (select pompiste from ctx_m);
+select is((select role::text from public.employees where id = (select pompiste from ctx_m)), 'manager', 'changement de type → rôle historique synchronisé');
+select ok(exists (select 1 from public.employee_rights_history((select pompiste from ctx_m)) where action = 'type_changed' and details ->> 'type_code' = 'adjoint_station'), 'historique : changement de type tracé');
+select ok(exists (select 1 from public.employee_rights_history((select pompiste from ctx_m)) where action = 'module_added' and details ->> 'module' = 'delivery'), 'historique : ajout de module tracé');
+select ok(exists (select 1 from public.audit_log where table_name = 'employee_module_overrides' and at >= now()), 'audit_log : surcharges tracées');
+select pg_temp.logout();

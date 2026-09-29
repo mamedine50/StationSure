@@ -15,3 +15,4 @@ export * from './mobile-money';
 export * from './notifications';
 export * from './villes';
 export * from './cuves';
+export * from './modules';

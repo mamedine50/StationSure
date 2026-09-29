@@ -127,3 +127,79 @@ export async function chargerStatutConfiguration(): Promise<StatutConfiguration 
   if ((statut.tanks ?? []).length === 0) manques.push(t('fuelSetup.stepState.tanksNone'));
   return { complete: statut.complete, manques };
 }
+
+/** Tâches du shift (écran 21) : jamais de montant. */
+export interface TacheShift {
+  key: string;
+  complete: boolean;
+  done?: number;
+  total?: number;
+  available?: boolean;
+  handover_id?: string;
+  status?: string;
+  incoming_name?: string;
+  mine?: boolean;
+}
+export interface TachesShift {
+  shift: {
+    id: string;
+    status: 'opening' | 'open' | 'closing';
+    label: string | null;
+    opened_at: string;
+    opened_by: string;
+    opened_by_name: string | null;
+    fuel_closed_at: string | null;
+  } | null;
+  setup_complete: boolean;
+  tasks: TacheShift[];
+}
+
+export async function chargerTaches(): Promise<TachesShift | null> {
+  const res = await rpc<TachesShift>('shift_tasks', {});
+  const data = (res.data ?? (res as unknown)) as Partial<TachesShift>;
+  if (!Array.isArray(data.tasks)) return null;
+  return {
+    shift: data.shift ?? null,
+    setup_complete: Boolean(data.setup_complete),
+    tasks: data.tasks,
+  };
+}
+
+export interface OperationRecente {
+  at: string;
+  kind: string;
+  label: string;
+  method: string | null;
+  amount_fcfa: number;
+}
+
+/** Mes dernières opérations (les miennes uniquement). */
+export async function chargerOperationsRecentes(limite = 5): Promise<OperationRecente[]> {
+  const res = await rpc<OperationRecente[]>('my_recent_operations', { p_limit: limite });
+  return Array.isArray(res.data) ? res.data : [];
+}
+
+/** Crée le shift (statut opening) ; le serveur refuse sans module « shift » (MODULE_NOT_GRANTED). */
+export async function creerShift(
+  appareil: {
+    organizationId: string;
+    stationId: string;
+    deviceId: string;
+  },
+  employeeId: string,
+): Promise<{ id: string } | { error: string }> {
+  const { data, error } = await supabase
+    .from('shifts')
+    .insert({
+      organization_id: appareil.organizationId,
+      station_id: appareil.stationId,
+      device_id: appareil.deviceId,
+      opened_by: employeeId,
+      opened_at: new Date().toISOString(),
+      device_created_at: new Date().toISOString(),
+    })
+    .select('id')
+    .single();
+  if (error || !data) return { error: error?.message.split(':')[0] ?? 'ERREUR' };
+  return { id: data.id };
+}

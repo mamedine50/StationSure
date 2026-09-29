@@ -1,4 +1,4 @@
-import { normaliserE164, validerPin } from '@stationsure/core';
+import { MODULES, normaliserE164, validerPin } from '@stationsure/core';
 import { z } from 'zod';
 
 /** Schémas de validation des formulaires web. Les messages sont des clés i18n (`validation.*`). */
@@ -416,5 +416,49 @@ export const schemaEmployeAvecTelephone = schemaEmploye.extend({
   telephone: z.preprocess(
     (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
     telephoneE164.nullable(),
+  ),
+});
+
+// ---------------------------------------------------------------------------
+// Lot de correctifs n°2 : types d'employés et modules.
+// ---------------------------------------------------------------------------
+const telephoneFacultatif = z.preprocess(
+  (v) => (typeof v === 'string' && v.trim() === '' ? null : v),
+  telephoneE164.nullable(),
+);
+
+export const schemaModifierEmploye = z.object({
+  employeId: z.guid(),
+  typeId: z.guid({ error: 'validation.role' }),
+  telephone: telephoneFacultatif,
+});
+
+/** Cases `module_<code>` cochées : ensemble voulu des modules effectifs. */
+export const schemaModulesEmploye = z
+  .object({ employeId: z.guid() })
+  .and(
+    z.object(
+      Object.fromEntries(MODULES.map((m) => [`module_${m}`, caseACocher.optional()])) as Record<
+        `module_${(typeof MODULES)[number]}`,
+        z.ZodOptional<typeof caseACocher>
+      >,
+    ),
+  );
+
+export const schemaTypeEmploye = z.object({
+  typeId: z.guid().optional().or(z.literal('')),
+  nom: z
+    .string()
+    .trim()
+    .min(2, { error: 'validation.nameMin' })
+    .max(60, { error: 'validation.nameMax' }),
+  code: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z][a-z0-9_]{1,40}$/, { error: 'validation.typeCode' }),
+  modules: z.preprocess(
+    (v) => (Array.isArray(v) ? v : typeof v === 'string' && v ? [v] : []),
+    z.array(z.enum(MODULES, { error: 'validation.module' })),
   ),
 });

@@ -65,4 +65,4 @@ select is(
                      where c.relname = t.name and tr.tgname = 'audit')),
   0::bigint, 'trigger audit présent sur toutes les tables de configuration'
 );
-select is((select count(*) from public.audit_log where table_name = 'stations' and action = 'INSERT'), 3::bigint, 'la seed a journalisé la création des 3 stations');
+select is((select count(*) from public.audit_log where table_name = 'stations' and action = 'INSERT' and organization_id = pg_temp.org_demo()), 3::bigint, 'la seed a journalisé la création des 3 stations');

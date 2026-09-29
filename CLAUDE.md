@@ -1,5 +1,19 @@
 # StationSûre — guide pour les agents
 
+> ## RÈGLE ABSOLUE : NE JAMAIS EFFACER LA BASE LOCALE DE TRAVAIL
+>
+> **`supabase db reset` est INTERDIT** sauf demande explicite du propriétaire du repo dans la
+> conversation en cours. La base locale contient son compte et ses données de test réelles
+> (`mamedine50@gmail.com`, organisation « Leona Énergies »).
+>
+> - Nouvelle migration → `pnpm db:migrate` (`supabase migration up`), jamais un reset.
+> - Tests pgTAP → autonomes : chaque fichier crée son propre jeu de données (seed.sql sous l'espace de
+>   noms `test:`) dans sa transaction et fait ROLLBACK. Ils ne dépendent ni de la seed chargée, ni de
+>   l'état de la base. Un test qui compte des lignes doit filtrer par `organization_id = pg_temp.org_demo()`.
+> - Avant toute opération risquée : `pnpm db:backup-org -- --email <courriel>` ; restauration :
+>   `pnpm db:restore-org -- --file <fichier.json> --confirm` (dry-run par défaut).
+> - Compter les lignes de l'organisation avant et après un lot et le montrer.
+
 ## Le projet en bref
 
 Plateforme de gestion de stations-service au Sénégal. Priorité n° 1 : empêcher un propriétaire absent
@@ -43,10 +57,11 @@ Next les transpile via `transpilePackages`, Metro nativement.
 `pnpm install` · `pnpm dev` · `pnpm build` · `pnpm lint` · `pnpm typecheck` · `pnpm test`.
 
 Base locale (Docker requis, ports 547xx : API 54721, Postgres 54722, Studio 54723) :
-`pnpm db:start` · `pnpm db:reset` (migrations + seed) · `pnpm db:lint` · `pnpm db:test` (pgTAP) ·
+`pnpm db:start` · `pnpm db:migrate` (migrations en attente, sans effacer) · `pnpm db:reset` (**interdit sans demande explicite** : efface la base locale) · `pnpm db:lint` · `pnpm db:test` (pgTAP) ·
 `pnpm db:types` (régénère `packages/database/src/types.generated.ts`) · `pnpm db:stop` ·
 `pnpm db:functions:test` (tests Deno des Edge Functions) · `pnpm db:functions:serve` (lit `supabase/functions/.env`) ·
-`pnpm db:reset-station-config -- --email <courriel> [--confirm]` (nettoyage LOCAL d'une organisation de test).
+`pnpm db:reset-station-config -- --email <courriel> [--confirm]` (nettoyage LOCAL d'une organisation de test) ·
+`pnpm db:backup-org -- --email <courriel>` / `pnpm db:restore-org -- --file <json> [--confirm]`.
 `psql` n'est pas installé : `docker exec supabase_db_stationsure psql -U postgres -c "…"`.
 
 **INTERDIT sans demande explicite du propriétaire du repo : `supabase link`, `supabase db push`,
@@ -139,6 +154,20 @@ error}` au lieu de lever une exception : une exception annulerait l'écriture du
   ressemblant à des données ; `evaluerSaisieBaremage` (core) donne l'erreur à afficher.
 - Nettoyage local d'un compte de test : `pnpm db:reset-station-config -- --email <courriel> [--confirm]`
   (jamais l'organisation de démo, jamais une base en ligne).
+
+## Lot de correctifs n°2 (types d'employés, modules, vraie app mobile)
+
+- Droits = **modules** (`employee_module`, liste fermée dans `packages/core/src/modules.ts`, miroir de
+  l'enum). Type d'employé (8 système + personnalisés) → modules par défaut ; surcharge par employé.
+  Le serveur vérifie : `private.require_module` dans chaque RPC mobile et dans les déclencheurs
+  d'insertion → `MODULE_NOT_GRANTED`. L'app ne fait que cacher / désactiver avec la raison.
+- Jamais attribuable à un employé : prix, approbations, écarts, comptes crédit, configuration (ils
+  n'existent pas dans l'enum ; les RPC owner vérifient `is_org_owner`).
+- Mobile : `src/app/(tabs)` (Accueil 21, Carburant 22, Caisse 23, Boutique, Lavage, Vidange, Moi 24) ;
+  onglets visibles = `ongletsVisibles(modules)`, gros bouton = `prochaineAction(...)` (core, testés).
+  L'accueil lit `shift_tasks` et `my_recent_operations` : aucun montant attendu, jamais.
+- Web : `/employes/[id]` (écran 26, modules + historique des droits), `/employes/types`,
+  `/carburant/historique` (barémages et prix avec auteur).
 
 ## Cycle carburant (phase 3)
 

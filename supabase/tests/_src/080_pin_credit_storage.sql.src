@@ -6,16 +6,16 @@ grant select on ctx to authenticated, service_role, anon;
 insert into public.org_members (organization_id, user_id, role) select pg_temp.org_demo(), supervisor_a, 'supervisor' from ctx;
 
 -- ---- PIN
-select is((select count(*) from public.employee_pins), 9::bigint, 'seed : 9 PIN hashés');
+select is((select count(*) from public.employee_pins p join public.employees e on e.id = p.employee_id where e.organization_id = pg_temp.org_demo()), 9::bigint, 'seed : 9 PIN hashés');
 select is(
   (select pin_hash = extensions.crypt('4062', pin_hash) from public.employee_pins where employee_id = pg_temp.employee('mbour', 'Awa Diop')),
   true, 'seed : le PIN de démo d''Awa Diop est 4062 (bcrypt)'
 );
 select is(
-  (select count(*) from public.employee_pins where pin_hash = extensions.crypt('1234', pin_hash)),
+  (select count(*) from public.employee_pins p join public.employees e on e.id = p.employee_id where e.organization_id = pg_temp.org_demo() and p.pin_hash = extensions.crypt('1234', p.pin_hash)),
   0::bigint, 'seed : aucun PIN de démo trivial'
 );
-select is((select count(*) from public.employee_pins where pin_hash like '$2a$%' or pin_hash like '$2b$%'), 9::bigint, 'les PIN sont hashés en bcrypt (gen_salt bf)');
+select is((select count(*) from public.employee_pins p join public.employees e on e.id = p.employee_id where e.organization_id = pg_temp.org_demo() and p.pin_hash like '$2a$%' or p.pin_hash like '$2b$%'), 9::bigint, 'les PIN sont hashés en bcrypt (gen_salt bf)');
 
 select pg_temp.login(pg_temp.owner_demo());
 select throws_ok('select * from public.employee_pins', '42501', null, 'owner : ne lit pas les hash de PIN');

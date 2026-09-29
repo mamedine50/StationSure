@@ -528,7 +528,9 @@ begin
 
   -- Aujourd'hui : Mbour a un shift ouvert (Awa Diop), Thiès et Kaolack ont clôturé.
   insert into public.shifts (id, organization_id, station_id, device_id, opened_by, opened_at, status, device_created_at, label)
-  values (md5('shift:mbour:aujourdhui')::uuid, v_org, md5('station:mbour')::uuid, md5('device:mbour')::uuid, v_awa, (current_date + time '06:00') at time zone v_tz, 'open', (current_date + time '06:00') at time zone v_tz, 'Shift matin');
+  values (md5('shift:mbour:aujourdhui')::uuid, v_org, md5('station:mbour')::uuid, md5('device:mbour')::uuid, v_awa, least(now() - interval '12 hours', (current_date + time '06:00') at time zone v_tz), 'open', least(now() - interval '12 hours', (current_date + time '06:00') at time zone v_tz), 'Shift matin');
+  -- L'horodatage serveur d'ouverture est imposé à l'insertion : on le recale sur l'heure d'ouverture de démo.
+  update public.shifts set opened_at = least(now() - interval '12 hours', (current_date + time '06:00') at time zone v_tz) where id = md5('shift:mbour:aujourdhui')::uuid;
   for st in select * from (values ('thies', v_fatou, 4205000, 0.40), ('kaolack', v_cheikh, 3443000, 0.35)) as s(slug, emp, fuel, super_share) loop
     v_shift := md5('shift:' || st.slug || ':aujourdhui')::uuid;
     v_closing := md5('cash_closing:' || st.slug || ':aujourdhui')::uuid;
@@ -536,8 +538,14 @@ begin
     v_gasoil_fcfa := st.fuel - v_super_fcfa;
     v_wave := round(st.fuel * 0.16)::bigint;
     v_om := round(st.fuel * 0.11)::bigint;
+    -- Horaires bornés par now() : la seed doit passer à n'importe quelle heure (tests autonomes, tôt le matin UTC).
     insert into public.shifts (id, organization_id, station_id, device_id, opened_by, closed_by, opened_at, closed_at, status, fuel_closed_at, device_created_at, label)
-    values (v_shift, v_org, md5('station:' || st.slug)::uuid, md5('device:' || st.slug)::uuid, st.emp, st.emp, (current_date + time '06:00') at time zone v_tz, least(now(), (current_date + time '14:00') at time zone v_tz), 'closed', least(now(), (current_date + time '13:45') at time zone v_tz), (current_date + time '06:00') at time zone v_tz, 'Shift matin');
+    values (v_shift, v_org, md5('station:' || st.slug)::uuid, md5('device:' || st.slug)::uuid, st.emp, st.emp,
+            least(now() - interval '2 hours', (current_date + time '06:00') at time zone v_tz),
+            greatest(least(now(), (current_date + time '14:00') at time zone v_tz), least(now() - interval '2 hours', (current_date + time '06:00') at time zone v_tz) + interval '1 minute'),
+            'closed',
+            greatest(least(now(), (current_date + time '13:45') at time zone v_tz), least(now() - interval '2 hours', (current_date + time '06:00') at time zone v_tz) + interval '1 minute'),
+            least(now() - interval '2 hours', (current_date + time '06:00') at time zone v_tz), 'Shift matin');
     insert into public.cash_counts (id, organization_id, station_id, device_id, employee_id, shift_id, denominations, device_created_at, created_at)
     values (md5('cash_count:' || st.slug || ':aujourdhui')::uuid, v_org, md5('station:' || st.slug)::uuid, md5('device:' || st.slug)::uuid, st.emp, v_shift, jsonb_build_object('10000', (st.fuel - v_wave - v_om) / 10000, '1000', ((st.fuel - v_wave - v_om) % 10000) / 1000), least(now(), (current_date + time '13:50') at time zone v_tz), least(now(), (current_date + time '13:50') at time zone v_tz));
     insert into public.cash_closings (id, organization_id, station_id, device_id, employee_id, shift_id, cash_count_id,

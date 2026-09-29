@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StationSûre — Fiche employé et modules</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@500;600&amp;display=swap">
+<style>
+body{margin:0;background:#0E1311;font-family:'IBM Plex Sans',sans-serif;color:#EEF2EF}
+button,input,select{font-family:inherit}
+a{color:#F2A541}a:hover{color:#F7C47E}
+</style>
+</head>
+<body>
+<div style="width: 1440px; height: 900px; display: flex; background: #0E1311; color: #EEF2EF; font-family: 'IBM Plex Sans', sans-serif">
+  <nav style="width: 232px; flex-shrink: 0; box-sizing: border-box; padding: 24px 14px; display: flex; flex-direction: column; gap: 4px; background: #111816; border-right: 1px solid #2A3530">
+    <div style="display: flex; align-items: center; gap: 8px; padding: 0 10px 20px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F2A541" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h12"></path><path d="M4 9h10"></path><path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18"></path><path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0V9.83a2 2 0 0 0-.59-1.42L18 5"></path></svg>
+      <span style="font-family: Sora, sans-serif; font-weight: 700; font-size: 15px">StationSûre</span>
+    </div>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Tableau de bord</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #C9D3CE; font-size: 14px; text-decoration: none">Carburant et cuves</a>
+    <a href="#" style="display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; background: #221C10; color: #F2A541; font-size: 14px; font-weight: 600; text-decoration: none">Employés</a>
+    <a href="#" style="margin-top: auto; display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; color: #A3B0AA; font-size: 14px; text-decoration: none">Paramètres</a>
+  </nav>
+
+  <main style="flex-grow: 1; min-width: 0; box-sizing: border-box; padding: 28px 32px; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <a href="#" style="font-size: 13px">← Employés</a>
+        <h1 style="margin: 0; font-family: Sora, sans-serif; font-size: 26px; font-weight: 700">Salif</h1>
+        <span style="font-size: 14px; color: #A3B0AA">Station Leona · actif</span>
+      </div>
+      <button style="height: 40px; padding: 0 18px; border-radius: 10px; background: #F2A541; border: none; color: #1A1206; font-size: 14px; font-weight: 600">Enregistrer</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 380px 1fr; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 16px">
+        <section style="display: flex; flex-direction: column; gap: 12px; padding: 18px; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+          <span style="font-weight: 600; font-size: 15px">Informations</span>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #A3B0AA">Type d'employé
+            <select style="height: 40px; padding: 0 10px; border-radius: 10px; background: #0E1311; border: 1px solid #4A5852; color: #EEF2EF; font-size: 14px"><option>Gérant</option><option>Chef de piste</option><option>Pompiste</option><option>Caissier boutique</option><option>Mécanicien (vidange)</option><option>Laveur</option><option>Gardien de nuit</option><option>Adjoint de station</option></select>
+          </label>
+          <a href="#" style="font-size: 13px">Gérer les types d'employés</a>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #A3B0AA">Téléphone (pour les relances)
+            <input value="+221 77 XXX XX XX" style="height: 40px; box-sizing: border-box; padding: 0 10px; border-radius: 10px; background: #0E1311; border: 1px solid #4A5852; color: #EEF2EF; font-family: 'IBM Plex Mono', monospace; font-size: 14px">
+          </label>
+          <div style="display: flex; gap: 8px">
+            <button style="height: 38px; padding: 0 12px; border-radius: 10px; background: transparent; border: 1px solid #4A5852; color: #EEF2EF; font-size: 13px">Changer le PIN</button>
+            <button style="height: 38px; padding: 0 12px; border-radius: 10px; background: transparent; border: 1px solid #7A2F25; color: #FF7A66; font-size: 13px">Désactiver</button>
+          </div>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+          <span style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A3B0AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Toujours réservé au propriétaire</span>
+          <span style="font-size: 13px; color: #A3B0AA; line-height: 1.5">Prix, approbations, écarts de caisse, comptes crédit, configuration de la station. Aucun employé ne peut valider ses propres écarts.</span>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px; font-size: 13px">
+          <span style="font-weight: 600; font-size: 14px">Historique des droits</span>
+          <span style="color: #A3B0AA">28/09 19:40 · vous · ajout « Réception de livraison »</span>
+          <span style="color: #A3B0AA">27/09 18:02 · vous · création, type Gérant</span>
+        </section>
+      </div>
+
+      <section style="display: flex; flex-direction: column; gap: 14px; padding: 20px; background: #161D1A; border: 1px solid #2A3530; border-radius: 16px">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <span style="font-weight: 600; font-size: 17px">Modules dans l'application</span>
+          <span style="display: flex; align-items: center; gap: 10px"><span style="padding: 4px 10px; border-radius: 999px; background: #261E0F; color: #F2A541; font-size: 12px; font-weight: 600">Personnalisé</span><a href="#" style="font-size: 13px">Revenir au modèle « Gérant »</a></span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+          <fieldset style="margin: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; border: 1px solid #2A3530">
+            <legend style="padding: 0 6px; font-size: 12px; letter-spacing: 1px; color: #A3B0AA">CARBURANT</legend>
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #F2A541">Ouvrir et fermer le shift (relevés)</label>
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #F2A541">Jaugeage des cuves</label>
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #F2A541">Passation</label>
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #F2A541">Réception de livraison</label>
+          </fieldset>
+          <fieldset style="margin: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; border: 1px solid #2A3530">
+            <legend style="padding: 0 6px; font-size: 12px; letter-spacing: 1px; color: #A3B0AA">CAISSE</legend>
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #F2A541">Encaisser</label>
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #F2A541">Vente à crédit</label>
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #F2A541">Demander une annulation</label>
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #F2A541">Clôture de caisse (billetage)</label>
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #F2A541">Versement bancaire</label>
+          </fieldset>
+          <fieldset style="margin: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; border: 1px dashed #2A3530; color: #6F7D77">
+            <legend style="padding: 0 6px; font-size: 12px; letter-spacing: 1px">BOUTIQUE · bientôt</legend>
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" disabled style="width: 18px; height: 18px">Caisse boutique</label>
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" disabled style="width: 18px; height: 18px">Inventaire de passation</label>
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" disabled style="width: 18px; height: 18px">Vente des tickets lavage / vidange</label>
+          </fieldset>
+          <fieldset style="margin: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 12px; border: 1px dashed #2A3530; color: #6F7D77">
+            <legend style="padding: 0 6px; font-size: 12px; letter-spacing: 1px">SERVICES · bientôt</legend>
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" disabled style="width: 18px; height: 18px">Scan des tickets vidange</label>
+            <label style="display: flex; align-items: center; gap: 10px; font-size: 14px"><input type="checkbox" disabled style="width: 18px; height: 18px">Scan des tickets lavage</label>
+          </fieldset>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: #0E1311; border: 1px solid #2A3530; font-size: 13px; color: #A3B0AA">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A3B0AA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+          <span>Aperçu dans l'app : 4 onglets — Accueil, Carburant, Caisse, Moi. Les droits sont vérifiés par le serveur, pas seulement cachés.</span>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>

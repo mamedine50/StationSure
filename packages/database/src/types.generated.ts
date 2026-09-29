@@ -884,6 +884,48 @@ export type Database = {
           },
         ];
       };
+      employee_module_overrides: {
+        Row: {
+          created_at: string;
+          employee_id: string;
+          granted: boolean;
+          module: Database['public']['Enums']['employee_module'];
+          organization_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          employee_id: string;
+          granted: boolean;
+          module: Database['public']['Enums']['employee_module'];
+          organization_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          employee_id?: string;
+          granted?: boolean;
+          module?: Database['public']['Enums']['employee_module'];
+          organization_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employee_module_overrides_employee_id_fkey';
+            columns: ['employee_id'];
+            isOneToOne: false;
+            referencedRelation: 'employees';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'employee_module_overrides_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       employee_pins: {
         Row: {
           employee_id: string;
@@ -981,6 +1023,53 @@ export type Database = {
           },
         ];
       };
+      employee_types: {
+        Row: {
+          code: string;
+          created_at: string;
+          id: string;
+          is_system: boolean;
+          legacy_role: Database['public']['Enums']['employee_role'];
+          modules: Database['public']['Enums']['employee_module'][];
+          name: string;
+          organization_id: string | null;
+          position: number;
+          updated_at: string;
+        };
+        Insert: {
+          code: string;
+          created_at?: string;
+          id?: string;
+          is_system?: boolean;
+          legacy_role?: Database['public']['Enums']['employee_role'];
+          modules?: Database['public']['Enums']['employee_module'][];
+          name: string;
+          organization_id?: string | null;
+          position?: number;
+          updated_at?: string;
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          id?: string;
+          is_system?: boolean;
+          legacy_role?: Database['public']['Enums']['employee_role'];
+          modules?: Database['public']['Enums']['employee_module'][];
+          name?: string;
+          organization_id?: string | null;
+          position?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'employee_types_organization_id_fkey';
+            columns: ['organization_id'];
+            isOneToOne: false;
+            referencedRelation: 'organizations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       employees: {
         Row: {
           active: boolean;
@@ -991,6 +1080,7 @@ export type Database = {
           phone_e164: string | null;
           role: Database['public']['Enums']['employee_role'];
           station_id: string;
+          type_id: string;
           updated_at: string;
         };
         Insert: {
@@ -1002,6 +1092,7 @@ export type Database = {
           phone_e164?: string | null;
           role: Database['public']['Enums']['employee_role'];
           station_id: string;
+          type_id: string;
           updated_at?: string;
         };
         Update: {
@@ -1013,6 +1104,7 @@ export type Database = {
           phone_e164?: string | null;
           role?: Database['public']['Enums']['employee_role'];
           station_id?: string;
+          type_id?: string;
           updated_at?: string;
         };
         Relationships: [
@@ -1022,6 +1114,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'stations';
             referencedColumns: ['id', 'organization_id'];
+          },
+          {
+            foreignKeyName: 'employees_type_id_fkey';
+            columns: ['type_id'];
+            isOneToOne: false;
+            referencedRelation: 'employee_types';
+            referencedColumns: ['id'];
           },
         ];
       };
@@ -3652,6 +3751,26 @@ export type Database = {
         Args: { p_key: string; p_station_id: string };
         Returns: number;
       };
+      employee_has_module: {
+        Args: {
+          p_employee_id: string;
+          p_module: Database['public']['Enums']['employee_module'];
+        };
+        Returns: boolean;
+      };
+      employee_modules: {
+        Args: { p_employee_id: string };
+        Returns: Database['public']['Enums']['employee_module'][];
+      };
+      employee_rights_history: {
+        Args: { p_employee_id: string };
+        Returns: {
+          action: string;
+          actor_user_id: string;
+          at: string;
+          details: Json;
+        }[];
+      };
       employee_small_variance_cumulative: {
         Args: { p_days?: number; p_employee_id: string };
         Returns: number;
@@ -3744,6 +3863,24 @@ export type Database = {
         }[];
       };
       locked_tolerances: { Args: never; Returns: Json };
+      member_labels: {
+        Args: never;
+        Returns: {
+          email: string;
+          role: Database['public']['Enums']['org_member_role'];
+          user_id: string;
+        }[];
+      };
+      my_recent_operations: {
+        Args: { p_limit?: number };
+        Returns: {
+          amount_fcfa: number;
+          at: string;
+          kind: string;
+          label: string;
+          method: Database['public']['Enums']['payment_method'];
+        }[];
+      };
       normaliser_localite: { Args: { p: string }; Returns: string };
       nozzle_is_paused: { Args: { p_nozzle_id: string }; Returns: boolean };
       open_shift: { Args: { p_shift_id: string }; Returns: Json };
@@ -3844,6 +3981,7 @@ export type Database = {
           price_fcfa_per_litre: number;
         }[];
       };
+      shift_tasks: { Args: never; Returns: Json };
       sign_delivery: {
         Args: {
           p_invoice_evidence_id: string;
@@ -3971,6 +4109,21 @@ export type Database = {
       delivery_status:
         'gauging_before' | 'unloading' | 'gauging_after' | 'signing' | 'signed' | 'cancelled';
       deposit_mode: 'slip' | 'later';
+      employee_module:
+        | 'shift'
+        | 'gauging'
+        | 'handover'
+        | 'delivery'
+        | 'sell'
+        | 'credit_sale'
+        | 'void_request'
+        | 'cash_close'
+        | 'bank_deposit'
+        | 'shop_pos'
+        | 'shop_count'
+        | 'service_ticket_sale'
+        | 'oil_change_scan'
+        | 'wash_scan';
       employee_role: 'manager' | 'pump_attendant' | 'shop_cashier' | 'mechanic' | 'washer';
       evidence_kind:
         | 'meter_photo'
@@ -4179,6 +4332,22 @@ export const Constants = {
         'cancelled',
       ],
       deposit_mode: ['slip', 'later'],
+      employee_module: [
+        'shift',
+        'gauging',
+        'handover',
+        'delivery',
+        'sell',
+        'credit_sale',
+        'void_request',
+        'cash_close',
+        'bank_deposit',
+        'shop_pos',
+        'shop_count',
+        'service_ticket_sale',
+        'oil_change_scan',
+        'wash_scan',
+      ],
       employee_role: ['manager', 'pump_attendant', 'shop_cashier', 'mechanic', 'washer'],
       evidence_kind: [
         'meter_photo',

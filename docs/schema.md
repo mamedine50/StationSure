@@ -36,6 +36,9 @@ Conventions :
 | 0017 | `20260926090017_correctifs_enums.sql` | alertes `cash_small_variance_cumulative`, `tank_low` |
 | 0018 | `20260926090018_villes.sql` | référence `sn_regions` (14), `sn_departments` (46), `sn_communes` (553), `normaliser_localite()`, `stations.commune_code`, `station_localite()`, rattachement des stations existantes |
 | 0019 | `20260926090019_correctifs.sql` | paramètre `small_variance_cumulative_fcfa` (org + station), `employee_small_variance_cumulative()`, `private.check_small_variance_cumulative()` appelée par `close_shift_cash`, score avec petits écarts, `tanks.reorder_threshold_pct`, `tank_levels()`, trigger `after_tank_reading_low`, `station_fuel_setup_status()`, `open_shift` refuse `FUEL_SETUP_INCOMPLETE` |
+| 0020 | `20260926090020_modules_enums.sql` | enum `employee_module` (14 modules, liste fermée) |
+| 0021 | `20260926090021_modules.sql` | `employee_types` (8 types système + personnalisés), `employees.type_id` (+ synchronisation de `role`), `employee_module_overrides`, `employee_modules()`, `employee_has_module()`, `private.require_module()` (MODULE_NOT_GRANTED) dans toutes les RPC mobiles et déclencheurs d'insertion (relevés, jaugeages, billetage, shifts), `employee_rights_history()`, `member_labels()`, `verify_employee_pin` / `current_employee_session` avec modules, `shift_tasks()`, `my_recent_operations()` |
+| 0022 | `20260926090022_modules_role_fallback.sql` | type système déduit du rôle historique quand un employé est inséré sans type |
 | 0010 | `20260926090010_identite.sql` | `create_organization()`, `device_pairing_codes`, `pairing_rate_limits`, `create_pairing_code()`, `consume_pairing_code()`, `register_paired_device()`, `revoke_device()`, `employee_sessions`, `pin_attempts`, `verify_employee_pin()`, `end_employee_session()`, `current_employee_id()`, `current_employee_session()`, `employees_with_pin()`, PIN non trivial, durcissement des policies d'insertion |
 
 ## Tables et relations
@@ -173,6 +176,21 @@ Formules (core ↔ SQL testées) : attendu total = carburant (tranches) + boutiq
 | `tank_levels(station?)` | écran 20 : mesuré (dernier jaugeage), théorique (`theoretical_stock_cl`), écart, ventes moyennes 7 jours (relevés d'index, sinon litres figés des clôtures répartis par cuve du produit), autonomie en jours, seuil et drapeau « à commander » |
 | `station_fuel_setup_status(station)` | écran 19 : complet = ≥ 1 cuve active, chaque cuve avec barémage en vigueur (≥ 2 points) et ≥ 1 pistolet actif, un prix en vigueur par produit ; détail par cuve de ce qui manque. `open_shift` renvoie `FUEL_SETUP_INCOMPLETE` tant que ce n'est pas réglé (le mobile masque le bouton avec le même message) |
 | `supabase/scripts/reset-station-config-local.*` | nettoyage LOCAL d'une organisation de test par courriel du propriétaire (dry-run par défaut, `--confirm`), refus hors 127.0.0.1:54722 et sur l'organisation de démo, une transaction, `session_replication_role = replica` (superuser) ou déclencheurs utilisateur désactivés + passes FK (rôle `postgres`) |
+
+### Lot de correctifs n°2 (types d'employés, modules, vraie app mobile, base protégée)
+
+| Objet | Rôle |
+| --- | --- |
+| `employee_types` | 8 types système (`organization_id` null, non modifiables) : Gérant, Chef de piste, Pompiste, Caissier boutique, Mécanicien (vidange), Laveur, Gardien de nuit, Adjoint de station, chacun avec ses modules par défaut et son `legacy_role` (plafonds d'annulation). Types personnalisés par organisation (owner). Audité |
+| `employees.type_id` | obligatoire ; `role` reste synchronisé depuis le type (déclencheur). Migration : manager → Gérant, pump_attendant → Pompiste, shop_cashier → Caissier boutique, mechanic → Mécanicien, washer → Laveur, sans perte |
+| `employee_module_overrides` | surcharge par employé (`granted` = ajout, sinon retrait), prioritaire sur le type. Audité |
+| `employee_modules(e)`, `employee_has_module(e, m)` | modules effectifs = type ∪ ajouts − retraits. Prix, approbations, écarts, comptes crédit, configuration n'existent pas dans l'enum : jamais attribuables |
+| `private.require_module` | appelé par TOUTES les RPC mobiles (open/close shift, passation, livraison, vente, crédit, annulation, clôture, versement) et par les déclencheurs d'insertion de `meter_readings`, `tank_readings`, `cash_counts`, `shifts` quand un appareil agit → `MODULE_NOT_GRANTED` (42501). Les anciens contrôles « gérant » sont remplacés |
+| `employee_rights_history(e)` | historique des droits depuis `audit_log` (création, changement de type, ajout / retrait de module) |
+| `shift_tasks()` | écran 21 : shift courant, complétude de la configuration, tâches cochables (relevés, jaugeage, relevés de fin, passation, clôture, bordereau de la veille). **Ne renvoie aucun montant** (test 140) |
+| `my_recent_operations(n)` | les dernières opérations de l'employé connecté uniquement |
+| `verify_employee_pin`, `current_employee_session` | renvoient `type_code` et `modules` → onglets et actions de l'app |
+| Tests | chaque fichier pgTAP crée le jeu de démo (seed.sql) sous l'espace de noms `test:` dans sa transaction (`_build.sh`), puis rollback : aucune dépendance à la seed chargée ni à `db reset`. Scripts `pnpm db:backup-org` / `db:restore-org` (JSON d'une organisation, dry-run par défaut) |
 
 ### Transversal
 

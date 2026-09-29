@@ -26,7 +26,7 @@ select is(public.effective_setting(pg_temp.station('thies'), 'cash_tolerance_fcf
 insert into public.station_settings (station_id, organization_id, tank_variance_pct) values (pg_temp.station('thies'), pg_temp.org_demo(), 0.2);
 select is(public.effective_setting(pg_temp.station('thies'), 'tank_variance_pct'), 0.2::numeric, 'la surcharge station prime sur l''organisation');
 select is(public.effective_setting(pg_temp.station('mbour'), 'tank_variance_pct'), 1.2::numeric, 'les autres stations gardent la valeur de l''organisation');
-select is((select count(*)::int from public.audit_log where table_name in ('organization_settings', 'station_settings') and at >= now()), 2, 'modifications des paramètres tracées dans l''audit');
+select is((select count(*)::int from public.audit_log where table_name in ('organization_settings', 'station_settings') and at >= now() and organization_id = pg_temp.org_demo() and action <> 'INSERT') + (select count(*)::int from public.audit_log where table_name = 'station_settings' and action = 'INSERT' and at >= now() and organization_id = pg_temp.org_demo()), 2, 'modifications des paramètres tracées dans l''audit');
 select pg_temp.logout();
 
 -- Verrouillé : aucune colonne pour les tolérances des paiements électroniques / passation / index.
@@ -51,11 +51,13 @@ select pg_temp.login(pg_temp.owner_demo());
 update public.organization_settings set deposit_missing_hours = 72 where organization_id = pg_temp.org_demo();
 select pg_temp.logout();
 delete from public.alerts where type = 'deposit_missing';
-select is(public.flag_missing_deposits(), 0, 'délai 72 h : aucun bordereau en retard');
+select public.flag_missing_deposits();
+select is((select count(*)::int from public.alerts where type = 'deposit_missing' and organization_id = pg_temp.org_demo()), 0, 'délai 72 h : aucun bordereau en retard');
 select pg_temp.login(pg_temp.owner_demo());
 update public.organization_settings set deposit_missing_hours = 24 where organization_id = pg_temp.org_demo();
 select pg_temp.logout();
-select is(public.flag_missing_deposits(), 2, 'délai 24 h : Thiès (36 h) et Mbour (avant-hier) sont signalées');
+select public.flag_missing_deposits();
+select is((select count(*)::int from public.alerts where type = 'deposit_missing' and organization_id = pg_temp.org_demo()), 2, 'délai 24 h : Thiès (36 h) et Mbour (avant-hier) sont signalées');
 
 -- ---------------------------------------------------------------- Destinataires
 select pg_temp.login(pg_temp.owner_demo());
@@ -106,7 +108,7 @@ select is((select r ->> 'ca_total_fcfa' from public.build_evening_report((select
 select is(public.format_fcfa(-35000), '−35 000', 'format_fcfa miroir de formatFCFA');
 select is(public.format_litres(1000), '10,00', 'format_litres miroir de formatLitres');
 select is(public.format_pct(-0.9), '−0,9 %', 'format_pct miroir de formatPourcent');
-select is((select count(*)::int from public.notification_outbox_events e join public.notification_outbox o on o.id = e.outbox_id where o.kind = 'evening_report' and e.status = 'queued'), 3, 'historique : un événement « queued » par message');
+select is((select count(*)::int from public.notification_outbox_events e join public.notification_outbox o on o.id = e.outbox_id where o.kind = 'evening_report' and e.status = 'queued' and o.organization_id = pg_temp.org_demo()), 3, 'historique : un événement « queued » par message');
 
 -- Mode heure fixe : rien n'est envoyé après une clôture, tout part à l'heure choisie.
 update public.organization_settings set report_mode = 'fixed_time', report_time = (now() at time zone 'Africa/Dakar')::time where organization_id = pg_temp.org_demo();
@@ -129,19 +131,19 @@ select alike(public.render_summary_report(public.build_summary_report(pg_temp.or
 -- ---------------------------------------------------------------- Alertes immédiates + anti-spam
 insert into public.alerts (organization_id, station_id, shift_id, type, severity, payload)
 values (pg_temp.org_demo(), pg_temp.station('mbour'), :'shift_p5', 'cash_variance', 'critical', jsonb_build_object('variance_fcfa', -12000, 'employee_id', pg_temp.employee('mbour', 'Ibrahima Sarr')));
-select is((select count(*)::int from public.notification_outbox where kind = 'alert' and created_at >= now()), 1, 'alerte immédiate → un message pour le seul destinataire « alertes graves »');
-select is((select to_phone from public.notification_outbox where kind = 'alert' and created_at >= now()), '+221770000001', 'envoyé au destinataire qui reçoit les alertes');
-select is((select body from public.notification_outbox where kind = 'alert' and created_at >= now()), E'⚠️ Mbour · Écart de caisse −12 000 FCFA · Ibrahima Sarr\nhttp://localhost:3000/alertes?id=' || (select id from public.alerts where type = 'cash_variance' and shift_id = :'shift_p5')::text, 'message court : quoi, où, qui, montant, lien');
+select is((select count(*)::int from public.notification_outbox where kind = 'alert' and created_at >= now() and organization_id = pg_temp.org_demo() and (variables ->> 'type') = 'cash_variance'), 1, 'alerte immédiate → un message pour le seul destinataire « alertes graves »');
+select is((select to_phone from public.notification_outbox where kind = 'alert' and created_at >= now() and organization_id = pg_temp.org_demo() and (variables ->> 'type') = 'cash_variance'), '+221770000001', 'envoyé au destinataire qui reçoit les alertes');
+select is((select body from public.notification_outbox where kind = 'alert' and created_at >= now() and organization_id = pg_temp.org_demo() and (variables ->> 'type') = 'cash_variance'), E'⚠️ Mbour · Écart de caisse −12 000 FCFA · Ibrahima Sarr\nhttp://localhost:3000/alertes?id=' || (select id from public.alerts where type = 'cash_variance' and shift_id = :'shift_p5')::text, 'message court : quoi, où, qui, montant, lien');
 insert into public.alerts (organization_id, station_id, shift_id, type, severity, payload)
 values (pg_temp.org_demo(), pg_temp.station('mbour'), :'shift_p5', 'cash_variance', 'critical', jsonb_build_object('variance_fcfa', -12000, 'employee_id', pg_temp.employee('mbour', 'Ibrahima Sarr')));
-select is((select count(*)::int from public.notification_outbox where kind = 'alert' and created_at >= now()), 1, 'anti-spam : alerte identique (station + type) dans les 10 min → regroupée');
-select is((select variables ->> 'count' from public.notification_outbox where kind = 'alert' and created_at >= now()), '2', 'le message regroupé compte 2 alertes');
+select is((select count(*)::int from public.notification_outbox where kind = 'alert' and created_at >= now() and organization_id = pg_temp.org_demo() and (variables ->> 'type') = 'cash_variance'), 1, 'anti-spam : alerte identique (station + type) dans les 10 min → regroupée');
+select is((select variables ->> 'count' from public.notification_outbox where kind = 'alert' and created_at >= now() and organization_id = pg_temp.org_demo() and (variables ->> 'type') = 'cash_variance'), '2', 'le message regroupé compte 2 alertes');
 insert into public.alerts (organization_id, station_id, shift_id, type, severity, payload)
 values (pg_temp.org_demo(), pg_temp.station('thies'), null, 'cash_variance', 'critical', jsonb_build_object('variance_fcfa', -3000));
-select is((select count(*)::int from public.notification_outbox where kind = 'alert' and created_at >= now()), 2, 'même type sur une autre station : nouveau message');
+select is((select count(*)::int from public.notification_outbox where kind = 'alert' and created_at >= now() and organization_id = pg_temp.org_demo() and (variables ->> 'type') = 'cash_variance'), 2, 'même type sur une autre station : nouveau message');
 insert into public.alerts (organization_id, station_id, shift_id, type, severity, payload)
 values (pg_temp.org_demo(), pg_temp.station('mbour'), null, 'void_requested', 'warning', jsonb_build_object('amount_fcfa', 5000));
-select is((select count(*)::int from public.notification_outbox where kind = 'alert' and created_at >= now()), 2, 'annulation demandée : routée « rapport du soir », rien en file');
+select is((select count(*)::int from public.notification_outbox where kind = 'alert' and created_at >= now() and organization_id = pg_temp.org_demo() and (variables ->> 'type') = 'cash_variance'), 2, 'annulation demandée : routée « rapport du soir », rien en file');
 
 -- Relance du gérant (écran 17).
 select pg_temp.login(pg_temp.owner_demo());
@@ -159,8 +161,8 @@ select pg_temp.logout();
 select pg_temp.as_service();
 select cmp_ok((select count(*)::int from public.claim_notifications(50)), '>=', 3, 'le worker réclame les messages en file');
 select is((select count(*)::int from public.notification_outbox where status = 'queued' and next_attempt_at <= now()), 0, 'rien ne reste réclamable dans l''instant… ');
-select is((select min(attempts) from public.notification_outbox where kind = 'alert' and created_at >= now()), 1, '…et chaque message compte une tentative');
-select o.id as msg_id from public.notification_outbox o where o.kind = 'alert' and o.to_phone = '+221770000001' and o.created_at >= now() limit 1 \gset
+select is((select min(attempts) from public.notification_outbox where kind = 'alert' and created_at >= now() and organization_id = pg_temp.org_demo() and (variables ->> 'type') = 'cash_variance'), 1, '…et chaque message compte une tentative');
+select o.id as msg_id from public.notification_outbox o where o.kind = 'alert' and o.to_phone = '+221770000001' and o.created_at >= now() and o.organization_id = pg_temp.org_demo() and (o.variables ->> 'type') = 'cash_variance' limit 1 \gset
 select public.set_notification_status(:'msg_id', 'sent', null, 'wamid.TEST1');
 select is((select status from public.notification_outbox where id = :'msg_id'), 'sent', 'statut sent');
 select is(public.record_delivery_status('wamid.TEST1', 'delivered'), 1, 'webhook : statut de livraison rattaché par identifiant fournisseur');
@@ -169,7 +171,7 @@ select is((select array_agg(status::text order by id) from public.notification_o
 select throws_ok($$ delete from public.notification_outbox_events where outbox_id = (select id from public.notification_outbox limit 1) $$, 'P0001', null, 'l''historique des statuts est append-only');
 -- SMS de secours : activé, un message envoyé mais non délivré depuis 11 min → copie SMS.
 update public.organization_settings set sms_fallback = true where organization_id = pg_temp.org_demo();
-select o.id as msg_sms from public.notification_outbox o where o.kind = 'alert' and o.to_phone = '+221770000001' and o.created_at >= now() and o.id <> :'msg_id' limit 1 \gset
+select o.id as msg_sms from public.notification_outbox o where o.kind = 'alert' and o.to_phone = '+221770000001' and o.created_at >= now() and o.organization_id = pg_temp.org_demo() and (o.variables ->> 'type') = 'cash_variance' and o.id <> :'msg_id' limit 1 \gset
 select public.set_notification_status(:'msg_sms', 'sent', null, 'wamid.TEST2');
 update public.notification_outbox set sent_at = now() - interval '11 minutes' where id = :'msg_sms';
 select is(public.escalate_undelivered(), 1, 'un message WhatsApp non délivré après 10 min → SMS de secours');

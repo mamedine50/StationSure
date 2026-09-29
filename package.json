@@ -19,6 +19,9 @@
     "db:lint": "supabase db lint",
     "db:test": "bash supabase/tests/_build.sh && supabase test db",
     "db:types": "supabase gen types typescript --local --schema public > packages/database/src/types.generated.ts && prettier --write packages/database/src/types.generated.ts",
+    "db:backup-org": "bash supabase/scripts/backup-org-local.sh",
+    "db:restore-org": "bash supabase/scripts/restore-org-local.sh",
+    "db:migrate": "supabase migration up",
     "db:reset-station-config": "bash supabase/scripts/reset-station-config-local.sh",
     "db:functions:test": "for f in supabase/functions/*/; do (cd \"$f\" && deno test --allow-env --allow-net) || exit 1; done",
     "db:functions:serve": "supabase functions serve --env-file supabase/functions/.env"

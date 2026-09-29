@@ -18,6 +18,10 @@ export interface EmployeConnecte {
   employeeId: string;
   fullName: string;
   role: RoleEmploye;
+  /** Code du type d'employé (gerant, pompiste…) ou null pour un type personnalisé sans code connu. */
+  typeCode: string | null;
+  /** Modules effectifs (lot n°2) : onglets et actions visibles. Le serveur vérifie de son côté. */
+  modules: string[];
   expiresAt: string;
 }
 
@@ -65,6 +69,8 @@ function lireEmploye(json: unknown): EmployeConnecte | null {
     employeeId: o.employee_id,
     fullName: String(o.full_name ?? ''),
     role: o.role as RoleEmploye,
+    typeCode: typeof o.type_code === 'string' ? o.type_code : null,
+    modules: Array.isArray(o.modules) ? o.modules.map(String) : [],
     expiresAt: String(o.expires_at ?? ''),
   };
 }

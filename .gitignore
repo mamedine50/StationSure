@@ -49,3 +49,6 @@ pnpm-debug.*
 # Système
 .DS_Store
 *.pem
+
+# Sauvegardes locales d'organisation (données réelles de test)
+supabase/backups/
